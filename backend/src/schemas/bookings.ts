@@ -29,16 +29,16 @@ const CONTROL_CHARS = /\p{Cc}/u;
 /** Controles Cc salvo tab, LF y CR (para el comentario). */
 const CONTROL_CHARS_EXCEPT_NEWLINES = /[^\P{Cc}\t\n\r]/u;
 
-const stripBidi = (value: string): string => value.replace(BIDI_CONTROLS, '');
-const cleanPhoneText = (value: string): string => value.replace(FORMAT_CHARS, '').replace(EXOTIC_SPACES, ' ');
-const isSingleLine = (value: string): boolean => !CONTROL_CHARS.test(value);
-const isMultiLine = (value: string): boolean => !CONTROL_CHARS_EXCEPT_NEWLINES.test(value);
-const blankToNull = (value: string): string | null => (value === '' ? null : value);
-const countDigits = (value: string): number => (value.match(/\d/g) ?? []).length;
+export const stripBidi = (value: string): string => value.replace(BIDI_CONTROLS, '');
+export const cleanPhoneText = (value: string): string => value.replace(FORMAT_CHARS, '').replace(EXOTIC_SPACES, ' ');
+export const isSingleLine = (value: string): boolean => !CONTROL_CHARS.test(value);
+export const isMultiLine = (value: string): boolean => !CONTROL_CHARS_EXCEPT_NEWLINES.test(value);
+export const blankToNull = (value: string): string | null => (value === '' ? null : value);
+export const countDigits = (value: string): number => (value.match(/\d/g) ?? []).length;
 /** En los campos opcionales, un `null` explícito equivale a omitirlo. */
-const nullToUndefined = (value: unknown): unknown => (value === null ? undefined : value);
+export const nullToUndefined = (value: unknown): unknown => (value === null ? undefined : value);
 
-const TELEFONO_MSG = 'Revisá el teléfono: usá solo números, espacios, +, - y paréntesis (mínimo 8 dígitos).';
+export const TELEFONO_MSG = 'Revisá el teléfono: usá solo números, espacios, +, - y paréntesis (mínimo 8 dígitos).';
 const EMAIL_MSG = 'Revisá el email.';
 /** Mismo mensaje si el servicio no tiene formato de id, no existe o está inactivo (ver BookingService). */
 export const SERVICIO_MSG = 'Elegí un servicio de la lista.';

@@ -7,10 +7,10 @@ import { type TestContext, addUser, closeAllContexts, createClient, createTestCo
 afterEach(closeAllContexts);
 
 /*
- * Objetivo 8, de punta a punta por la API (app de test + PGlite) y contrato con el frontend.
+ * Objetivo 8, de punta a punta por la API (app de test + PGlite) y contrato de la API.
  *
  * 1. El flujo del taller: completar con cobro, estadísticas, empleado, corrección, baja de la persona, vuelta a pendiente.
- * 2. Las respuestas REALES del backend se guardan en frontend/src/api/fixtures-backend/respuestas.json y el test
+ * 2. Las respuestas REALES del backend se guardan en test/fixtures/respuestas-api.json y el test
  *    frontend/src/api/contrato-backend.test.ts las pasa por los esquemas estrictos del panel. Para regenerarlas:
  *    ACTUALIZAR_FIXTURES=1 npx vitest run test/integracion-objetivo8.test.ts (sin la variable, el test verifica que el
  *    archivo guardado coincide con lo que devuelve el backend hoy: si el contrato cambia y nadie regeneró, falla).
@@ -84,9 +84,9 @@ describe('flujo completo: cobro, estadísticas, empleado, baja de la persona y v
   });
 });
 
-/* ---------- Fixtures para el frontend ---------- */
+/* ---------- Respuestas reales de la API (contrato para un frontend futuro) ---------- */
 
-const FIXTURES = path.join(BACKEND_ROOT, '..', 'frontend', 'src', 'api', 'fixtures-backend', 'respuestas.json');
+const FIXTURES = path.join(BACKEND_ROOT, 'test', 'fixtures', 'respuestas-api.json');
 
 /** Ids y fechas de hora aleatorios se reemplazan por valores estables, en orden de aparición. */
 function normalizar(valor: unknown): unknown {
@@ -100,8 +100,8 @@ function normalizar(valor: unknown): unknown {
   return JSON.parse(texto);
 }
 
-describe('respuestas reales del backend para los esquemas del frontend', () => {
-  it('coinciden con las guardadas en frontend/src/api/fixtures-backend (ACTUALIZAR_FIXTURES=1 las regenera)', async () => {
+describe('respuestas reales del backend (contrato de la API)', () => {
+  it('coinciden con las guardadas en test/fixtures/respuestas-api.json (ACTUALIZAR_FIXTURES=1 las regenera)', async () => {
     const context = await createTestContext();
     const ana = await addUser(context, { email: 'ana@t.test', rol: 'admin', nombre: 'Ana' });
     await addUser(context, { email: 'beto@t.test', rol: 'empleado', nombre: 'Beto' });

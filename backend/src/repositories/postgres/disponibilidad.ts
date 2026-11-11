@@ -59,7 +59,8 @@ async function especialesEntre(sql: SqlClient, desde: string, hasta: string | nu
 }
 
 /**
- * Turnos que ocupan cupo: los no cancelados, por fecha y franja de agenda. Mismas expresiones y mismo predicado
+ * Turnos que ocupan cupo: los no cancelados pedidos como turno (los lavados de mostrador no ocupan lugar), por fecha
+ * y franja de agenda. Mismas expresiones y mismo predicado
  * que el índice parcial bookings_agenda_idx.
  */
 async function ocupaciones(sql: SqlClient, desde: string, hasta: string): Promise<Ocupacion[]> {
@@ -69,6 +70,7 @@ async function ocupaciones(sql: SqlClient, desde: string, hasta: string): Promis
             count(*)::int AS ocupados
      FROM buddys.bookings b
      WHERE b.estado <> 'cancelado'
+       AND b.origen = 'web'
        AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
      GROUP BY 1, 2`,
     [desde, hasta],

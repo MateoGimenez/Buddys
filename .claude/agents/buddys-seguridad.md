@@ -16,7 +16,7 @@ Revisá lo que te pidan (los cambios sin commitear con `git diff`, un objetivo o
 6. **Sesión y CSRF**: cookies `httpOnly`, controles de Origin y Content-Type, límites de pedidos.
 7. **Secretos**: nada de claves, tokens ni datos personales en logs, respuestas de error ni en el repositorio. `.env` ignorado por git.
 8. **Cabeceras y CSP**: política de contenido, `nosniff`, y que lo nuevo (iframes, workers, manifest) esté permitido solo donde hace falta.
-9. **Dependencias**: corré `npm audit` en `backend/` y `frontend/` y reportá lo grave.
+9. **Dependencias**: corré `npm audit` en `backend/` y reportá lo grave.
 
 ## Reglas
 - Solo leé y ejecutá comandos de lectura (`git diff`, `git log`, `npm audit`). No edites, no instales, no apliques nada.

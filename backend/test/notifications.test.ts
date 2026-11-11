@@ -14,6 +14,7 @@ const BOOKING: Booking = {
   email: null,
   vehiculoTipo: 'auto',
   vehiculoModelo: 'VW Gol',
+  origen: 'web',
   servicioId: 'lavado-premium',
   fechaPreferida: '2026-10-20',
   franja: 'manana',

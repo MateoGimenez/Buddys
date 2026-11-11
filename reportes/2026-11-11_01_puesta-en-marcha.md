@@ -1,5 +1,8 @@
 # 01 — Puesta en marcha de Buddys Wash Detail
 
+> **Actualización (informe 02):** el frontend se sacó; el sistema es solo la API, con "Registrar lavado". Lo de
+> colores, logo y capturas de este informe ya no aplica.
+
 Fecha: 2026-11-11
 
 ## Qué se hizo
@@ -26,20 +29,11 @@ y se adaptó a la marca **Buddys Wash Detail**:
    en orden (CLI: `supabase link --project-ref <ref>` y `supabase db push`). Después, seguir
    [backend/README.md](../backend/README.md#conectar-supabase) para crear la contraseña del rol `buddys_app`, cargar
    `backend/.env` y dar de alta al primer superadmin.
-2. **Datos del negocio** en `frontend/src/config/sitio.ts` (buscar `COMPLETAR`): WhatsApp, dirección, horarios, link
-   de Google Maps y el dominio. Hoy figura `buddyswashdetail.com.ar` como dominio provisorio (también en `render.yaml`).
+2. **Dominio de la API**: hoy figura `api.buddyswashdetail.com.ar` como provisorio en `render.yaml`.
 3. **Ciudad**: el sistema usa la hora de La Rioja (Argentina) y textos que dicen "La Rioja". Si Buddys está en otra
    ciudad, avisar para cambiarlo.
-4. **Servicios y precios**: se cargan desde el panel → Servicios (el catálogo inicial es el mismo de MG, sin precios).
-5. **Trabajadores**: crear los usuarios del equipo en el panel → Usuarios, así aparecen en el cobro de cada turno y en
-   el ranking de Estadísticas.
-6. **Deploy**: `render.yaml` ya trae los servicios `buddys-web` y `buddys` con el dominio provisorio.
-7. **Logo en alta**: si hay un archivo del logo en mejor calidad (PNG/SVG), reemplazar
-   `frontend/public/fotos/Buddys-logo.png` y correr `npm --prefix frontend run marca`.
+4. **Servicios y precios**: se cargan con `PATCH /api/admin/servicios/:id` (el catálogo inicial es el mismo de MG, sin precios).
+5. **Trabajadores**: crear los usuarios del equipo con `POST /api/admin/usuarios` (superadmin), así aparecen en los
+   lavados y en el ranking de Estadísticas.
+6. **Deploy**: `render.yaml` trae solo el servicio `buddys` (la API).
 
-## Verificación
-
-- `npm run verificar` en verde: backend 739 tests, frontend 556 tests, typecheck, lint y build.
-- Capturas con datos de ejemplo (backend real sobre PGlite en memoria, 114 turnos ficticios) en
-  [capturas/2026-11-11_marca/](capturas/2026-11-11_marca/): landing, login, Hoy, Estadísticas (con el ranking
-  "Equipo": quién completó más trabajos y cuánto cobró), Finanzas y Turnos, en celular y PC.

@@ -34,7 +34,7 @@ export function formatBookingMessage(booking: Booking, servicioNombre: string, p
     '🚗 Nuevo turno Buddys Wash Detail',
     descripcionTurno(servicioNombre, booking.fechaPreferida, booking.franja),
     `${recortar(booking.nombre)} · ${vehiculo}`,
-    `Tel: ${recortar(booking.telefono)}`,
+    `Tel: ${recortar(booking.telefono ?? '-')}`,
   ];
   if (booking.telefonoWhatsapp !== null) lines.push(`Escribile: https://wa.me/${booking.telefonoWhatsapp}`);
   if (booking.comentario) lines.push(`Comentario: ${recortar(booking.comentario)}`);

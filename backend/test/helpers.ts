@@ -46,8 +46,8 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       secretKey: SECRET_KEY,
     },
     trustProxy: false,
-    serveFrontend: false,
-    frontendDistPath: '',
+    // Los tests de siempre usan el alta pública de turnos; test/turnos-online.test.ts prueba el sistema sin ella.
+    turnosOnline: true,
     rateLimits: { api: NO_LIMIT, bookings: NO_LIMIT, loginFailures: NO_LIMIT, seguimiento: NO_LIMIT, pdf: NO_LIMIT },
     whatsapp: { provider: 'none' },
     recordatorios: { cronSecret: undefined, email: undefined, whatsapp: undefined },

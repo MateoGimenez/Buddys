@@ -13,6 +13,8 @@ import {
   ESTADOS,
   FRANJAS,
   MIN_DIGITOS_BUSQUEDA,
+  type NuevoLavado,
+  ORIGENES,
   type Trabajador,
   TurnoCerradoError,
   VEHICULO_TIPOS,
@@ -30,17 +32,18 @@ function toTrabajador(row: Row): Trabajador | null {
 }
 
 function toBooking(row: Row): Booking {
-  const telefono = str(row, 'telefono');
+  const telefono = strOrNull(row, 'telefono');
   return {
     id: str(row, 'id'),
     nombre: str(row, 'nombre'),
     telefono,
     // La columna se llena al crear el turno. Un turno viejo que todavía no pasó por `npm run normalizar-telefonos`
     // la tiene en null: se calcula al leer, como antes, para que no cambie de comportamiento.
-    telefonoWhatsapp: strOrNull(row, 'telefono_whatsapp') ?? telefonoWhatsapp(telefono),
+    telefonoWhatsapp: strOrNull(row, 'telefono_whatsapp') ?? (telefono === null ? null : telefonoWhatsapp(telefono)),
     email: strOrNull(row, 'email'),
     vehiculoTipo: oneOf(VEHICULO_TIPOS, row, 'vehiculo_tipo'),
     vehiculoModelo: strOrNull(row, 'vehiculo_modelo'),
+    origen: oneOf(ORIGENES, row, 'origen'),
     servicioId: str(row, 'servicio_id'),
     fechaPreferida: str(row, 'fecha_preferida'),
     franja: oneOf(FRANJAS, row, 'franja'),
@@ -90,7 +93,7 @@ async function insertBooking(sql: SqlClient, input: NewBooking, now: Date): Prom
        nombre, telefono, telefono_whatsapp, email, vehiculo_tipo, vehiculo_modelo,
        servicio_id, fecha_preferida, franja, comentario, estado, created_at, updated_at
      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, $9, $10, 'pendiente', $11::timestamptz, $11::timestamptz)
-     RETURNING id::text AS id, nombre, telefono, telefono_whatsapp, email, vehiculo_tipo, vehiculo_modelo, servicio_id,
+     RETURNING id::text AS id, nombre, telefono, telefono_whatsapp, email, vehiculo_tipo, vehiculo_modelo, origen, servicio_id,
                to_char(fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, franja,
                to_char(fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, franja_confirmada,
                comentario, estado, notas_internas, monto, created_at, updated_at,
@@ -129,6 +132,72 @@ export class PostgresBookingRepository implements BookingRepository {
 
   create(input: NewBooking, now: Date): Promise<Booking> {
     return insertBooking(this.sql, input, now);
+  }
+
+  /**
+   * Lavado de mostrador: nace completado, con su cobro y `origen = 'mostrador'`. No toma el bloqueo de la fecha ni
+   * mira cupos (no ocupa lugar en la agenda). Va en un WITH para traer el nombre del trabajador en la misma consulta;
+   * la subconsulta de turnos_del_cliente no ve la fila nueva (misma instantánea): por eso se suma 1.
+   */
+  async registrarLavado(input: NuevoLavado, now: Date): Promise<Booking> {
+    const { rows } = await this.sql.query(
+      `WITH b AS (
+         INSERT INTO buddys.bookings (
+           nombre, telefono, telefono_whatsapp, vehiculo_tipo, vehiculo_modelo, servicio_id, fecha_preferida, franja,
+           estado, notas_internas, monto, trabajador_id, origen, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8, 'completado', $9, $10::integer, $11::uuid, 'mostrador',
+                   $12::timestamptz, $12::timestamptz)
+         RETURNING *
+       )
+       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
+              to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
+              to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
+              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
+              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+              CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
+                   ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp) + 1
+              END AS turnos_del_cliente
+       FROM b
+       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id`,
+      [
+        input.nombre,
+        input.telefono,
+        input.telefono === null ? null : telefonoWhatsapp(input.telefono),
+        input.vehiculoTipo,
+        input.vehiculoModelo,
+        input.servicioId,
+        input.fecha,
+        input.franja,
+        input.notasInternas,
+        input.monto,
+        input.trabajadorId,
+        now.toISOString(),
+      ],
+    );
+    const row = rows[0];
+    if (!row) throw new Error('INSERT de lavado no devolvió la fila creada');
+    return toBooking(row);
+  }
+
+  async lavadosDelDia(fecha: string): Promise<Booking[]> {
+    // Mismas expresiones que el índice parcial bookings_mostrador_fecha_idx.
+    const { rows } = await this.sql.query(
+      `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
+              to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
+              to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
+              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
+              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+              CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
+                   ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
+              END AS turnos_del_cliente
+       FROM buddys.bookings b
+       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+       WHERE b.origen = 'mostrador'
+         AND coalesce(b.fecha_confirmada, b.fecha_preferida) = $1::date
+       ORDER BY b.seq`,
+      [fecha],
+    );
+    return rows.map(toBooking);
   }
 
   reservar(input: NewBooking, now: Date): Promise<Booking> {
@@ -222,7 +291,7 @@ export class PostgresBookingRepository implements BookingRepository {
     const params = [estado ?? null, cliente ?? null, texto, digitos];
     const [page, count] = await Promise.all([
       this.sql.query(
-        `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.servicio_id,
+        `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
                 to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
                 to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
                 b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
@@ -267,7 +336,7 @@ export class PostgresBookingRepository implements BookingRepository {
   async find(id: string): Promise<Booking | undefined> {
     if (!isUuid(id)) return undefined;
     const { rows } = await this.sql.query(
-      `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.servicio_id,
+      `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
               b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
@@ -311,7 +380,7 @@ export class PostgresBookingRepository implements BookingRepository {
          WHERE u.id = $5::uuid
          RETURNING u.*
        )
-       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.servicio_id,
+       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
               b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
@@ -361,7 +430,7 @@ export class PostgresBookingRepository implements BookingRepository {
        WHERE b.id = $7::uuid AND b.estado NOT IN ('cancelado', 'completado')
        RETURNING b.*
        )
-       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.servicio_id,
+       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
               b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
@@ -395,7 +464,7 @@ export class PostgresBookingRepository implements BookingRepository {
     // Mismas expresiones y mismo predicado que el índice parcial bookings_agenda_idx (migración
     // agenda_fecha_confirmada). 'manana' < 'tarde' como texto: mañana antes que tarde.
     const { rows } = await this.sql.query(
-      `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.servicio_id,
+      `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
               b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,

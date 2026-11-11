@@ -35,6 +35,7 @@ const CAMPOS_TURNO = [
   'monto',
   'nombre',
   'notasInternas',
+  'origen',
   'servicioId',
   'telefono',
   'telefonoWhatsapp',

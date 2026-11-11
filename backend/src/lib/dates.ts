@@ -23,6 +23,13 @@ export function todayInLaRioja(now: Date): string {
   return `${pick('year')}-${pick('month')}-${pick('day')}`;
 }
 
+const hourPart = new Intl.DateTimeFormat('en-US', { timeZone: TIME_ZONE, hour: 'numeric', hourCycle: 'h23' });
+
+/** Hora (0 a 23) en La Rioja. */
+export function hourInLaRioja(now: Date): number {
+  return Number(hourPart.formatToParts(now).find((part) => part.type === 'hour')?.value ?? '0');
+}
+
 /** true si el texto es YYYY-MM-DD y existe en el calendario (rechaza 2026-02-30, 2026-13-01, etc.). */
 export function isValidCalendarDate(text: string): boolean {
   const match = ISO_DATE.exec(text);

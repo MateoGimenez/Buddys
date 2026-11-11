@@ -7,7 +7,9 @@ import {
   puedeBorrarTurnos,
   puedeCambiarEstado,
   puedeCorregirCobro,
+  puedeAnotarLavadoDeOtro,
   puedeArmarPresupuestos,
+  puedeRegistrarLavados,
   puedeEditarCatalogo,
   puedeEditarTaller,
   puedeEmitirComprobantes,
@@ -48,6 +50,8 @@ describe('matriz de permisos (CAPACIDADES) y funciones puede*', () => {
       expect(puedeVerImportes(rol), rol).toBe(esperado.estadisticas);
       expect(puedeRegistrarCobro(rol), rol).toBe(esperado.cobro);
       expect(puedeCorregirCobro(rol), rol).toBe(esperado.corregir);
+      expect(puedeRegistrarLavados(rol), rol).toBe(true);
+      expect(puedeAnotarLavadoDeOtro(rol), rol).toBe(rol !== 'empleado');
       for (const estado of ESTADOS) {
         expect(puedeCambiarEstado(rol, estado), `${rol} ${estado}`).toBe(rol === 'empleado' ? estado === 'completado' : true);
       }
@@ -56,6 +60,7 @@ describe('matriz de permisos (CAPACIDADES) y funciones puede*', () => {
 
   it('las funciones coinciden con la matriz que ve el usuario', () => {
     const pares: [string, (rol: Rol) => boolean][] = [
+      ['lavados.registrar', puedeAnotarLavadoDeOtro],
       ['turnos.reprogramar', puedeReprogramar],
       ['turnos.borrar', puedeBorrarTurnos],
       ['usuarios.gestionar', puedeGestionarUsuarios],

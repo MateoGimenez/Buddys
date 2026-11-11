@@ -17,7 +17,7 @@ Sos el programador del backend de Buddys Wash Detail, el sistema de un taller de
 - Las fechas son de La Rioja (`America/Argentina/La_Rioja`); nada puede depender de la zona horaria del servidor.
 - Las migraciones son archivos nuevos: nunca se edita una existente. Llevan RLS, `REVOKE` y `GRANT` mínimo al rol `buddys_app`. **Nunca las apliques a Supabase remoto.**
 - Los tests usan vitest y pglite. Corré `npx vitest run --maxWorkers=4`, `npx tsc --noEmit` y `npx eslint .` dentro de `backend/`, con timeout. `npm --prefix` y `npm run verificar` se cuelgan en este entorno.
-- No hagas commits. No levantes ni mates servidores. No toques `.env`, Supabase ni `frontend/`.
+- No hagas commits. No levantes ni mates servidores. No toques `.env` ni Supabase.
 - Comentarios y mensajes de error en español rioplatense, con voseo.
 
 ## Cómo responder

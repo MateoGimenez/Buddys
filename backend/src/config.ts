@@ -115,9 +115,11 @@ export interface AppConfig {
   database: DatabaseConfig;
   supabase: SupabaseAuthConfig;
   trustProxy: TrustProxySetting;
-  serveFrontend: boolean;
-  /** Carpeta con el build del frontend (../frontend/dist). */
-  frontendDistPath: string;
+  /**
+   * Rutas públicas de turnos (catálogo, disponibilidad, pedir turno y seguimiento). Buddys es un sistema interno sin
+   * web: por defecto están apagadas (404) y solo existe la API del panel. TURNOS_ONLINE=true las vuelve a montar.
+   */
+  turnosOnline: boolean;
   rateLimits: {
     /** Tope general para toda la API, por IP. */
     api: RateLimitRule;
@@ -422,20 +424,20 @@ const envSchema = z.object({
       error: 'no parece una clave privada VAPID (base64url de 32 bytes). Generá el par con: npm run vapid',
     }),
   ),
-  VAPID_SUBJECT: optionalEnv(
-    z
-      .string()
-      .trim()
-      .max(200, { error: 'es demasiado larga' })
-      .refine(isVapidSubject, { error: 'tiene que ser mailto:tu@email o una URL https:// (sin espacios)' }),
-  ),
-  SERVE_FRONTEND: optionalEnv(
+  TURNOS_ONLINE: optionalEnv(
     z
       .string()
       .trim()
       .toLowerCase()
       .pipe(z.enum(['true', 'false', '1', '0'], { error: 'tiene que ser true o false' }))
       .transform((value) => value === 'true' || value === '1'),
+  ),
+  VAPID_SUBJECT: optionalEnv(
+    z
+      .string()
+      .trim()
+      .max(200, { error: 'es demasiado larga' })
+      .refine(isVapidSubject, { error: 'tiene que ser mailto:tu@email o una URL https:// (sin espacios)' }),
   ),
 });
 
@@ -818,12 +820,11 @@ export function parseConfig(env: NodeJS.ProcessEnv): AppConfig {
     database,
     supabase,
     trustProxy,
-    serveFrontend: values.SERVE_FRONTEND ?? false,
-    frontendDistPath: path.resolve(BACKEND_ROOT, '..', 'frontend', 'dist'),
     rateLimits: DEFAULT_RATE_LIMITS,
     whatsapp,
     recordatorios,
     push,
+    turnosOnline: values.TURNOS_ONLINE ?? false,
     publicUrl: values.PUBLIC_URL,
     warnings,
   };

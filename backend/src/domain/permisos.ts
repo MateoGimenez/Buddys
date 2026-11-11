@@ -12,6 +12,7 @@ import type { Rol } from './perfil.js';
  *
  * | Capacidad                              | superadmin | admin | empleado                          |
  * |----------------------------------------|------------|-------|-----------------------------------|
+ * | Registrar un lavado de mostrador       | sí         | sí    | parcial: a su nombre               |
  * | Ver turnos, agenda, clientes, notas    | sí         | sí    | sí                                |
  * | Cambiar el estado de un turno          | cualquiera | cualq.| solo a "completado"               |
  * | Reprogramar y borrar turnos            | sí         | sí    | no                                |
@@ -52,6 +53,15 @@ export interface Capacidad {
 
 /** La matriz de permisos: una fila por cosa que un rol puede o no hacer. El orden es el de la tabla. */
 export const CAPACIDADES = [
+  {
+    id: 'lavados.registrar',
+    grupo: 'Lavados',
+    texto: 'Registrar un lavado de mostrador (servicio, vehículo, cobro y quién lavó)',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'parcial' },
+    matiz: {
+      empleado: 'Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige',
+    },
+  },
   {
     id: 'turnos.ver',
     grupo: 'Turnos',
@@ -207,6 +217,16 @@ export function nivelDe(rol: Rol, id: CapacidadId): Nivel {
   const capacidad = CAPACIDADES.find((candidata) => candidata.id === id);
   if (capacidad === undefined) throw new RangeError(`Capacidad desconocida: ${id}`);
   return capacidad.roles[rol];
+}
+
+/** Registrar lavados de mostrador: todos los roles (el empleado, solo a su nombre). */
+export function puedeRegistrarLavados(rol: Rol): boolean {
+  return nivelDe(rol, 'lavados.registrar') !== 'no';
+}
+
+/** Anotar un lavado a nombre de otra persona del equipo (elegir el trabajador). El empleado, no. */
+export function puedeAnotarLavadoDeOtro(rol: Rol): boolean {
+  return nivelDe(rol, 'lavados.registrar') === 'si';
 }
 
 export function puedeCambiarEstado(rol: Rol, estado: Estado): boolean {

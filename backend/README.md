@@ -1,8 +1,16 @@
 # Buddys Wash Detail - backend
 
-API REST de Buddys Wash Detail, taller de detailing de autos en La Rioja, Argentina. Hace esto:
+API REST del **sistema interno** de Buddys Wash Detail (lavadero y detailing). **No tiene web**: es solo la API; el
+frontend se hará más adelante con otro diseño y va a consumir los endpoints de este documento. El contrato real de
+cada respuesta está guardado en `test/fixtures/respuestas-api.json` (un test verifica que no cambie sin querer).
 
-1. Recibe **solicitudes de turno** desde la landing (público, con anti-spam).
+Hace esto:
+
+0. **Registra lavados** (`POST /api/admin/lavados`): el auto que llega sin turno, con servicio, vehículo, cuánto se
+   cobró y quién lo lavó. Cuenta en ingresos, metas y el ranking del equipo (quién lava más). Ver
+   [Registrar lavado](#registrar-lavado-post-y-get-apiadminlavados).
+1. Las rutas **públicas** de turnos (catálogo, disponibilidad, pedir turno, seguimiento) vienen de MgDetailing y
+   están **apagadas por defecto** (`TURNOS_ONLINE=false`, responden 404). Con `TURNOS_ONLINE=true` vuelven.
 2. **Autentica** a los usuarios del panel con **Supabase Auth**, en modo BFF: el backend habla con Supabase y guarda los tokens en cookies httpOnly; el navegador nunca ve un token ni una clave.
 3. Les permite **gestionar** esas solicitudes desde el panel `/admin` según su **rol** (`superadmin`, `admin`, `empleado`), y al `superadmin` gestionar los usuarios.
 4. Sirve el **catálogo de servicios** (textos, precios, duraciones, destacado, orden) desde la base: la landing lo lee de `GET /api/servicios` y `admin`/`superadmin` lo editan desde el panel sin volver a publicar la web.
@@ -69,13 +77,13 @@ Copiá `.env.example` a `.env` (está ignorado por git; nunca subas uno con secr
 | `DATABASE_SSL_CA_FILE` | (obligatoria con Postgres remoto) | Certificado raíz de Supabase para verificar al servidor (TLS verify-full). Ruta relativa a `backend/` o absoluta. Solo un Postgres local (`localhost`/`127.x`) se tolera sin ella fuera de producción, con un aviso. |
 | `DB_DRIVER`, `DB_PATH`, `JWT_SECRET` | | **Ya no se usan.** `DB_DRIVER=postgres` se sigue aceptando (cualquier otro valor se rechaza); `DB_PATH` y `JWT_SECRET` solo generan un aviso al arrancar: borralos del `.env`. |
 | `TRUST_PROXY` | `false` | Cuántos proxies hay delante (`1`) o una lista de IP/CIDR de confianza, para que el rate limit vea la IP real. `true` se rechaza a propósito (permite falsear la IP). |
-| `PUBLIC_URL` | (vacía) | Origen público del sitio (ej. `https://buddys.com.ar`). Opcional: si está, el aviso de WhatsApp incluye el link al panel, se publica `GET /sitemap.xml` (sin ella, 404) y `robots.txt` suma la línea `Sitemap:` (ver [Gastos, metas y datos del taller](#gastos-metas-mensuales-y-datos-del-taller-objetivo-10-m1)). |
+| `PUBLIC_URL` | (vacía) | Origen público del sitio (ej. `https://buddys.com.ar`). Opcional: si está, el aviso de WhatsApp incluye el link al panel, `robots.txt` suma la línea `Sitemap:` (ver [Gastos, metas y datos del taller](#gastos-metas-mensuales-y-datos-del-taller-objetivo-10-m1)). |
 | `WHATSAPP_PROVIDER` | `none` | `none`, `callmebot`, `cloud` o `telegram`. Ver [Avisos por WhatsApp](#avisos-por-whatsapp). |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | | Solo con `telegram`. Vacías = avisos desactivados (advertencia en desarrollo; en producción no arranca). |
 | `WHATSAPP_OWNER_PHONE` | | Número del dueño, con código de país y solo dígitos (`5493804781737`). |
 | `CALLMEBOT_APIKEY` | | Solo con `callmebot`. Con la apikey vacía los avisos quedan desactivados (advertencia en desarrollo; en producción no arranca). |
 | `WHATSAPP_CLOUD_TOKEN`, `WHATSAPP_CLOUD_PHONE_NUMBER_ID`, `WHATSAPP_CLOUD_TEMPLATE`, `WHATSAPP_CLOUD_LANGUAGE` | idioma `es_AR` | Solo con `cloud` (el idioma puede ser `es_AR` o `es`). |
-| `SERVE_FRONTEND` | `false` | `true`: la API también sirve `../frontend/dist` con fallback SPA a `index.html` para rutas que no empiezan con `/api`. |
+| `TURNOS_ONLINE` | `false` | `true`: monta las rutas públicas de la landing (`/api/servicios`, `/api/disponibilidad`, `/api/bookings`, `/api/turnos/:id`). Por defecto apagadas: Buddys es un sistema interno y solo existe la API del panel. |
 | `CRON_SECRET` | (vacía) | **Secreto** del cron de recordatorios: `Authorization: Bearer <CRON_SECRET>` en `POST /api/internal/recordatorios`. Mínimo 32 caracteres imprimibles sin espacios. Sin ella el endpoint responde `404`. Ver [Recordatorios](#recordatorios). |
 | `RESEND_API_KEY`, `RECORDATORIO_EMAIL_DESDE` | (vacías) | Recordatorio por **email con Resend**. Van juntas: la API key (`re_...`, **secreto**) y el remitente del dominio verificado (`turnos@dominio` o `Nombre <turnos@dominio>`). |
 | `WHATSAPP_CLOUD_TEMPLATE_RECORDATORIO` | (vacía) | Recordatorio por **WhatsApp Cloud**: nombre de la plantilla aprobada (tres variables). Usa `WHATSAPP_CLOUD_TOKEN`, `WHATSAPP_CLOUD_PHONE_NUMBER_ID` y `WHATSAPP_CLOUD_LANGUAGE` aunque `WHATSAPP_PROVIDER` no sea `cloud`. |
@@ -459,7 +467,7 @@ El código ya está listo. El backend se conecta con el **rol dedicado `buddys_a
    # -> {"status":"ok"}
    ```
 
-   Entrá a http://localhost:5173/admin con tu usuario, pedí un turno de prueba desde la landing y fijate que aparezca en el panel (y en Supabase: **Table Editor**, esquema `buddys`, tabla `bookings`). Si `/api/health` responde `503`, Postgres no responde: revisá la contraseña, la conexión a internet y que el proyecto no esté pausado. Si el login responde `503`, el backend no llega a Supabase Auth (revisá `SUPABASE_URL`); si responde `403`, tu perfil no está activo (paso 3 de *Alta de usuarios*).
+   Iniciá sesión con curl (ver [Endpoints con ejemplos curl](#endpoints-con-ejemplos-curl)), registrá un lavado de prueba con `POST /api/admin/lavados` y fijate que aparezca en `GET /api/admin/lavados` (y en Supabase: **Table Editor**, esquema `buddys`, tabla `bookings`). Si `/api/health` responde `503`, Postgres no responde: revisá la contraseña, la conexión a internet y que el proyecto no esté pausado. Si el login responde `503`, el backend no llega a Supabase Auth (revisá `SUPABASE_URL`); si responde `403`, tu perfil no está activo (paso 3 de *Alta de usuarios*).
 
 ## Endpoints con ejemplos curl
 
@@ -563,7 +571,7 @@ Esta sección es la referencia para el frontend. Todo viaja como JSON; las fecha
 
 - **`POST`, `PATCH` y `DELETE` (y `PUT`) exigen `Content-Type: application/json` aunque no lleven body** (por ejemplo `logout` y `delete`); si no, responden `415`. Un body vacío se acepta en esos casos. El body se interpreta como UTF-8.
 - **Si el pedido trae cabecera `Origin`, tiene que coincidir exactamente con uno de los `FRONTEND_ORIGIN`**; si no, `403 FORBIDDEN_ORIGIN`. Los navegadores la mandan solos. Los clientes sin `Origin` (curl, scripts) se aceptan.
-- Con `fetch` hay que enviar las cookies: `credentials: "include"` (o `same-origin` si se usa el proxy de Vite / `SERVE_FRONTEND`). El JS nunca ve los tokens: son cookies httpOnly.
+- Con `fetch` hay que enviar las cookies: `credentials: "include"`. El JS nunca ve los tokens: son cookies httpOnly.
 - Body máximo: **10 kb**. Los objetos de entrada son estrictos: **un campo desconocido se rechaza** con `400`.
 - Las respuestas de `/api` llevan `Cache-Control: no-store`.
 - Una ruta `/api/...` que no existe responde `404 NOT_FOUND` en JSON. Todo lo que cuelga de `/api/admin` pide sesión primero (`401`), exista o no la ruta.
@@ -699,6 +707,57 @@ Sin body (pero con `Content-Type: application/json`). Canjea el refresh token: `
 ### `GET /api/auth/me`
 
 `200 { "usuario": { id, email, nombre, rol } }`, `401 UNAUTHORIZED` o `403 NO_ACCESS`. Si el access token venció, refresca solo (acá sí viaja el refresh token) y reescribe las cookies.
+
+### Registrar lavado (`POST` y `GET /api/admin/lavados`)
+
+El auto que llega sin turno. Se guarda como un turno **ya completado** con su cobro y `origen: "mostrador"`, así entra
+solo en estadísticas (`porTrabajador` = quién lava más), metas, comprobantes e historial del cliente. **No ocupa cupo**
+de la agenda. Se corrige o se borra como cualquier turno: `PATCH` / `DELETE /api/admin/bookings/:id`.
+
+`POST /api/admin/lavados` (requiere sesión; todos los roles) — body estricto (un campo desconocido = 400):
+
+| Campo | Obligatorio | Qué es |
+|---|---|---|
+| `servicioId` | sí | Servicio activo del catálogo que se ofrezca para ese vehículo. |
+| `vehiculoTipo` | sí | `auto`, `camioneta` o `moto`. |
+| `monto` | no | Pesos cobrados (entero 0 a 99.999.999). `null`/omitido = sin cargar (se completa después con PATCH). |
+| `trabajadorId` | no | Quién lavó (perfil activo). Omitido = quien registra. El `empleado` solo puede ser él mismo (otro = 403). |
+| `fecha` | no | `YYYY-MM-DD`, de hoy hasta 31 días atrás (hora de La Rioja). Omitida = hoy. Futura = 400. |
+| `franja` | no | `manana` o `tarde`. Omitida = según la hora (desde las 14 h, `tarde`). |
+| `nombre` | no | Cliente (hasta 80). Omitido = "Cliente de mostrador". |
+| `telefono` | no | Como en el pedido de turno (mín. 8 dígitos). Sirve para el historial del cliente. |
+| `vehiculoModelo` | no | Modelo y/o patente, texto libre (hasta 80). |
+| `notasInternas` | no | Nota (hasta 1000), p. ej. forma de pago. |
+
+`201 { "lavado": Turno }` (el mismo objeto Turno de `/api/admin/bookings`, con `estado: "completado"` y
+`origen: "mostrador"`). El empleado puede cargar el monto al registrar (es el momento de cobrar), pero nunca lo recibe
+en las respuestas (`monto: null`) ni lo puede corregir después.
+
+```bash
+curl -b cookies.txt -H "Origin: http://localhost:5173" -H "Content-Type: application/json" \
+  -d '{"servicioId":"lavado-basico","vehiculoTipo":"auto","monto":12000,"vehiculoModelo":"Gol AB123CD"}' \
+  http://localhost:4000/api/admin/lavados
+```
+
+`GET /api/admin/lavados?fecha=YYYY-MM-DD` (sin fecha: hoy) — la planilla del día (sin los cancelados):
+
+```json
+{
+  "fecha": "2026-11-11",
+  "lavados": [ /* Turno, en el orden en que se registraron */ ],
+  "resumen": {
+    "cantidad": 4,
+    "total": 32000,
+    "sinMonto": 1,
+    "porTrabajador": [
+      { "trabajador": { "id": "<uuid>", "nombre": "Franco" }, "cantidad": 2, "total": 22000 }
+    ]
+  }
+}
+```
+
+`porTrabajador` va de quien lavó más a quien menos (a igual cantidad, más cobrado). Para el `empleado`, `total` es
+`null` (en el resumen y en cada fila) y los `monto` de los lavados también.
 
 ### `GET /api/admin/bookings?estado=&q=&cliente=&limit=&offset=` (requiere sesión; todos los roles)
 
@@ -987,10 +1046,6 @@ PATCH acepta cualquiera de esos campos (al menos uno; `proveedor: null` lo borra
 
 `200 { "taller": { nombre, telefono, direccion, instagram, cuit, leyendaPdf } }` (los cinco últimos pueden ser `null`). `PUT` **reemplaza** los seis campos (`nombre` obligatorio, 1 a 80; los otros aceptan `null`, texto en blanco o no mandarse para vaciarlos): `telefono` solo dígitos con código de país (8 a 15, ej. `5493804781737`), `instagram` sin `@` (letras, números, `.`, `_`; hasta 30), `cuit` 11 dígitos o `NN-NNNNNNNN-N` (no se verifica el dígito verificador), `direccion` hasta 160, `leyendaPdf` hasta 300 (una línea). Sembrado con el nombre, teléfono y dirección de la web. **Para el PDF:** `TallerService.obtener()` (`src/services/taller.ts`) devuelve esos datos.
 
-#### `GET /sitemap.xml` y `robots.txt` (SEO, objetivo 9)
-
-Solo con `PUBLIC_URL` configurada: `GET /sitemap.xml` (público, fuera de `/api`) arma el XML en cada pedido con la home y una URL `PUBLIC_URL/servicios/<id>` por **servicio activo**, cada una con `<lastmod>` (la fecha, en La Rioja, de la última edición del servicio; la home, la del cambio más reciente), y la página fija `PUBLIC_URL/privacidad` (sin `<lastmod>`); `Cache-Control: public, max-age=3600`. Sin `PUBLIC_URL` responde `404`. Con `SERVE_FRONTEND=true` y `PUBLIC_URL`, `robots.txt` es el del build (`frontend/public/robots.txt`, sin tocar lo que dice) más la línea `Sitemap: <PUBLIC_URL>/sitemap.xml`; sin `PUBLIC_URL`, el archivo tal cual. `/servicios/<id>` cae al `index.html` de la SPA (sin `noindex`). La CSP de la SPA permite `frame-src https://www.google.com/maps/` (el mapa de "Dónde estamos"); la de la API sigue en `default-src 'none'`.
-
 ## Avisos por WhatsApp
 
 Cuando entra una solicitud de turno, el dueño recibe un WhatsApp con el servicio, la fecha, la franja, el cliente, su teléfono, un link `wa.me` para escribirle (si el teléfono es interpretable), el comentario (máx. 200 caracteres) y, si existe `PUBLIC_URL`, el link al panel. El aviso se manda **después** de guardar el turno y **sin esperar**: si el proveedor falla o tarda (timeout de 5 s), el cliente igual recibe su `201`. Los turnos descartados por honeypot no avisan. En el log solo queda `Aviso de WhatsApp enviado id=<id>` o `Aviso de WhatsApp falló id=<id> (status X)`; nunca el texto, la apikey, el token ni la URL.
@@ -1131,39 +1186,23 @@ Cuando entra un turno nuevo por el formulario público, las personas del panel q
 
 Si se vuelve a correr `npm run vapid` y se cambia el par, los dispositivos ya suscriptos dejan de recibir hasta que se suscriban otra vez (la suscripción queda atada a la clave pública).
 
-### Hosting del panel como app
-
-Con `SERVE_FRONTEND=true` (`middleware/frontend.ts`, `middleware/security.ts`): la CSP de la web lleva `worker-src 'self'` y `manifest-src 'self'` (la de `/api` sigue siendo `default-src 'none'`); `/admin/sw.js` se sirve como `text/javascript` con `Cache-Control: no-cache` (el navegador revisa el service worker en cada visita) y `Service-Worker-Allowed: /admin` (así controla también la ruta exacta `/admin`, el `start_url`); `/admin/manifest.webmanifest` como `application/manifest+json`; y los estáticos de `public/admin/*` (copiados a `dist/admin/`, p. ej. `sin-conexion.html`) se sirven **antes** del fallback de la SPA. Las rutas del panel (`/admin`, `/admin/turnos`) siguen cayendo en `index.html`.
-
 ## Operación
 
-### Despliegue objetivo
+### Despliegue
 
-Un **solo proceso Node** con `SERVE_FRONTEND=true` (la API y la landing/panel en el **mismo origen**), detrás de **HTTPS**: Caddy en un VPS (proxy inverso a `127.0.0.1:4000`, certificados automáticos) o un PaaS. No hace falta volumen persistente: los datos y los usuarios viven en Supabase.
+Solo la API: `render.yaml` (raíz) crea el Web Service `buddys` (`npm start` → `node dist/index.js`), detrás del HTTPS
+de Render, con `TURNOS_ONLINE=false`.
 
 ```
-navegador --HTTPS--> Caddy / PaaS --HTTP--> node dist/index.js (API + estáticos del frontend)
+cliente (frontend futuro, curl, app) --HTTPS--> api.buddyswashdetail.com.ar (esta API)
                                                   |
                                                   +--TLS--> Postgres en Supabase (Session pooler, esquema buddys)
                                                   +--HTTPS--> Supabase Auth (/auth/v1: token, logout, JWKS)
 ```
 
-Con mismo origen no hay CORS de por medio, las cookies `SameSite=Strict` funcionan sin vueltas y el `Origin` que manda el navegador es el propio dominio. El build del frontend (`frontend/dist`) tiene que existir antes de arrancar con `SERVE_FRONTEND=true`; si no, el servidor no arranca y lo explica. Los estáticos se sirven comprimidos (gzip) y con caché larga para `/assets` (un año; nombres con hash); la API nunca se comprime. Las fotos de `/fotos` se cachean 7 días **y no llevan hash en el nombre: al reemplazar una foto hay que cambiarle el nombre** (por ejemplo `taller-2.jpg` en vez de `taller.jpg`), o los visitantes seguirán viendo la vieja hasta una semana. La CSP de la SPA es estricta: todo del mismo origen, sin scripts ni estilos inline, fuentes autoalojadas, sin iframes. Si el frontend pasa a cargar algo de otro dominio, hay que agregarlo a propósito en `src/middleware/security.ts`.
-
-### Despliegue actual en Render: web y API separadas
-
-En Render (`render.yaml` en la raíz) la web **no** la sirve este proceso: hay dos servicios.
-
-```
-navegador --HTTPS--> buddyswashdetail.com.ar      (Static Site "buddys-web": landing + panel, CDN, nunca se duerme)
-          --HTTPS--> api.buddyswashdetail.com.ar  (Web Service "buddys": esta API, SERVE_FRONTEND=false)
-```
-
-- El frontend se compila con `VITE_API_URL=https://api.buddyswashdetail.com.ar` y llama a `https://api.buddyswashdetail.com.ar/api/...` con `credentials: "include"` (`frontend/src/api/base.ts`). Sin esa variable sigue usando `/api` en el mismo origen, así que el despliegue de un solo proceso de arriba sigue funcionando.
-- Web y API son **orígenes distintos pero el mismo sitio** (`buddyswashdetail.com.ar`): las cookies `SameSite=Strict` de la API viajan igual. Hacen falta CORS y el chequeo de `Origin`, que ya usan `FRONTEND_ORIGIN` (`https://buddyswashdetail.com.ar,https://www.buddyswashdetail.com.ar`).
-- Las cabeceras de la web (CSP, HSTS, `X-Robots-Tag`, caché de `/assets`, service worker del panel) están en `render.yaml`, copiadas de `src/middleware/security.ts` y `src/middleware/frontend.ts`; la CSP suma la API en `connect-src`. Un cambio en un lado va también en el otro.
-- `/sitemap.xml` lo sigue armando la API: el Static Site lo reescribe a `https://api.buddyswashdetail.com.ar/sitemap.xml`. `robots.txt` es el archivo de `frontend/public` (con su línea `Sitemap:`).
-- Si la API duerme (plan gratis), la web aparece igual al instante; el primer pedido (el catálogo de la landing) la despierta y mientras tanto se ve el catálogo de respaldo.
+Cuando exista el frontend: cargar su origen exacto en `FRONTEND_ORIGIN` (CORS + defensa CSRF). Si web y API comparten
+sitio (`app.dominio` y `api.dominio`), las cookies `SameSite=Strict` funcionan sin cambios; el frontend tiene que
+llamar con `credentials: "include"`.
 
 ### Variables en producción
 
@@ -1179,7 +1218,7 @@ navegador --HTTPS--> buddyswashdetail.com.ar      (Static Site "buddys-web": lan
 | `TRUST_PROXY` | Con Caddy/nginx **en la misma máquina**: `loopback` (y `HOST=127.0.0.1`), así solo se cree el `X-Forwarded-For` que llega del proxy local. En un PaaS: `1` (el balanceador de la plataforma), siempre que el proceso no sea alcanzable sin pasar por él. Sin esto, el rate limit ve la IP del proxy y **todos los visitantes comparten el mismo cupo**; con un número y el puerto de Node expuesto a Internet, cualquiera puede conectarse directo, inventar su `X-Forwarded-For` y saltear el rate limit. |
 | `DATABASE_URL` | La cadena del Session pooler con la contraseña, en el gestor de secretos de la plataforma (nunca en el repo). |
 | `DATABASE_SSL_CA_FILE` | Ruta al certificado raíz de Supabase (obligatoria). |
-| `SERVE_FRONTEND` | `true` para el despliegue de un solo proceso; `false` en Render (la web es un Static Site aparte). |
+| `TURNOS_ONLINE` | `false` (sistema interno). |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Opcionales: avisos push al celular (`npm run vapid` genera el par). La privada es un secreto: solo en el entorno del servidor. |
 
 ### Límites conocidos

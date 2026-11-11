@@ -56,7 +56,7 @@ describe('desarrollo: defaults seguros', () => {
       frontendOrigins: ['http://localhost:5173'],
       sessionCookieMaxAgeSeconds: 8 * 60 * 60,
       trustProxy: false,
-      serveFrontend: false,
+      turnosOnline: false,
       rateLimits: DEFAULT_RATE_LIMITS,
       warnings: [],
     });
@@ -64,10 +64,17 @@ describe('desarrollo: defaults seguros', () => {
     expect(DEFAULT_RATE_LIMITS.loginFailures).toEqual({ windowMs: 15 * 60 * 1000, limit: 5 });
   });
 
-  it('las variables vacías (FOO=) cuentan como no definidas', () => {
-    const config = parseConfig({ PORT: '', HOST: ' ', FRONTEND_ORIGIN: '', TRUST_PROXY: '', SERVE_FRONTEND: '' });
+  it('TURNOS_ONLINE: true/1 o false/0 (por defecto, apagado: sistema interno)', () => {
+    expect(parseConfig({ TURNOS_ONLINE: 'TRUE' }).turnosOnline).toBe(true);
+    expect(parseConfig({ TURNOS_ONLINE: '0' }).turnosOnline).toBe(false);
+    expect(parseConfig({ TURNOS_ONLINE: '' }).turnosOnline).toBe(false);
+    expect(problemsOf({ TURNOS_ONLINE: 'yes' })).toMatch(/TURNOS_ONLINE: tiene que ser true o false/);
+  });
 
-    expect(config).toMatchObject({ port: 4000, host: '127.0.0.1', trustProxy: false, serveFrontend: false });
+  it('las variables vacías (FOO=) cuentan como no definidas', () => {
+    const config = parseConfig({ PORT: '', HOST: ' ', FRONTEND_ORIGIN: '', TRUST_PROXY: ''});
+
+    expect(config).toMatchObject({ port: 4000, host: '127.0.0.1', trustProxy: false });
     expect(config.frontendOrigins).toEqual(['http://localhost:5173']);
   });
 
@@ -223,11 +230,6 @@ describe('validación de cada variable', () => {
     for (const raw of ['11', 'basura', '10.0.0.0/33']) expect(problemsOf({ TRUST_PROXY: raw }), raw).toMatch(/TRUST_PROXY:/);
   });
 
-  it('SERVE_FRONTEND: true/1 o false/0', () => {
-    expect(parseConfig({ SERVE_FRONTEND: 'TRUE' }).serveFrontend).toBe(true);
-    expect(parseConfig({ SERVE_FRONTEND: '0' }).serveFrontend).toBe(false);
-    expect(problemsOf({ SERVE_FRONTEND: 'yes' })).toMatch(/SERVE_FRONTEND: tiene que ser true o false/);
-  });
 
   it('informa todos los problemas juntos, no de a uno', () => {
     const message = problemsOf({ PORT: 'abc', TRUST_PROXY: 'true', FRONTEND_ORIGIN: '*', SUPABASE_URL: 'x' });

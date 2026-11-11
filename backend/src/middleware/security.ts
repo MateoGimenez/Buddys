@@ -10,7 +10,8 @@ const PERMISSIONS_POLICY = 'camera=(), microphone=(), geolocation=(), payment=()
 /**
  * Cabeceras de seguridad (helmet). Hay dos perfiles:
  * - /api: respuestas JSON. CSP "none": no pueden cargar ni ejecutar nada ni embeberse en un frame.
- * - resto (solo si SERVE_FRONTEND=true): la SPA. CSP restrictiva y ajustada a lo que el frontend realmente usa:
+ * - resto: hoy no hay web (el sistema es solo la API); quedó la CSP que usaba la SPA de MgDetailing, por si vuelve.
+ *   La SPA: CSP restrictiva y ajustada a lo que el frontend realmente usa:
  *   todo del mismo origen ('self'), sin scripts ni estilos inline, fuentes autoalojadas (sin Google Fonts),
  *   imágenes y video propios o data:, sin plugins. El único iframe permitido es el de Google Maps de "Dónde estamos"
  *   (frame-src https://www.google.com/maps/; la landing lo carga recién cuando la persona lo pide).

@@ -2,6 +2,7 @@
 
 | Fecha | Informe |
 |---|---|
+| 2026-11-11 | [02 — Registrar lavado y sistema solo-API (sin frontend)](2026-11-11_02_registrar-lavado-sin-frontend.md) |
 | 2026-11-11 | [01 — Puesta en marcha (copia del sistema MgDetailing con la marca Buddys)](2026-11-11_01_puesta-en-marcha.md) |
 
 Los contratos anteriores que citan los README (`reportes/2026-10-*` y `reportes/2026-11-01_*`) son del desarrollo

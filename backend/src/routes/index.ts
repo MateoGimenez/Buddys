@@ -16,6 +16,7 @@ import type { EstadisticasService } from '../services/estadisticas.js';
 import type { ComprobanteService } from '../services/comprobantes.js';
 import type { GastoService } from '../services/gastos.js';
 import type { InventarioService } from '../services/inventario.js';
+import type { LavadoService } from '../services/lavados.js';
 import type { PresupuestoService } from '../services/presupuestos.js';
 import type { MetaService } from '../services/metas.js';
 import type { TallerService } from '../services/taller.js';
@@ -34,6 +35,7 @@ import { adminTrabajadoresRouter } from './admin-trabajadores.js';
 import { adminEstadisticasRouter } from './admin-estadisticas.js';
 import { adminComprobantesRouter } from './admin-comprobantes.js';
 import { adminInsumosRouter } from './admin-insumos.js';
+import { adminLavadosRouter } from './admin-lavados.js';
 import { adminPresupuestosRouter } from './admin-presupuestos.js';
 import { adminGastosRouter } from './admin-gastos.js';
 import { adminMetasRouter } from './admin-metas.js';
@@ -58,6 +60,7 @@ export interface ApiDeps {
   estadisticas: EstadisticasService;
   bookingService: BookingService;
   agenda: AgendaService;
+  lavados: LavadoService;
   disponibilidad: DisponibilidadService;
   recordatorios: RecordatorioService;
   push: PushService;
@@ -86,6 +89,7 @@ export function createApiRouter(deps: ApiDeps): Router {
     estadisticas,
     bookingService,
     agenda,
+    lavados,
     disponibilidad,
     recordatorios,
     push,
@@ -122,14 +126,18 @@ export function createApiRouter(deps: ApiDeps): Router {
   const withSession = requireSession(auth, cookies);
 
   api.use('/health', healthRouter(checkDatabase));
-  api.use('/servicios', publicServiciosRouter({ servicios }));
-  api.use('/disponibilidad', publicDisponibilidadRouter({ disponibilidad, now }));
-  api.use('/bookings', publicBookingsRouter({ bookings: bookingService, logger, now, limiter: limiters.bookings }));
-  api.use('/turnos', publicTurnosRouter({ bookings, limiter: limiters.seguimiento }));
+  // Rutas públicas (las usaba la landing). Buddys es un sistema interno: solo se montan con TURNOS_ONLINE=true.
+  if (config.turnosOnline) {
+    api.use('/servicios', publicServiciosRouter({ servicios }));
+    api.use('/disponibilidad', publicDisponibilidadRouter({ disponibilidad, now }));
+    api.use('/bookings', publicBookingsRouter({ bookings: bookingService, logger, now, limiter: limiters.bookings }));
+    api.use('/turnos', publicTurnosRouter({ bookings, limiter: limiters.seguimiento }));
+  }
   api.use('/internal', internalRouter({ cronSecret: config.recordatorios.cronSecret, recordatorios }));
   api.use('/auth', authRouter({ auth, cookies, loginLimiter: limiters.loginFailures, requireSession: withSession }));
   // Todo lo que cuelga de /admin exige sesión, existan o no las rutas (así no se revela cuáles existen).
   api.use('/admin', withSession);
+  api.use('/admin/lavados', adminLavadosRouter({ lavados, now }));
   api.use('/admin/bookings', adminBookingsRouter({ bookings, agenda }));
   api.use('/admin/agenda', adminAgendaRouter({ agenda, disponibilidad }));
   api.use('/admin/disponibilidad', adminDisponibilidadRouter({ disponibilidad }));

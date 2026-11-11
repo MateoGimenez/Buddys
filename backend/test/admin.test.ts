@@ -77,6 +77,7 @@ describe('GET /api/admin/bookings', () => {
       email: 'juan@example.com',
       vehiculoTipo: 'auto',
       vehiculoModelo: 'Toyota Corolla 2020',
+      origen: 'web',
       servicioId: 'pulido',
       fechaPreferida: '2026-10-20',
       franja: 'manana',

@@ -1,104 +1,13 @@
-# Render Blueprint: DOS servicios.
-#  - buddys-web (Static Site): la web y el panel (React). Gratis, no se duerme nunca y sale desde el CDN de Render:
-#    la página aparece al instante aunque la API esté dormida.
-#  - buddys (Web Service): la API de Node (Express). En el plan gratis se duerme tras 15 min sin pedidos; la
-#    primera visita la despierta (la landing muestra el catálogo de respaldo mientras tanto).
+# Render Blueprint: UN servicio.
+#  - buddys (Web Service): la API de Node (Express) del sistema interno de Buddys Wash Detail. No hay web: el
+#    frontend se hará más adelante con otro diseño y se conectará a esta API (ver backend/README.md).
+#    En el plan gratis se duerme tras 15 min sin pedidos; el primer pedido la despierta.
 # Uso: en Render, New > Blueprint, elegir este repo (o, si ya existe, "Sync" del Blueprint). Las variables con
 # `sync: false` se cargan a mano en el panel de Render (son secretos o datos tuyos): nunca van al repo. Detalle de cada
 # una en backend/.env.example.
 #
-# Dominios: buddyswashdetail.com.ar y www.buddyswashdetail.com.ar → buddys-web; api.buddyswashdetail.com.ar → buddys.
-# Si cambia el dominio de la API, hay que cambiarlo en TRES lugares de este archivo: VITE_API_URL, el connect-src
-# de la CSP y la reescritura de /sitemap.xml.
+# Dominio provisorio de la API: api.buddyswashdetail.com.ar (COMPLETAR con el dominio real).
 services:
-  # ---------------------------------------------------------------------------------------------------------------
-  # Frontend: Static Site
-  # ---------------------------------------------------------------------------------------------------------------
-  - type: web
-    runtime: static
-    name: buddys-web
-    buildCommand: npm --prefix frontend ci --include=dev && npm --prefix frontend run build
-    staticPublishPath: ./frontend/dist
-    autoDeploy: true
-    # Solo se vuelve a publicar si cambia algo del frontend.
-    buildFilter:
-      paths:
-        - frontend/**
-    domains:
-      - buddyswashdetail.com.ar
-      - www.buddyswashdetail.com.ar
-    envVars:
-      - key: NODE_VERSION
-        value: "24"
-      # A dónde llama la web (se fija al compilar; no es un secreto). Sin barra final y sin /api.
-      - key: VITE_API_URL
-        value: https://api.buddyswashdetail.com.ar
-    routes:
-      # El sitemap lo arma la API con los servicios del catálogo: se sirve desde el dominio de la web.
-      - type: rewrite
-        source: /sitemap.xml
-        destination: https://api.buddyswashdetail.com.ar/sitemap.xml
-      # SPA: toda ruta que no sea un archivo (/, /admin, /turno/xyz, /servicios/...) carga index.html y la resuelve
-      # React Router. Render no aplica esta regla si existe un archivo en esa ruta (assets, fotos, robots.txt).
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      # Cabeceras de seguridad: las mismas que pone el backend cuando sirve la web (backend/src/middleware/security.ts).
-      # connect-src suma la API, que ahora vive en otro dominio.
-      - path: /*
-        name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self'; worker-src 'self'; manifest-src 'self'; connect-src 'self' https://api.buddyswashdetail.com.ar; frame-src https://www.google.com/maps/; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
-      - path: /*
-        name: Strict-Transport-Security
-        value: max-age=15552000
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: no-referrer
-      - path: /*
-        name: Permissions-Policy
-        value: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-      - path: /*
-        name: Cross-Origin-Opener-Policy
-        value: same-origin
-      - path: /*
-        name: X-Permitted-Cross-Domain-Policies
-        value: none
-      # Los archivos de /assets llevan hash en el nombre (Vite): se cachean un año.
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      # Las fotos NO llevan hash: 7 días. Al reemplazar una foto hay que cambiarle el nombre.
-      - path: /fotos/*
-        name: Cache-Control
-        value: public, max-age=604800
-      # Service worker del panel: el navegador lo revisa en cada visita, y controla también /admin (sin barra).
-      - path: /admin/sw.js
-        name: Cache-Control
-        value: no-cache
-      - path: /admin/sw.js
-        name: Service-Worker-Allowed
-        value: /admin
-      - path: /admin/manifest.webmanifest
-        name: Content-Type
-        value: application/manifest+json; charset=utf-8
-      # El panel y el seguimiento de un turno no se indexan (robots.txt impide ver su <meta robots>).
-      - path: /admin
-        name: X-Robots-Tag
-        value: noindex, nofollow
-      - path: /admin/*
-        name: X-Robots-Tag
-        value: noindex, nofollow
-      - path: /turno/*
-        name: X-Robots-Tag
-        value: noindex, nofollow
-
   # ---------------------------------------------------------------------------------------------------------------
   # Backend: la API (Web Service)
   # ---------------------------------------------------------------------------------------------------------------
@@ -132,20 +41,19 @@ services:
       # Render llega al proceso desde afuera: hay que escuchar en todas las interfaces.
       - key: HOST
         value: 0.0.0.0
-      # La web la sirve el Static Site: la API ya no sirve el build del frontend.
-      - key: SERVE_FRONTEND
+      # Sistema interno: las rutas públicas de turnos (landing) quedan apagadas. true las vuelve a montar.
+      - key: TURNOS_ONLINE
         value: "false"
       # Un proxy inverso (el de Render) entre el visitante y la API: para que el límite de pedidos vea la IP real.
       - key: TRUST_PROXY
         value: "1"
-      # Orígenes exactos de la web (esquema + host, sin barra final), separados por coma. Los usan CORS y la defensa
-      # CSRF: un pedido desde otro origen se rechaza. Para probar con la URL provisoria del Static Site, sumala acá:
-      # ...,https://buddys-web.onrender.com
+      # Orígenes exactos del frontend que va a usar esta API (esquema + host, sin barra final), separados por coma.
+      # Los usan CORS y la defensa CSRF. Hoy no hay frontend: cuando exista, cargá su dominio acá.
       - key: FRONTEND_ORIGIN
-        value: https://buddyswashdetail.com.ar,https://www.buddyswashdetail.com.ar
-      # La web pública (links al panel en los avisos y URLs del sitemap): es el dominio del Static Site, no el de la API.
+        sync: false
+      # Dirección pública del panel (links en los avisos). Opcional hasta que exista el frontend.
       - key: PUBLIC_URL
-        value: https://buddyswashdetail.com.ar
+        sync: false
       # El certificado raíz de Supabase ya está en el repo (backend/certs).
       - key: DATABASE_SSL_CA_FILE
         value: ./certs/supabase-ca.crt

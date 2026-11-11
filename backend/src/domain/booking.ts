@@ -1,10 +1,13 @@
 export const VEHICULO_TIPOS = ['auto', 'camioneta', 'moto'] as const;
 export const FRANJAS = ['manana', 'tarde'] as const;
 export const ESTADOS = ['pendiente', 'confirmado', 'completado', 'cancelado'] as const;
+/** web = pedido de turno; mostrador = lavado registrado en el panel ("Registrar lavado"), nace completado. */
+export const ORIGENES = ['web', 'mostrador'] as const;
 
 export type VehiculoTipo = (typeof VEHICULO_TIPOS)[number];
 export type Franja = (typeof FRANJAS)[number];
 export type Estado = (typeof ESTADOS)[number];
+export type Origen = (typeof ORIGENES)[number];
 
 /** Datos ya validados de una solicitud de turno (lo que se guarda). */
 export interface NewBooking {
@@ -32,8 +35,12 @@ export interface Trabajador {
 }
 
 /** Turno tal como lo devuelve la API de administración (camelCase, fechas ISO 8601). */
-export interface Booking extends NewBooking {
+export interface Booking extends Omit<NewBooking, 'telefono'> {
   id: string;
+  /** Tal como se escribió. null solo en lavados de mostrador registrados sin teléfono. */
+  telefono: string | null;
+  /** De dónde vino: pedido de turno (web) o lavado registrado en el panel (mostrador). */
+  origen: Origen;
   /**
    * Teléfono listo para https://wa.me/<n>: solo dígitos, formato internacional, sin "+".
    * null si el teléfono no se puede interpretar. Se guarda al crear el turno (columna telefono_whatsapp, la que
@@ -135,6 +142,28 @@ export interface ActualizacionTurno {
   trabajadorId?: string | null;
 }
 
+/**
+ * Un lavado de mostrador ya validado (POST /api/admin/lavados). Se guarda como turno completado con su cobro y
+ * `origen = 'mostrador'`: así cuenta en estadísticas, metas y el ranking del equipo sin lógica aparte.
+ */
+export interface NuevoLavado {
+  /** Si no se indica, "Cliente de mostrador". */
+  nombre: string;
+  telefono: string | null;
+  vehiculoTipo: VehiculoTipo;
+  /** Modelo y/o patente, texto libre. */
+  vehiculoModelo: string | null;
+  servicioId: string;
+  /** YYYY-MM-DD: el día del lavado. */
+  fecha: string;
+  franja: Franja;
+  /** null = sin monto cargado (se puede completar después desde PATCH /api/admin/bookings/:id). */
+  monto: number | null;
+  /** Quién lavó (perfil activo). */
+  trabajadorId: string;
+  notasInternas: string | null;
+}
+
 /** Estados en los que un turno ya no se puede reprogramar. */
 export const ESTADOS_CERRADOS: readonly Estado[] = ['cancelado', 'completado'];
 
@@ -176,6 +205,10 @@ export interface BookingRepository {
    * sin guardar nada. Dos altas simultáneas por el último lugar no pueden entrar las dos.
    */
   reservar(input: NewBooking, now: Date): Promise<Booking>;
+  /** Guarda un lavado de mostrador ya completado, con su cobro. No mira ni ocupa cupos de la agenda. */
+  registrarLavado(input: NuevoLavado, now: Date): Promise<Booking>;
+  /** Los lavados de mostrador con fecha `fecha`, en el orden en que se registraron. */
+  lavadosDelDia(fecha: string): Promise<Booking[]>;
   /** Lo público del turno para la página de seguimiento. undefined si no existe (o el id no es un UUID). */
   seguimiento(id: string): Promise<SeguimientoTurno | undefined>;
   /** Confirmados con fecha de agenda `fecha` y sin recordatorio enviado, por orden de llegada. */

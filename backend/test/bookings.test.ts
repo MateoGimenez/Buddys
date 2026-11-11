@@ -359,6 +359,8 @@ describe('POST /api/bookings: logging', () => {
       reprogramar: () => Promise.reject(new Error('x')),
       agenda: () => Promise.reject(new Error('x')),
       delete: () => Promise.reject(new Error('x')),
+      registrarLavado: () => Promise.reject(new Error('x')),
+      lavadosDelDia: () => Promise.reject(new Error('x')),
     };
     const logger = new MemoryLogger();
     const data = {

@@ -9,7 +9,6 @@ import { type Logger, createLogger } from './lib/logger.js';
 import { SupabaseAdminClient } from './lib/supabase-admin.js';
 import { type FetchFn, SupabaseAuthClient } from './lib/supabase-auth.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
-import { mountFrontend } from './middleware/frontend.js';
 import { createRateLimiters } from './middleware/rate-limit.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { securityHeaders } from './middleware/security.js';
@@ -18,7 +17,6 @@ import { createWebPushSender } from './notifications/push.js';
 import { createCanalesRecordatorio } from './notifications/recordatorio.js';
 import type { Repositories } from './repositories/index.js';
 import { createApiRouter } from './routes/index.js';
-import { sitemapRouter } from './routes/sitemap.js';
 import { AgendaService } from './services/agenda.js';
 import { AuthService } from './services/auth.js';
 import { BookingService } from './services/bookings.js';
@@ -27,6 +25,7 @@ import { DisponibilidadService } from './services/disponibilidad.js';
 import { EstadisticasService } from './services/estadisticas.js';
 import { GastoService } from './services/gastos.js';
 import { InventarioService } from './services/inventario.js';
+import { LavadoService } from './services/lavados.js';
 import { MetaService } from './services/metas.js';
 import { PresupuestoService } from './services/presupuestos.js';
 import { PUSH_TIMEOUT_MS, PushService } from './services/push.js';
@@ -115,6 +114,7 @@ export function createApp(deps: AppDeps): Express {
     now,
   });
   const agenda = new AgendaService({ bookings, perfiles, logger, now });
+  const lavados = new LavadoService({ bookings, servicios, perfiles, logger, now });
   const estadisticas = new EstadisticasService({ estadisticas: estadisticasRepo, now });
   const servicioService = new ServicioService({ servicios, logger, now });
   const disponibilidadService = new DisponibilidadService({ disponibilidad, logger, now });
@@ -163,6 +163,7 @@ export function createApp(deps: AppDeps): Express {
       estadisticas,
       bookingService,
       agenda,
+      lavados,
       disponibilidad: disponibilidadService,
       recordatorios,
       push,
@@ -180,14 +181,6 @@ export function createApp(deps: AppDeps): Express {
     }),
   );
 
-  // /sitemap.xml (SEO): solo con PUBLIC_URL; sin ella no se monta y cae al 404 de siempre.
-  if (config.publicUrl !== undefined) {
-    app.use(sitemapRouter({ publicUrl: config.publicUrl, servicios: servicioService, limiter: limiters.api }));
-  }
-
-  if (config.serveFrontend) {
-    mountFrontend(app, config.frontendDistPath, config.publicUrl);
-  }
 
   app.use(notFoundHandler);
   app.use(errorHandler(logger));
