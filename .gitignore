@@ -1,0 +1,45 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Variables de entorno (pueden tener secretos; solo se versiona .env.example)
+.env
+.env.*
+!.env.example
+
+# Claves privadas y configuración local de Claude Code (los .crt de CA son públicos: se pueden versionar)
+*.key
+*.pem
+*.p12
+*.pfx
+.claude/settings.local.json
+
+# Bases de datos locales (SQLite)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
+
+# Tests y cachés de herramientas
+coverage/
+*.tsbuildinfo
+.eslintcache
+
+# Capturas de verificación de los agentes
+.capturas/
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

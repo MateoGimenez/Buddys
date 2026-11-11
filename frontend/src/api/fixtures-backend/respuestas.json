@@ -1,0 +1,4016 @@
+{
+  "patchAdminCompleta": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "00000000-0000-4000-8000-000000000001",
+        "nombre": "Cliente Largo Nombre",
+        "telefono": "12345678",
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": null,
+        "servicioId": "pulido",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": 60000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "patchEmpleadoCompleta": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "00000000-0000-4000-8000-000000000003",
+        "nombre": "Cliente Largo Nombre",
+        "telefono": "12345678",
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": null,
+        "servicioId": "encerado",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "patchAdminCompletaSinCobro": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "nombre": "Cliente Largo Nombre",
+        "telefono": "12345678",
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": null,
+        "servicioId": "pulido",
+        "fechaPreferida": "2026-09-20",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": null,
+        "trabajador": null,
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400Monto": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "monto": "El cobro y quién hizo el trabajo solo se cargan en un turno completado."
+        }
+      }
+    }
+  },
+  "error400MontoRango": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "monto": "El monto tiene que ser un número entero de pesos entre 0 y 99.999.999, o null."
+        }
+      }
+    }
+  },
+  "error400Trabajador": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "trabajadorId": "El cobro y quién hizo el trabajo solo se cargan en un turno completado."
+        }
+      }
+    }
+  },
+  "error400TrabajadorInexistente": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "trabajadorId": "Elegí una persona activa del panel."
+        }
+      }
+    }
+  },
+  "error403EmpleadoMonto": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés cargar el monto cobrado: lo completa un administrador."
+      }
+    }
+  },
+  "error403EmpleadoCorrige": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol, quien hizo el trabajo sos vos: no podés elegir a otra persona."
+      }
+    }
+  },
+  "error403EstadisticasEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver las estadísticas completas."
+      }
+    }
+  },
+  "gastoCrea": {
+    "status": 201,
+    "body": {
+      "gasto": {
+        "id": "00000000-0000-4000-8000-000000000006",
+        "fecha": "2026-10-14",
+        "categoria": "insumos",
+        "descripcion": "Cera en pasta y paños",
+        "monto": 12500,
+        "proveedor": "Distribuidora Norte",
+        "origen": "manual",
+        "creadoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "gastoCreaSinProveedor": {
+    "status": 201,
+    "body": {
+      "gasto": {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "fecha": "2026-10-02",
+        "categoria": "alquiler",
+        "descripcion": "Alquiler del local",
+        "monto": 90000,
+        "proveedor": null,
+        "origen": "manual",
+        "creadoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400GastoFechaFutura": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "fecha": "La fecha del gasto no puede ser futura."
+        }
+      }
+    }
+  },
+  "error400GastoMonto": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "monto": "El monto tiene que ser un número entero de pesos entre 1 y 99.999.999."
+        }
+      }
+    }
+  },
+  "gastosLista": {
+    "status": 200,
+    "body": {
+      "gastos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000006",
+          "fecha": "2026-10-14",
+          "categoria": "insumos",
+          "descripcion": "Cera en pasta y paños",
+          "monto": 12500,
+          "proveedor": "Distribuidora Norte",
+          "origen": "manual",
+          "creadoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000008",
+          "fecha": "2026-10-10",
+          "categoria": "insumos",
+          "descripcion": "Compra: Shampoo (5 litro)",
+          "monto": 6000,
+          "proveedor": null,
+          "origen": "inventario",
+          "creadoPor": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000007",
+          "fecha": "2026-10-02",
+          "categoria": "alquiler",
+          "descripcion": "Alquiler del local",
+          "monto": 90000,
+          "proveedor": null,
+          "origen": "manual",
+          "creadoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 3,
+      "suma": 108500
+    }
+  },
+  "gastosFiltrados": {
+    "status": 200,
+    "body": {
+      "gastos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000006",
+          "fecha": "2026-10-14",
+          "categoria": "insumos",
+          "descripcion": "Cera en pasta y paños",
+          "monto": 12500,
+          "proveedor": "Distribuidora Norte",
+          "origen": "manual",
+          "creadoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 1,
+      "suma": 12500
+    }
+  },
+  "error409GastoDeInventario": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "GASTO_DE_INVENTARIO",
+        "message": "Este gasto viene de una compra de inventario: corregilo desde Inventario."
+      }
+    }
+  },
+  "error403GastosEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver ni cargar los gastos del taller."
+      }
+    }
+  },
+  "metaPut": {
+    "status": 200,
+    "body": {
+      "meta": {
+        "mes": "2026-10",
+        "ingresosObjetivo": 1500000,
+        "trabajosObjetivo": 40
+      }
+    }
+  },
+  "error400MetaVacia": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "ingresosObjetivo": "La meta tiene que tener al menos un objetivo: de ingresos o de trabajos.",
+          "trabajosObjetivo": "La meta tiene que tener al menos un objetivo: de ingresos o de trabajos."
+        }
+      }
+    }
+  },
+  "metasActual": {
+    "status": 200,
+    "body": {
+      "mes": "2026-10",
+      "meta": {
+        "ingresosObjetivo": 1500000,
+        "trabajosObjetivo": 40
+      },
+      "progreso": {
+        "ingresos": 60000,
+        "trabajos": 2,
+        "porcentajeIngresos": 0.04,
+        "porcentajeTrabajos": 0.05,
+        "diasDeAtencionTranscurridos": 16,
+        "diasDeAtencionRestantes": 15,
+        "diasDeAtencionTotales": 31,
+        "proyeccionIngresos": 116250,
+        "necesarioPorDia": 96000,
+        "estado": "atrasado"
+      }
+    }
+  },
+  "metasAnio": {
+    "status": 200,
+    "body": {
+      "metas": [
+        {
+          "mes": "2026-09",
+          "ingresosObjetivo": 50000,
+          "trabajosObjetivo": null,
+          "ingresos": 0,
+          "trabajos": 1,
+          "cumplida": false
+        },
+        {
+          "mes": "2026-10",
+          "ingresosObjetivo": 1500000,
+          "trabajosObjetivo": 40,
+          "ingresos": 60000,
+          "trabajos": 2,
+          "cumplida": false
+        }
+      ]
+    }
+  },
+  "error403MetasEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver ni fijar las metas mensuales."
+      }
+    }
+  },
+  "tallerGet": {
+    "status": 200,
+    "body": {
+      "taller": {
+        "nombre": "Buddys Wash Detail",
+        "telefono": "5493804781737",
+        "direccion": "Calle Olta Pasaje N2, La Rioja",
+        "instagram": null,
+        "cuit": null,
+        "leyendaPdf": null
+      }
+    }
+  },
+  "tallerPut": {
+    "status": 200,
+    "body": {
+      "taller": {
+        "nombre": "Buddys Wash Detail",
+        "telefono": "5493804781737",
+        "direccion": "Calle Olta Pasaje N2, La Rioja",
+        "instagram": "buddys",
+        "cuit": "20-12345678-9",
+        "leyendaPdf": "Gracias por confiar en nosotros."
+      }
+    }
+  },
+  "error400Taller": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "nombre": "El nombre tiene que tener entre 1 y 80 caracteres, sin saltos de línea.",
+          "telefono": "El teléfono tiene que ser solo dígitos con código de país, de 8 a 15 (por ejemplo 5493804781737), o null.",
+          "instagram": "El usuario de Instagram va sin @ y solo con letras, números, puntos y guiones bajos (hasta 30), o null.",
+          "cuit": "El CUIT tiene que tener 11 dígitos, con o sin guiones (20-12345678-9), o null."
+        }
+      }
+    }
+  },
+  "error403TallerEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver ni editar los datos del taller."
+      }
+    }
+  },
+  "listaAdmin": {
+    "status": 200,
+    "body": {
+      "bookings": [
+        {
+          "id": "00000000-0000-4000-8000-000000000009",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-14",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "cancelado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-09-20",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-15",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "pendiente",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "encerado",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 60000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 5
+    }
+  },
+  "listaEmpleado": {
+    "status": 200,
+    "body": {
+      "bookings": [
+        {
+          "id": "00000000-0000-4000-8000-000000000009",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-14",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "cancelado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-09-20",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-15",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "pendiente",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "encerado",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 5
+    }
+  },
+  "agendaAdmin": {
+    "status": 200,
+    "body": {
+      "turnos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-15",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "pendiente",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 60000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "encerado",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "cupos": [
+        {
+          "fecha": "2026-10-14",
+          "abierto": true,
+          "cupoManana": 20,
+          "cupoTarde": 20,
+          "ocupadosManana": 0,
+          "ocupadosTarde": 0
+        },
+        {
+          "fecha": "2026-10-15",
+          "abierto": true,
+          "cupoManana": 20,
+          "cupoTarde": 20,
+          "ocupadosManana": 1,
+          "ocupadosTarde": 0
+        },
+        {
+          "fecha": "2026-10-16",
+          "abierto": true,
+          "cupoManana": 20,
+          "cupoTarde": 20,
+          "ocupadosManana": 2,
+          "ocupadosTarde": 0
+        }
+      ]
+    }
+  },
+  "agendaEmpleado": {
+    "status": 200,
+    "body": {
+      "turnos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-15",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "pendiente",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "nombre": "Cliente Largo Nombre",
+          "telefono": "12345678",
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "servicioId": "encerado",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "cupos": [
+        {
+          "fecha": "2026-10-14",
+          "abierto": true,
+          "cupoManana": 20,
+          "cupoTarde": 20,
+          "ocupadosManana": 0,
+          "ocupadosTarde": 0
+        },
+        {
+          "fecha": "2026-10-15",
+          "abierto": true,
+          "cupoManana": 20,
+          "cupoTarde": 20,
+          "ocupadosManana": 1,
+          "ocupadosTarde": 0
+        },
+        {
+          "fecha": "2026-10-16",
+          "abierto": true,
+          "cupoManana": 20,
+          "cupoTarde": 20,
+          "ocupadosManana": 2,
+          "ocupadosTarde": 0
+        }
+      ]
+    }
+  },
+  "trabajadores": {
+    "status": 200,
+    "body": {
+      "trabajadores": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana",
+          "rol": "admin"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto",
+          "rol": "empleado"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "nombre": "sin@t.test",
+          "rol": "empleado"
+        }
+      ]
+    }
+  },
+  "estadisticasMes": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2026-10-01",
+        "hasta": "2026-10-16"
+      },
+      "granularidad": "dia",
+      "resumen": {
+        "hoy": {
+          "actual": {
+            "completados": 2,
+            "ingresos": 60000,
+            "gastos": 0,
+            "ganancia": 60000
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "mes": {
+          "actual": {
+            "completados": 2,
+            "ingresos": 60000,
+            "gastos": 108500,
+            "ganancia": -48500
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "anio": {
+          "actual": {
+            "completados": 3,
+            "ingresos": 60000,
+            "gastos": 116500,
+            "ganancia": -56500
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        }
+      },
+      "periodo": {
+        "turnos": 4,
+        "pedidos": 3,
+        "pendientes": 1,
+        "confirmados": 0,
+        "completados": 2,
+        "cancelados": 1,
+        "ingresos": 60000,
+        "gastos": 108500,
+        "gananciaNeta": -48500,
+        "margen": -0.8083,
+        "ticketPromedio": 60000,
+        "completadosSinMonto": 1,
+        "tasaCancelacion": 0.25
+      },
+      "serie": [
+        {
+          "clave": "2026-10-01",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-02",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 90000
+        },
+        {
+          "clave": "2026-10-03",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-04",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-05",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-06",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-07",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-08",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-09",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-10",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 6000
+        },
+        {
+          "clave": "2026-10-11",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-12",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-13",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-14",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 12500
+        },
+        {
+          "clave": "2026-10-15",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-16",
+          "completados": 2,
+          "ingresos": 60000,
+          "gastos": 0
+        }
+      ],
+      "porServicio": [
+        {
+          "servicioId": "pulido",
+          "nombre": "Pulido",
+          "pedidos": 2,
+          "completados": 1,
+          "ingresos": 60000
+        },
+        {
+          "servicioId": "encerado",
+          "nombre": "Encerado",
+          "pedidos": 1,
+          "completados": 1,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "lavado-basico",
+          "nombre": "Lavado Básico",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "lavado-premium",
+          "nombre": "Lavado Premium",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "restauracion-opticas",
+          "nombre": "Restauración de ópticas",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        }
+      ],
+      "porTrabajador": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana",
+          "completados": 1,
+          "ingresos": 60000
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto",
+          "completados": 1,
+          "ingresos": 0
+        }
+      ],
+      "porDiaSemana": [
+        {
+          "dia": 0,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 1,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 2,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 3,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 4,
+          "manana": 1,
+          "tarde": 0
+        },
+        {
+          "dia": 5,
+          "manana": 2,
+          "tarde": 0
+        },
+        {
+          "dia": 6,
+          "manana": 0,
+          "tarde": 0
+        }
+      ],
+      "completadosSinTrabajador": 0,
+      "gastosPorCategoria": [
+        {
+          "categoria": "alquiler",
+          "monto": 90000
+        },
+        {
+          "categoria": "insumos",
+          "monto": 18500
+        }
+      ]
+    }
+  },
+  "estadisticasAnio": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2026-01-01",
+        "hasta": "2026-12-31"
+      },
+      "granularidad": "mes",
+      "resumen": {
+        "hoy": {
+          "actual": {
+            "completados": 2,
+            "ingresos": 60000,
+            "gastos": 0,
+            "ganancia": 60000
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "mes": {
+          "actual": {
+            "completados": 2,
+            "ingresos": 60000,
+            "gastos": 108500,
+            "ganancia": -48500
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "anio": {
+          "actual": {
+            "completados": 3,
+            "ingresos": 60000,
+            "gastos": 116500,
+            "ganancia": -56500
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        }
+      },
+      "periodo": {
+        "turnos": 5,
+        "pedidos": 4,
+        "pendientes": 1,
+        "confirmados": 0,
+        "completados": 3,
+        "cancelados": 1,
+        "ingresos": 60000,
+        "gastos": 116500,
+        "gananciaNeta": -56500,
+        "margen": -0.9417,
+        "ticketPromedio": 60000,
+        "completadosSinMonto": 2,
+        "tasaCancelacion": 0.2
+      },
+      "serie": [
+        {
+          "clave": "2026-01",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-02",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-03",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-04",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-05",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-06",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-07",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-08",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-09",
+          "completados": 1,
+          "ingresos": 0,
+          "gastos": 8000
+        },
+        {
+          "clave": "2026-10",
+          "completados": 2,
+          "ingresos": 60000,
+          "gastos": 108500
+        },
+        {
+          "clave": "2026-11",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-12",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        }
+      ],
+      "porServicio": [
+        {
+          "servicioId": "pulido",
+          "nombre": "Pulido",
+          "pedidos": 3,
+          "completados": 2,
+          "ingresos": 60000
+        },
+        {
+          "servicioId": "encerado",
+          "nombre": "Encerado",
+          "pedidos": 1,
+          "completados": 1,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "lavado-basico",
+          "nombre": "Lavado Básico",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "lavado-premium",
+          "nombre": "Lavado Premium",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "restauracion-opticas",
+          "nombre": "Restauración de ópticas",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        }
+      ],
+      "porTrabajador": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana",
+          "completados": 1,
+          "ingresos": 60000
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto",
+          "completados": 1,
+          "ingresos": 0
+        },
+        {
+          "id": null,
+          "nombre": "Sin asignar",
+          "completados": 1,
+          "ingresos": 0
+        }
+      ],
+      "porDiaSemana": [
+        {
+          "dia": 0,
+          "manana": 1,
+          "tarde": 0
+        },
+        {
+          "dia": 1,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 2,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 3,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 4,
+          "manana": 1,
+          "tarde": 0
+        },
+        {
+          "dia": 5,
+          "manana": 2,
+          "tarde": 0
+        },
+        {
+          "dia": 6,
+          "manana": 0,
+          "tarde": 0
+        }
+      ],
+      "completadosSinTrabajador": 1,
+      "gastosPorCategoria": [
+        {
+          "categoria": "alquiler",
+          "monto": 90000
+        },
+        {
+          "categoria": "insumos",
+          "monto": 18500
+        },
+        {
+          "categoria": "servicios",
+          "monto": 8000
+        }
+      ]
+    }
+  },
+  "estadisticasVacio": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2020-01-01",
+        "hasta": "2020-01-07"
+      },
+      "granularidad": "dia",
+      "resumen": {
+        "hoy": {
+          "actual": {
+            "completados": 2,
+            "ingresos": 60000,
+            "gastos": 0,
+            "ganancia": 60000
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "mes": {
+          "actual": {
+            "completados": 2,
+            "ingresos": 60000,
+            "gastos": 108500,
+            "ganancia": -48500
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "anio": {
+          "actual": {
+            "completados": 3,
+            "ingresos": 60000,
+            "gastos": 116500,
+            "ganancia": -56500
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        }
+      },
+      "periodo": {
+        "turnos": 0,
+        "pedidos": 0,
+        "pendientes": 0,
+        "confirmados": 0,
+        "completados": 0,
+        "cancelados": 0,
+        "ingresos": 0,
+        "gastos": 0,
+        "gananciaNeta": 0,
+        "margen": null,
+        "ticketPromedio": null,
+        "completadosSinMonto": 0,
+        "tasaCancelacion": null
+      },
+      "serie": [
+        {
+          "clave": "2020-01-01",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2020-01-02",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2020-01-03",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2020-01-04",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2020-01-05",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2020-01-06",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2020-01-07",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        }
+      ],
+      "porServicio": [
+        {
+          "servicioId": "lavado-basico",
+          "nombre": "Lavado Básico",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "lavado-premium",
+          "nombre": "Lavado Premium",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "pulido",
+          "nombre": "Pulido",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "encerado",
+          "nombre": "Encerado",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "restauracion-opticas",
+          "nombre": "Restauración de ópticas",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        }
+      ],
+      "porTrabajador": [],
+      "porDiaSemana": [
+        {
+          "dia": 0,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 1,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 2,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 3,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 4,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 5,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 6,
+          "manana": 0,
+          "tarde": 0
+        }
+      ],
+      "completadosSinTrabajador": 0,
+      "gastosPorCategoria": []
+    }
+  },
+  "misTrabajos": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2026-10-01",
+        "hasta": "2026-10-16"
+      },
+      "completados": 1,
+      "porServicio": [
+        {
+          "servicioId": "encerado",
+          "nombre": "Encerado",
+          "completados": 1
+        }
+      ],
+      "serie": [
+        {
+          "clave": "2026-10-01",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-02",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-03",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-04",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-05",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-06",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-07",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-08",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-09",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-10",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-11",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-12",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-13",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-14",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-15",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10-16",
+          "completados": 1
+        }
+      ]
+    }
+  },
+  "misTrabajosAnio": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2026-01-01",
+        "hasta": "2026-12-31"
+      },
+      "completados": 1,
+      "porServicio": [
+        {
+          "servicioId": "encerado",
+          "nombre": "Encerado",
+          "completados": 1
+        }
+      ],
+      "serie": [
+        {
+          "clave": "2026-01",
+          "completados": 0
+        },
+        {
+          "clave": "2026-02",
+          "completados": 0
+        },
+        {
+          "clave": "2026-03",
+          "completados": 0
+        },
+        {
+          "clave": "2026-04",
+          "completados": 0
+        },
+        {
+          "clave": "2026-05",
+          "completados": 0
+        },
+        {
+          "clave": "2026-06",
+          "completados": 0
+        },
+        {
+          "clave": "2026-07",
+          "completados": 0
+        },
+        {
+          "clave": "2026-08",
+          "completados": 0
+        },
+        {
+          "clave": "2026-09",
+          "completados": 0
+        },
+        {
+          "clave": "2026-10",
+          "completados": 1
+        },
+        {
+          "clave": "2026-11",
+          "completados": 0
+        },
+        {
+          "clave": "2026-12",
+          "completados": 0
+        }
+      ]
+    }
+  },
+  "permisosEmpleado": {
+    "status": 200,
+    "body": {
+      "roles": [
+        {
+          "id": "superadmin",
+          "nombre": "Superadministrador",
+          "descripcion": "Puede todo lo del administrador y, además, gestionar usuarios: alta, baja, rol y acceso al panel."
+        },
+        {
+          "id": "admin",
+          "nombre": "Administrador",
+          "descripcion": "Gestiona turnos, el cobro de cada trabajo, catálogo y disponibilidad; ve estadísticas con importes; lleva gastos, metas, presupuestos, comprobantes, datos del taller e inventario. No gestiona usuarios."
+        },
+        {
+          "id": "empleado",
+          "nombre": "Empleado",
+          "descripcion": "Ve turnos y agenda, escribe notas y marca turnos como completados (sin cargar el monto). Ve sus propios trabajos, sin importes, y el inventario, donde registra el uso de insumos. No ve gastos ni metas."
+        }
+      ],
+      "capacidades": [
+        {
+          "id": "turnos.ver",
+          "grupo": "Turnos",
+          "texto": "Ver los turnos y la agenda",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.estado",
+          "grupo": "Turnos",
+          "texto": "Cambiar el estado de un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo puede marcarlos como Completado"
+          }
+        },
+        {
+          "id": "turnos.reprogramar",
+          "grupo": "Turnos",
+          "texto": "Cambiar la fecha y la franja de un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "turnos.borrar",
+          "grupo": "Turnos",
+          "texto": "Borrar turnos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "turnos.notas",
+          "grupo": "Turnos",
+          "texto": "Escribir notas internas en un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.clientes",
+          "grupo": "Turnos",
+          "texto": "Buscar turnos y ver el historial de un cliente",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "cobro.registrar",
+          "grupo": "Cobro",
+          "texto": "Registrar cuánto se cobró por un trabajo y quién lo hizo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Al completar un turno queda como quien lo hizo, pero no carga el monto"
+          }
+        },
+        {
+          "id": "cobro.corregir",
+          "grupo": "Cobro",
+          "texto": "Corregir el monto y el trabajador de un turno ya completado",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "catalogo.ver",
+          "grupo": "Catálogo",
+          "texto": "Ver los servicios del catálogo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "catalogo.editar",
+          "grupo": "Catálogo",
+          "texto": "Crear, editar y ordenar los servicios del catálogo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "disponibilidad.ver",
+          "grupo": "Disponibilidad",
+          "texto": "Ver el horario, los días especiales y los cupos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "disponibilidad.editar",
+          "grupo": "Disponibilidad",
+          "texto": "Cambiar el horario semanal y los días especiales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "estadisticas.completas",
+          "grupo": "Estadísticas",
+          "texto": "Ver las estadísticas del taller, con importes y de todo el equipo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "estadisticas.propias",
+          "grupo": "Estadísticas",
+          "texto": "Ver los trabajos que uno mismo completó, sin importes",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "finanzas.gastos",
+          "grupo": "Finanzas",
+          "texto": "Ver y cargar los gastos del taller",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "finanzas.metas",
+          "grupo": "Finanzas",
+          "texto": "Fijar y seguir las metas mensuales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.presupuestos",
+          "grupo": "Documentos",
+          "texto": "Armar presupuestos y descargarlos en PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.comprobantes",
+          "grupo": "Documentos",
+          "texto": "Emitir comprobantes de pago en PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.taller",
+          "grupo": "Documentos",
+          "texto": "Editar los datos del taller que salen en los PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "inventario.ver",
+          "grupo": "Inventario",
+          "texto": "Ver el inventario",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "inventario.usar",
+          "grupo": "Inventario",
+          "texto": "Registrar el uso de insumos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "inventario.gestionar",
+          "grupo": "Inventario",
+          "texto": "Crear insumos, cargar compras y ajustar el stock",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "usuarios.gestionar",
+          "grupo": "Usuarios",
+          "texto": "Crear, editar y desactivar usuarios del panel",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "push.activar",
+          "grupo": "Avisos",
+          "texto": "Activar los avisos de turnos nuevos en su propio dispositivo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        }
+      ],
+      "tuRol": "empleado"
+    }
+  },
+  "permisosAdmin": {
+    "status": 200,
+    "body": {
+      "roles": [
+        {
+          "id": "superadmin",
+          "nombre": "Superadministrador",
+          "descripcion": "Puede todo lo del administrador y, además, gestionar usuarios: alta, baja, rol y acceso al panel."
+        },
+        {
+          "id": "admin",
+          "nombre": "Administrador",
+          "descripcion": "Gestiona turnos, el cobro de cada trabajo, catálogo y disponibilidad; ve estadísticas con importes; lleva gastos, metas, presupuestos, comprobantes, datos del taller e inventario. No gestiona usuarios."
+        },
+        {
+          "id": "empleado",
+          "nombre": "Empleado",
+          "descripcion": "Ve turnos y agenda, escribe notas y marca turnos como completados (sin cargar el monto). Ve sus propios trabajos, sin importes, y el inventario, donde registra el uso de insumos. No ve gastos ni metas."
+        }
+      ],
+      "capacidades": [
+        {
+          "id": "turnos.ver",
+          "grupo": "Turnos",
+          "texto": "Ver los turnos y la agenda",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.estado",
+          "grupo": "Turnos",
+          "texto": "Cambiar el estado de un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo puede marcarlos como Completado"
+          }
+        },
+        {
+          "id": "turnos.reprogramar",
+          "grupo": "Turnos",
+          "texto": "Cambiar la fecha y la franja de un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "turnos.borrar",
+          "grupo": "Turnos",
+          "texto": "Borrar turnos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "turnos.notas",
+          "grupo": "Turnos",
+          "texto": "Escribir notas internas en un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.clientes",
+          "grupo": "Turnos",
+          "texto": "Buscar turnos y ver el historial de un cliente",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "cobro.registrar",
+          "grupo": "Cobro",
+          "texto": "Registrar cuánto se cobró por un trabajo y quién lo hizo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Al completar un turno queda como quien lo hizo, pero no carga el monto"
+          }
+        },
+        {
+          "id": "cobro.corregir",
+          "grupo": "Cobro",
+          "texto": "Corregir el monto y el trabajador de un turno ya completado",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "catalogo.ver",
+          "grupo": "Catálogo",
+          "texto": "Ver los servicios del catálogo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "catalogo.editar",
+          "grupo": "Catálogo",
+          "texto": "Crear, editar y ordenar los servicios del catálogo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "disponibilidad.ver",
+          "grupo": "Disponibilidad",
+          "texto": "Ver el horario, los días especiales y los cupos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "disponibilidad.editar",
+          "grupo": "Disponibilidad",
+          "texto": "Cambiar el horario semanal y los días especiales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "estadisticas.completas",
+          "grupo": "Estadísticas",
+          "texto": "Ver las estadísticas del taller, con importes y de todo el equipo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "estadisticas.propias",
+          "grupo": "Estadísticas",
+          "texto": "Ver los trabajos que uno mismo completó, sin importes",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "finanzas.gastos",
+          "grupo": "Finanzas",
+          "texto": "Ver y cargar los gastos del taller",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "finanzas.metas",
+          "grupo": "Finanzas",
+          "texto": "Fijar y seguir las metas mensuales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.presupuestos",
+          "grupo": "Documentos",
+          "texto": "Armar presupuestos y descargarlos en PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.comprobantes",
+          "grupo": "Documentos",
+          "texto": "Emitir comprobantes de pago en PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.taller",
+          "grupo": "Documentos",
+          "texto": "Editar los datos del taller que salen en los PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "inventario.ver",
+          "grupo": "Inventario",
+          "texto": "Ver el inventario",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "inventario.usar",
+          "grupo": "Inventario",
+          "texto": "Registrar el uso de insumos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "inventario.gestionar",
+          "grupo": "Inventario",
+          "texto": "Crear insumos, cargar compras y ajustar el stock",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "usuarios.gestionar",
+          "grupo": "Usuarios",
+          "texto": "Crear, editar y desactivar usuarios del panel",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "push.activar",
+          "grupo": "Avisos",
+          "texto": "Activar los avisos de turnos nuevos en su propio dispositivo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        }
+      ],
+      "tuRol": "admin"
+    }
+  },
+  "insumoCrea": {
+    "status": 201,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000012",
+        "nombre": "Shampoo ph neutro",
+        "categoria": "Lavado",
+        "unidad": "litro",
+        "stock": 5,
+        "stockMinimo": 2,
+        "costoUnitario": 1200,
+        "activo": true,
+        "bajoStock": false,
+        "valorEnStock": 6000,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "insumoCreaSinCosto": {
+    "status": 201,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000013",
+        "nombre": "Cera en pasta",
+        "categoria": null,
+        "unidad": "unidad",
+        "stock": 1,
+        "stockMinimo": 3,
+        "costoUnitario": null,
+        "activo": true,
+        "bajoStock": true,
+        "valorEnStock": null,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400Insumo": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "nombre": "El nombre tiene que tener entre 1 y 80 caracteres, sin saltos de línea.",
+          "unidad": "La unidad tiene que ser una de: unidad, litro, ml, kg, g, par, caja.",
+          "stockInicial": "El stock inicial tiene que ser un número entre 0 y 999.999, con hasta 2 decimales."
+        }
+      }
+    }
+  },
+  "error409InsumoRepetido": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CONFLICT",
+        "message": "Ya hay un insumo activo con ese nombre.",
+        "fields": {
+          "nombre": "Ya hay un insumo activo con ese nombre."
+        }
+      }
+    }
+  },
+  "error403InsumoEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés crear ni editar insumos."
+      }
+    }
+  },
+  "insumoPatch": {
+    "status": 200,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000012",
+        "nombre": "Shampoo ph neutro",
+        "categoria": "Lavado exterior",
+        "unidad": "litro",
+        "stock": 5,
+        "stockMinimo": 1.5,
+        "costoUnitario": 1200,
+        "activo": true,
+        "bajoStock": false,
+        "valorEnStock": 6000,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "movimientoUsoAdmin": {
+    "status": 201,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000012",
+        "nombre": "Shampoo ph neutro",
+        "categoria": "Lavado exterior",
+        "unidad": "litro",
+        "stock": 4.5,
+        "stockMinimo": 1.5,
+        "costoUnitario": 1200,
+        "activo": true,
+        "bajoStock": false,
+        "valorEnStock": 5400,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "movimiento": {
+        "id": "00000000-0000-4000-8000-000000000014",
+        "tipo": "uso",
+        "cantidad": -0.5,
+        "costoTotal": null,
+        "proveedor": null,
+        "nota": "Auto de Juan",
+        "persona": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "turnoId": "00000000-0000-4000-8000-000000000001",
+        "createdAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "movimientoUsoEmpleado": {
+    "status": 201,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000012",
+        "nombre": "Shampoo ph neutro",
+        "categoria": "Lavado exterior",
+        "unidad": "litro",
+        "stock": 3.25,
+        "stockMinimo": 1.5,
+        "costoUnitario": null,
+        "activo": true,
+        "bajoStock": false,
+        "valorEnStock": null,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "movimiento": {
+        "id": "00000000-0000-4000-8000-000000000015",
+        "tipo": "uso",
+        "cantidad": -1.25,
+        "costoTotal": null,
+        "proveedor": null,
+        "nota": null,
+        "persona": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "turnoId": null,
+        "createdAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "movimientoCompra": {
+    "status": 201,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000013",
+        "nombre": "Cera en pasta",
+        "categoria": null,
+        "unidad": "unidad",
+        "stock": 6,
+        "stockMinimo": 3,
+        "costoUnitario": 2500,
+        "activo": true,
+        "bajoStock": false,
+        "valorEnStock": 15000,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "movimiento": {
+        "id": "00000000-0000-4000-8000-000000000016",
+        "tipo": "compra",
+        "cantidad": 5,
+        "costoTotal": 12500,
+        "proveedor": "Distribuidora Norte",
+        "nota": "Factura 0001",
+        "persona": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "turnoId": null,
+        "createdAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "movimientoAjuste": {
+    "status": 201,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000013",
+        "nombre": "Cera en pasta",
+        "categoria": null,
+        "unidad": "unidad",
+        "stock": 4.5,
+        "stockMinimo": 3,
+        "costoUnitario": 2500,
+        "activo": true,
+        "bajoStock": false,
+        "valorEnStock": 11250,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "movimiento": {
+        "id": "00000000-0000-4000-8000-000000000017",
+        "tipo": "ajuste",
+        "cantidad": -1.5,
+        "costoTotal": null,
+        "proveedor": null,
+        "nota": "Conteo del sábado",
+        "persona": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "turnoId": null,
+        "createdAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "movimientoAjusteSinCambio": {
+    "status": 200,
+    "body": {
+      "insumo": {
+        "id": "00000000-0000-4000-8000-000000000013",
+        "nombre": "Cera en pasta",
+        "categoria": null,
+        "unidad": "unidad",
+        "stock": 4.5,
+        "stockMinimo": 3,
+        "costoUnitario": 2500,
+        "activo": true,
+        "bajoStock": false,
+        "valorEnStock": 11250,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error409Stock": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "STOCK_INSUFICIENTE",
+        "message": "Solo quedan 3,25 litros.",
+        "fields": {
+          "cantidad": "Solo quedan 3,25 litros."
+        }
+      }
+    }
+  },
+  "error400Movimiento": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "cantidad": "La cantidad tiene que ser un número mayor que 0 y de hasta 999.999, con hasta 2 decimales."
+        }
+      }
+    }
+  },
+  "error403CompraEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol solo podés registrar el uso de los insumos, no compras ni ajustes."
+      }
+    }
+  },
+  "error403AjusteEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol solo podés registrar el uso de los insumos, no compras ni ajustes."
+      }
+    }
+  },
+  "movimientosAdmin": {
+    "status": 200,
+    "body": {
+      "movimientos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "tipo": "ajuste",
+          "cantidad": -1.5,
+          "costoTotal": null,
+          "proveedor": null,
+          "nota": "Conteo del sábado",
+          "persona": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "turnoId": null,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000016",
+          "tipo": "compra",
+          "cantidad": 5,
+          "costoTotal": 12500,
+          "proveedor": "Distribuidora Norte",
+          "nota": "Factura 0001",
+          "persona": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "turnoId": null,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000018",
+          "tipo": "ajuste",
+          "cantidad": 1,
+          "costoTotal": null,
+          "proveedor": null,
+          "nota": "Stock inicial",
+          "persona": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "turnoId": null,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 3
+    }
+  },
+  "movimientosEmpleado": {
+    "status": 200,
+    "body": {
+      "movimientos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "tipo": "ajuste",
+          "cantidad": -1.5,
+          "costoTotal": null,
+          "proveedor": null,
+          "nota": "Conteo del sábado",
+          "persona": null,
+          "turnoId": null,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000016",
+          "tipo": "compra",
+          "cantidad": 5,
+          "costoTotal": null,
+          "proveedor": null,
+          "nota": "Factura 0001",
+          "persona": null,
+          "turnoId": null,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000018",
+          "tipo": "ajuste",
+          "cantidad": 1,
+          "costoTotal": null,
+          "proveedor": null,
+          "nota": "Stock inicial",
+          "persona": null,
+          "turnoId": null,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 3
+    }
+  },
+  "insumosAdmin": {
+    "status": 200,
+    "body": {
+      "insumos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000013",
+          "nombre": "Cera en pasta",
+          "categoria": null,
+          "unidad": "unidad",
+          "stock": 4.5,
+          "stockMinimo": 3,
+          "costoUnitario": 2500,
+          "activo": true,
+          "bajoStock": false,
+          "valorEnStock": 11250,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000012",
+          "nombre": "Shampoo ph neutro",
+          "categoria": "Lavado exterior",
+          "unidad": "litro",
+          "stock": 3.25,
+          "stockMinimo": 1.5,
+          "costoUnitario": 1200,
+          "activo": true,
+          "bajoStock": false,
+          "valorEnStock": 3900,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 2,
+      "bajoStock": 0,
+      "valorTotal": 15150
+    }
+  },
+  "insumosEmpleado": {
+    "status": 200,
+    "body": {
+      "insumos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000013",
+          "nombre": "Cera en pasta",
+          "categoria": null,
+          "unidad": "unidad",
+          "stock": 4.5,
+          "stockMinimo": 3,
+          "costoUnitario": null,
+          "activo": true,
+          "bajoStock": false,
+          "valorEnStock": null,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000012",
+          "nombre": "Shampoo ph neutro",
+          "categoria": "Lavado exterior",
+          "unidad": "litro",
+          "stock": 3.25,
+          "stockMinimo": 1.5,
+          "costoUnitario": null,
+          "activo": true,
+          "bajoStock": false,
+          "valorEnStock": null,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 2,
+      "bajoStock": 0,
+      "valorTotal": null
+    }
+  },
+  "insumosBajoStock": {
+    "status": 200,
+    "body": {
+      "insumos": [],
+      "total": 0,
+      "bajoStock": 0,
+      "valorTotal": 15150
+    }
+  },
+  "presupuestoCrea": {
+    "status": 201,
+    "body": {
+      "presupuesto": {
+        "id": "00000000-0000-4000-8000-000000000019",
+        "numero": 1,
+        "codigo": "P-0001",
+        "clienteNombre": "María Núñez",
+        "clienteTelefono": "5493804123456",
+        "vehiculo": "Ford Ka 2019",
+        "items": [
+          {
+            "descripcion": "Pulido completo",
+            "cantidad": 1,
+            "precioUnitario": 25000
+          },
+          {
+            "descripcion": "Encerado",
+            "cantidad": 1.5,
+            "precioUnitario": 10001
+          }
+        ],
+        "descuento": 3000,
+        "subtotal": 40002,
+        "total": 37002,
+        "validezDias": 10,
+        "venceEl": "2026-10-26",
+        "estado": "borrador",
+        "vencido": false,
+        "notas": "Incluye lavado previo.",
+        "turnoId": null,
+        "creadoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "presupuestoCreaMinimo": {
+    "status": 201,
+    "body": {
+      "presupuesto": {
+        "id": "00000000-0000-4000-8000-000000000020",
+        "numero": 2,
+        "codigo": "P-0002",
+        "clienteNombre": "Pedro",
+        "clienteTelefono": null,
+        "vehiculo": null,
+        "items": [
+          {
+            "descripcion": "Lavado",
+            "cantidad": 1,
+            "precioUnitario": 8000
+          }
+        ],
+        "descuento": 0,
+        "subtotal": 8000,
+        "total": 8000,
+        "validezDias": 7,
+        "venceEl": "2026-10-23",
+        "estado": "borrador",
+        "vencido": false,
+        "notas": null,
+        "turnoId": null,
+        "creadoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400Presupuesto": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "clienteNombre": "El nombre del cliente tiene que tener entre 1 y 80 caracteres, sin saltos de línea.",
+          "items.1.descripcion": "La descripción tiene que tener entre 1 y 120 caracteres, sin saltos de línea.",
+          "items.1.cantidad": "La cantidad tiene que ser un número mayor que 0 y de hasta 999, con hasta 2 decimales.",
+          "items.1.precioUnitario": "El precio unitario tiene que ser un número entero de pesos entre 0 y 99.999.999."
+        }
+      }
+    }
+  },
+  "presupuestoPatch": {
+    "status": 200,
+    "body": {
+      "presupuesto": {
+        "id": "00000000-0000-4000-8000-000000000019",
+        "numero": 1,
+        "codigo": "P-0001",
+        "clienteNombre": "María Núñez",
+        "clienteTelefono": null,
+        "vehiculo": "Ford Ka 2019",
+        "items": [
+          {
+            "descripcion": "Pulido completo",
+            "cantidad": 1,
+            "precioUnitario": 25000
+          },
+          {
+            "descripcion": "Encerado",
+            "cantidad": 1.5,
+            "precioUnitario": 10001
+          }
+        ],
+        "descuento": 3000,
+        "subtotal": 40002,
+        "total": 37002,
+        "validezDias": 10,
+        "venceEl": "2026-10-26",
+        "estado": "aceptado",
+        "vencido": false,
+        "notas": "Incluye lavado previo.",
+        "turnoId": null,
+        "creadoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error409PresupuestoAceptado": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "PRESUPUESTO_ACEPTADO",
+        "message": "Este presupuesto está aceptado: no se puede borrar. Cambiale el estado si hace falta."
+      }
+    }
+  },
+  "presupuestosLista": {
+    "status": 200,
+    "body": {
+      "presupuestos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000020",
+          "numero": 2,
+          "codigo": "P-0002",
+          "clienteNombre": "Pedro",
+          "clienteTelefono": null,
+          "vehiculo": null,
+          "items": [
+            {
+              "descripcion": "Lavado",
+              "cantidad": 1,
+              "precioUnitario": 8000
+            }
+          ],
+          "descuento": 0,
+          "subtotal": 8000,
+          "total": 8000,
+          "validezDias": 7,
+          "venceEl": "2026-10-23",
+          "estado": "borrador",
+          "vencido": false,
+          "notas": null,
+          "turnoId": null,
+          "creadoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000019",
+          "numero": 1,
+          "codigo": "P-0001",
+          "clienteNombre": "María Núñez",
+          "clienteTelefono": null,
+          "vehiculo": "Ford Ka 2019",
+          "items": [
+            {
+              "descripcion": "Pulido completo",
+              "cantidad": 1,
+              "precioUnitario": 25000
+            },
+            {
+              "descripcion": "Encerado",
+              "cantidad": 1.5,
+              "precioUnitario": 10001
+            }
+          ],
+          "descuento": 3000,
+          "subtotal": 40002,
+          "total": 37002,
+          "validezDias": 10,
+          "venceEl": "2026-10-26",
+          "estado": "aceptado",
+          "vencido": false,
+          "notas": "Incluye lavado previo.",
+          "turnoId": null,
+          "creadoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 2
+    }
+  },
+  "error403PresupuestosEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver ni armar presupuestos."
+      }
+    }
+  },
+  "error404Comprobante": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "Este turno todavía no tiene comprobante."
+      }
+    }
+  },
+  "error400ComprobanteSinCobro": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Primero cargá el cobro del trabajo."
+      }
+    }
+  },
+  "comprobanteCrea": {
+    "status": 201,
+    "body": {
+      "comprobante": {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "numero": 1,
+        "codigo": "R-0001",
+        "fechaEmision": "2026-10-16",
+        "formaPago": "transferencia",
+        "monto": 60000,
+        "clienteNombre": "Cliente Largo Nombre",
+        "servicioNombre": "Pulido",
+        "vehiculo": "Auto",
+        "notas": "Alias mg.detailing"
+      }
+    }
+  },
+  "comprobanteExistente": {
+    "status": 200,
+    "body": {
+      "comprobante": {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "numero": 1,
+        "codigo": "R-0001",
+        "fechaEmision": "2026-10-16",
+        "formaPago": "transferencia",
+        "monto": 60000,
+        "clienteNombre": "Cliente Largo Nombre",
+        "servicioNombre": "Pulido",
+        "vehiculo": "Auto",
+        "notas": "Alias mg.detailing"
+      }
+    }
+  },
+  "comprobanteGet": {
+    "status": 200,
+    "body": {
+      "comprobante": {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "numero": 1,
+        "codigo": "R-0001",
+        "fechaEmision": "2026-10-16",
+        "formaPago": "transferencia",
+        "monto": 60000,
+        "clienteNombre": "Cliente Largo Nombre",
+        "servicioNombre": "Pulido",
+        "vehiculo": "Auto",
+        "notas": "Alias mg.detailing"
+      }
+    }
+  },
+  "error403ComprobanteEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés emitir ni ver comprobantes."
+      }
+    }
+  },
+  "error400ComprobanteFormaPago": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "formaPago": "La forma de pago tiene que ser una de: efectivo, transferencia, debito, credito, otro."
+        }
+      }
+    }
+  },
+  "error409TurnoConComprobante": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "TURNO_CON_COMPROBANTE",
+        "message": "Este turno tiene un comprobante de pago emitido: no se puede borrar."
+      }
+    }
+  },
+  "error404Gasto": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "No encontramos ese gasto."
+      }
+    }
+  },
+  "error404Presupuesto": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "No encontramos ese presupuesto."
+      }
+    }
+  },
+  "error404Insumo": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "No encontramos ese insumo."
+      }
+    }
+  },
+  "error400MetaMes": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "mes": "Solo se pueden fijar metas de hasta 12 meses atrás y 12 meses adelante."
+        }
+      }
+    }
+  },
+  "error400CompraCostoAlto": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "costoTotal": "El costo por unidad es demasiado alto: revisá la cantidad o el total."
+        }
+      }
+    }
+  },
+  "error400PresupuestoTotal": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "items": "La suma de los ítems supera el máximo permitido ($ 999.999.999)."
+        }
+      }
+    }
+  },
+  "serviciosPublico": {
+    "status": 200,
+    "body": {
+      "servicios": [
+        {
+          "id": "lavado-basico",
+          "nombre": "Lavado Básico",
+          "resumen": "El lavado bien hecho: por fuera a mano, y por dentro aspirado y vidrios.",
+          "descripcion": "Lavamos la carrocería a mano, con prelavado de espuma y el método de dos baldes, para sacar la tierra sin rayar la pintura. Es el lavado de mantenimiento: ideal para tener tu vehículo limpio entre tratamientos más profundos.",
+          "incluye": [
+            "Prelavado con espuma",
+            "Lavado exterior a mano con método de dos baldes",
+            "Llantas y neumáticos",
+            "Secado con microfibra",
+            "Aspirado del interior",
+            "Vidrios por dentro y por fuera"
+          ],
+          "glosario": [
+            {
+              "termino": "Prelavado con espuma",
+              "significado": "una espuma que ablanda la tierra para que salga sin frotar de más."
+            },
+            {
+              "termino": "Método de dos baldes",
+              "significado": "un balde con shampoo y otro con agua limpia para enjuagar el guante, así la tierra no vuelve a la pintura y no la raya."
+            }
+          ],
+          "duracion": "1 a 1,5 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        },
+        {
+          "id": "lavado-premium",
+          "nombre": "Lavado Premium",
+          "resumen": "Todo el básico, más una limpieza a fondo del interior y una capa de protección para la pintura.",
+          "descripcion": "Es el lavado completo. Además del exterior a mano, limpiamos en profundidad tapizados, alfombras y plásticos, descontaminamos las llantas y dejamos una protección rápida sobre la pintura. Para cuando tu vehículo necesita una puesta a punto de verdad.",
+          "incluye": [
+            "Todo lo del Lavado Básico",
+            "Limpieza profunda de tapizados y alfombras",
+            "Limpieza y acondicionado de plásticos",
+            "Descontaminación de llantas",
+            "Protección rápida de pintura (sellador o cera en spray)"
+          ],
+          "glosario": [
+            {
+              "termino": "Acondicionado de plásticos",
+              "significado": "un producto que limpia y nutre los plásticos para que no se resequen ni se pongan blanquecinos."
+            },
+            {
+              "termino": "Descontaminación de llantas",
+              "significado": "sacar el polvo de freno que queda pegado y que con agua y shampoo no sale."
+            },
+            {
+              "termino": "Sellador o cera en spray",
+              "significado": "una capa fina que da brillo y ayuda a que el agua y la tierra no se peguen tanto."
+            }
+          ],
+          "duracion": "3 a 4 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": true
+        },
+        {
+          "id": "pulido",
+          "nombre": "Pulido",
+          "resumen": "Corrección de pintura: saca rayas finas, marcas de lavado y opacidad para devolverle el brillo.",
+          "descripcion": "Primero lavamos y descontaminamos la pintura con clay bar. Después la pulimos en una o dos etapas, según cómo esté. Te decimos la verdad antes de empezar: las rayas profundas, las que llegan a la base de la pintura, no se van con un pulido.",
+          "incluye": [
+            "Descontaminación de la pintura con clay bar",
+            "Corrección de pintura en 1 o 2 etapas",
+            "Eliminación de swirls y rayas finas",
+            "Recuperación del brillo y la profundidad del color"
+          ],
+          "glosario": [
+            {
+              "termino": "Corrección de pintura",
+              "significado": "pulir la capa de barniz para emparejarla y sacar los defectos finos de la superficie."
+            },
+            {
+              "termino": "Swirls",
+              "significado": "las marcas circulares finitas que se ven con el sol; casi siempre las deja un lavado mal hecho."
+            },
+            {
+              "termino": "Clay bar",
+              "significado": "una arcilla especial que saca la suciedad pegada que el lavado no saca."
+            },
+            {
+              "termino": "Etapas",
+              "significado": "cada pasada con un pulimento distinto: la primera corrige y la segunda afina el brillo."
+            }
+          ],
+          "duracion": "Alrededor de 1 día",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        },
+        {
+          "id": "encerado",
+          "nombre": "Encerado",
+          "resumen": "Brillo profundo y una capa que protege la pintura del sol y del agua.",
+          "descripcion": "Lavamos y descontaminamos la pintura, y después aplicamos la cera. Deja un brillo profundo, hace que el agua resbale en gotas y suma protección contra el sol. Cuánto dura depende del uso, de si el vehículo duerme bajo techo y del clima.",
+          "incluye": [
+            "Lavado previo",
+            "Descontaminación de la pintura",
+            "Aplicación de cera",
+            "Brillo profundo y repelencia al agua",
+            "Protección UV"
+          ],
+          "glosario": [
+            {
+              "termino": "Descontaminación",
+              "significado": "sacar la suciedad pegada (tierra, resina, polvo de freno) que el lavado común no saca."
+            },
+            {
+              "termino": "Repelencia al agua",
+              "significado": "el agua forma gotitas y resbala, en lugar de quedarse pegada a la pintura."
+            },
+            {
+              "termino": "Protección UV",
+              "significado": "una barrera contra los rayos del sol, que con el tiempo opacan y decoloran la pintura."
+            }
+          ],
+          "duracion": "2 a 3 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        },
+        {
+          "id": "restauracion-opticas",
+          "nombre": "Restauración de ópticas",
+          "resumen": "Faros opacos o amarillentos, otra vez claros: se ven mejor y ves mejor de noche.",
+          "descripcion": "Lijamos al agua la capa dañada, pulimos hasta recuperar la transparencia y terminamos con un sellado UV para que el sol no las vuelva a castigar tan rápido. Mejora la estética y, sobre todo, la visibilidad cuando manejás de noche.",
+          "incluye": [
+            "Lijado al agua",
+            "Pulido de las ópticas",
+            "Sellado UV"
+          ],
+          "glosario": [
+            {
+              "termino": "Lijado al agua",
+              "significado": "un lijado suave, con agua, que saca la capa amarillenta sin dañar el faro."
+            },
+            {
+              "termino": "Sellado UV",
+              "significado": "una capa transparente que protege el faro del sol para que tarde más en volver a ponerse amarillo."
+            }
+          ],
+          "duracion": "1,5 a 2 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        }
+      ]
+    }
+  },
+  "serviciosAdmin": {
+    "status": 200,
+    "body": {
+      "servicios": [
+        {
+          "id": "lavado-basico",
+          "nombre": "Lavado Básico",
+          "resumen": "El lavado bien hecho: por fuera a mano, y por dentro aspirado y vidrios.",
+          "descripcion": "Lavamos la carrocería a mano, con prelavado de espuma y el método de dos baldes, para sacar la tierra sin rayar la pintura. Es el lavado de mantenimiento: ideal para tener tu vehículo limpio entre tratamientos más profundos.",
+          "incluye": [
+            "Prelavado con espuma",
+            "Lavado exterior a mano con método de dos baldes",
+            "Llantas y neumáticos",
+            "Secado con microfibra",
+            "Aspirado del interior",
+            "Vidrios por dentro y por fuera"
+          ],
+          "glosario": [
+            {
+              "termino": "Prelavado con espuma",
+              "significado": "una espuma que ablanda la tierra para que salga sin frotar de más."
+            },
+            {
+              "termino": "Método de dos baldes",
+              "significado": "un balde con shampoo y otro con agua limpia para enjuagar el guante, así la tierra no vuelve a la pintura y no la raya."
+            }
+          ],
+          "duracion": "1 a 1,5 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false,
+          "activo": true,
+          "orden": 10,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "lavado-premium",
+          "nombre": "Lavado Premium",
+          "resumen": "Todo el básico, más una limpieza a fondo del interior y una capa de protección para la pintura.",
+          "descripcion": "Es el lavado completo. Además del exterior a mano, limpiamos en profundidad tapizados, alfombras y plásticos, descontaminamos las llantas y dejamos una protección rápida sobre la pintura. Para cuando tu vehículo necesita una puesta a punto de verdad.",
+          "incluye": [
+            "Todo lo del Lavado Básico",
+            "Limpieza profunda de tapizados y alfombras",
+            "Limpieza y acondicionado de plásticos",
+            "Descontaminación de llantas",
+            "Protección rápida de pintura (sellador o cera en spray)"
+          ],
+          "glosario": [
+            {
+              "termino": "Acondicionado de plásticos",
+              "significado": "un producto que limpia y nutre los plásticos para que no se resequen ni se pongan blanquecinos."
+            },
+            {
+              "termino": "Descontaminación de llantas",
+              "significado": "sacar el polvo de freno que queda pegado y que con agua y shampoo no sale."
+            },
+            {
+              "termino": "Sellador o cera en spray",
+              "significado": "una capa fina que da brillo y ayuda a que el agua y la tierra no se peguen tanto."
+            }
+          ],
+          "duracion": "3 a 4 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": true,
+          "activo": true,
+          "orden": 20,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "pulido",
+          "nombre": "Pulido",
+          "resumen": "Corrección de pintura: saca rayas finas, marcas de lavado y opacidad para devolverle el brillo.",
+          "descripcion": "Primero lavamos y descontaminamos la pintura con clay bar. Después la pulimos en una o dos etapas, según cómo esté. Te decimos la verdad antes de empezar: las rayas profundas, las que llegan a la base de la pintura, no se van con un pulido.",
+          "incluye": [
+            "Descontaminación de la pintura con clay bar",
+            "Corrección de pintura en 1 o 2 etapas",
+            "Eliminación de swirls y rayas finas",
+            "Recuperación del brillo y la profundidad del color"
+          ],
+          "glosario": [
+            {
+              "termino": "Corrección de pintura",
+              "significado": "pulir la capa de barniz para emparejarla y sacar los defectos finos de la superficie."
+            },
+            {
+              "termino": "Swirls",
+              "significado": "las marcas circulares finitas que se ven con el sol; casi siempre las deja un lavado mal hecho."
+            },
+            {
+              "termino": "Clay bar",
+              "significado": "una arcilla especial que saca la suciedad pegada que el lavado no saca."
+            },
+            {
+              "termino": "Etapas",
+              "significado": "cada pasada con un pulimento distinto: la primera corrige y la segunda afina el brillo."
+            }
+          ],
+          "duracion": "Alrededor de 1 día",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false,
+          "activo": true,
+          "orden": 30,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "encerado",
+          "nombre": "Encerado",
+          "resumen": "Brillo profundo y una capa que protege la pintura del sol y del agua.",
+          "descripcion": "Lavamos y descontaminamos la pintura, y después aplicamos la cera. Deja un brillo profundo, hace que el agua resbale en gotas y suma protección contra el sol. Cuánto dura depende del uso, de si el vehículo duerme bajo techo y del clima.",
+          "incluye": [
+            "Lavado previo",
+            "Descontaminación de la pintura",
+            "Aplicación de cera",
+            "Brillo profundo y repelencia al agua",
+            "Protección UV"
+          ],
+          "glosario": [
+            {
+              "termino": "Descontaminación",
+              "significado": "sacar la suciedad pegada (tierra, resina, polvo de freno) que el lavado común no saca."
+            },
+            {
+              "termino": "Repelencia al agua",
+              "significado": "el agua forma gotitas y resbala, en lugar de quedarse pegada a la pintura."
+            },
+            {
+              "termino": "Protección UV",
+              "significado": "una barrera contra los rayos del sol, que con el tiempo opacan y decoloran la pintura."
+            }
+          ],
+          "duracion": "2 a 3 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false,
+          "activo": true,
+          "orden": 40,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "restauracion-opticas",
+          "nombre": "Restauración de ópticas",
+          "resumen": "Faros opacos o amarillentos, otra vez claros: se ven mejor y ves mejor de noche.",
+          "descripcion": "Lijamos al agua la capa dañada, pulimos hasta recuperar la transparencia y terminamos con un sellado UV para que el sol no las vuelva a castigar tan rápido. Mejora la estética y, sobre todo, la visibilidad cuando manejás de noche.",
+          "incluye": [
+            "Lijado al agua",
+            "Pulido de las ópticas",
+            "Sellado UV"
+          ],
+          "glosario": [
+            {
+              "termino": "Lijado al agua",
+              "significado": "un lijado suave, con agua, que saca la capa amarillenta sin dañar el faro."
+            },
+            {
+              "termino": "Sellado UV",
+              "significado": "una capa transparente que protege el faro del sol para que tarde más en volver a ponerse amarillo."
+            }
+          ],
+          "duracion": "1,5 a 2 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false,
+          "activo": true,
+          "orden": 50,
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ]
+    }
+  },
+  "servicioCrea": {
+    "status": 201,
+    "body": {
+      "servicio": {
+        "id": "tratamiento-ceramico",
+        "nombre": "Tratamiento cerámico",
+        "resumen": "Protección de larga duración.",
+        "descripcion": "Una capa cerámica sobre la pintura.",
+        "incluye": [],
+        "glosario": [],
+        "duracion": null,
+        "duracionCamioneta": null,
+        "duracionMoto": null,
+        "precioDesde": 150000,
+        "precioDesdeCamioneta": 180000,
+        "precioDesdeMoto": null,
+        "vehiculos": [
+          "auto",
+          "camioneta",
+          "moto"
+        ],
+        "destacado": false,
+        "activo": true,
+        "orden": 60,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "servicioPatchPrecios": {
+    "status": 200,
+    "body": {
+      "servicio": {
+        "id": "pulido",
+        "nombre": "Pulido",
+        "resumen": "Corrección de pintura: saca rayas finas, marcas de lavado y opacidad para devolverle el brillo.",
+        "descripcion": "Primero lavamos y descontaminamos la pintura con clay bar. Después la pulimos en una o dos etapas, según cómo esté. Te decimos la verdad antes de empezar: las rayas profundas, las que llegan a la base de la pintura, no se van con un pulido.",
+        "incluye": [
+          "Descontaminación de la pintura con clay bar",
+          "Corrección de pintura en 1 o 2 etapas",
+          "Eliminación de swirls y rayas finas",
+          "Recuperación del brillo y la profundidad del color"
+        ],
+        "glosario": [
+          {
+            "termino": "Corrección de pintura",
+            "significado": "pulir la capa de barniz para emparejarla y sacar los defectos finos de la superficie."
+          },
+          {
+            "termino": "Swirls",
+            "significado": "las marcas circulares finitas que se ven con el sol; casi siempre las deja un lavado mal hecho."
+          },
+          {
+            "termino": "Clay bar",
+            "significado": "una arcilla especial que saca la suciedad pegada que el lavado no saca."
+          },
+          {
+            "termino": "Etapas",
+            "significado": "cada pasada con un pulimento distinto: la primera corrige y la segunda afina el brillo."
+          }
+        ],
+        "duracion": "Alrededor de 1 día",
+        "duracionCamioneta": null,
+        "duracionMoto": null,
+        "precioDesde": 45000,
+        "precioDesdeCamioneta": 60000,
+        "precioDesdeMoto": 30000,
+        "vehiculos": [
+          "auto",
+          "camioneta",
+          "moto"
+        ],
+        "destacado": false,
+        "activo": true,
+        "orden": 30,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "servicioPatchBorraPrecio": {
+    "status": 200,
+    "body": {
+      "servicio": {
+        "id": "pulido",
+        "nombre": "Pulido",
+        "resumen": "Corrección de pintura: saca rayas finas, marcas de lavado y opacidad para devolverle el brillo.",
+        "descripcion": "Primero lavamos y descontaminamos la pintura con clay bar. Después la pulimos en una o dos etapas, según cómo esté. Te decimos la verdad antes de empezar: las rayas profundas, las que llegan a la base de la pintura, no se van con un pulido.",
+        "incluye": [
+          "Descontaminación de la pintura con clay bar",
+          "Corrección de pintura en 1 o 2 etapas",
+          "Eliminación de swirls y rayas finas",
+          "Recuperación del brillo y la profundidad del color"
+        ],
+        "glosario": [
+          {
+            "termino": "Corrección de pintura",
+            "significado": "pulir la capa de barniz para emparejarla y sacar los defectos finos de la superficie."
+          },
+          {
+            "termino": "Swirls",
+            "significado": "las marcas circulares finitas que se ven con el sol; casi siempre las deja un lavado mal hecho."
+          },
+          {
+            "termino": "Clay bar",
+            "significado": "una arcilla especial que saca la suciedad pegada que el lavado no saca."
+          },
+          {
+            "termino": "Etapas",
+            "significado": "cada pasada con un pulimento distinto: la primera corrige y la segunda afina el brillo."
+          }
+        ],
+        "duracion": "Alrededor de 1 día",
+        "duracionCamioneta": null,
+        "duracionMoto": null,
+        "precioDesde": 45000,
+        "precioDesdeCamioneta": 60000,
+        "precioDesdeMoto": null,
+        "vehiculos": [
+          "auto",
+          "camioneta",
+          "moto"
+        ],
+        "destacado": false,
+        "activo": true,
+        "orden": 30,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400PrecioCamioneta": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "precioDesdeCamioneta": "El precio tiene que ser un número entero de pesos, de 0 a 99.999.999, o null (\"Consultá\")."
+        }
+      }
+    }
+  },
+  "error400PrecioMoto": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "precioDesdeMoto": "El precio tiene que ser un número entero de pesos, de 0 a 99.999.999, o null (\"Consultá\")."
+        }
+      }
+    }
+  },
+  "servicioPatchVehiculos": {
+    "status": 200,
+    "body": {
+      "servicio": {
+        "id": "pulido",
+        "nombre": "Pulido",
+        "resumen": "Corrección de pintura: saca rayas finas, marcas de lavado y opacidad para devolverle el brillo.",
+        "descripcion": "Primero lavamos y descontaminamos la pintura con clay bar. Después la pulimos en una o dos etapas, según cómo esté. Te decimos la verdad antes de empezar: las rayas profundas, las que llegan a la base de la pintura, no se van con un pulido.",
+        "incluye": [
+          "Descontaminación de la pintura con clay bar",
+          "Corrección de pintura en 1 o 2 etapas",
+          "Eliminación de swirls y rayas finas",
+          "Recuperación del brillo y la profundidad del color"
+        ],
+        "glosario": [
+          {
+            "termino": "Corrección de pintura",
+            "significado": "pulir la capa de barniz para emparejarla y sacar los defectos finos de la superficie."
+          },
+          {
+            "termino": "Swirls",
+            "significado": "las marcas circulares finitas que se ven con el sol; casi siempre las deja un lavado mal hecho."
+          },
+          {
+            "termino": "Clay bar",
+            "significado": "una arcilla especial que saca la suciedad pegada que el lavado no saca."
+          },
+          {
+            "termino": "Etapas",
+            "significado": "cada pasada con un pulimento distinto: la primera corrige y la segunda afina el brillo."
+          }
+        ],
+        "duracion": "Alrededor de 1 día",
+        "duracionCamioneta": null,
+        "duracionMoto": null,
+        "precioDesde": 45000,
+        "precioDesdeCamioneta": 60000,
+        "precioDesdeMoto": null,
+        "vehiculos": [
+          "auto",
+          "moto"
+        ],
+        "destacado": false,
+        "activo": true,
+        "orden": 30,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "serviciosPublicoConVehiculos": {
+    "status": 200,
+    "body": {
+      "servicios": [
+        {
+          "id": "lavado-basico",
+          "nombre": "Lavado Básico",
+          "resumen": "El lavado bien hecho: por fuera a mano, y por dentro aspirado y vidrios.",
+          "descripcion": "Lavamos la carrocería a mano, con prelavado de espuma y el método de dos baldes, para sacar la tierra sin rayar la pintura. Es el lavado de mantenimiento: ideal para tener tu vehículo limpio entre tratamientos más profundos.",
+          "incluye": [
+            "Prelavado con espuma",
+            "Lavado exterior a mano con método de dos baldes",
+            "Llantas y neumáticos",
+            "Secado con microfibra",
+            "Aspirado del interior",
+            "Vidrios por dentro y por fuera"
+          ],
+          "glosario": [
+            {
+              "termino": "Prelavado con espuma",
+              "significado": "una espuma que ablanda la tierra para que salga sin frotar de más."
+            },
+            {
+              "termino": "Método de dos baldes",
+              "significado": "un balde con shampoo y otro con agua limpia para enjuagar el guante, así la tierra no vuelve a la pintura y no la raya."
+            }
+          ],
+          "duracion": "1 a 1,5 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        },
+        {
+          "id": "lavado-premium",
+          "nombre": "Lavado Premium",
+          "resumen": "Todo el básico, más una limpieza a fondo del interior y una capa de protección para la pintura.",
+          "descripcion": "Es el lavado completo. Además del exterior a mano, limpiamos en profundidad tapizados, alfombras y plásticos, descontaminamos las llantas y dejamos una protección rápida sobre la pintura. Para cuando tu vehículo necesita una puesta a punto de verdad.",
+          "incluye": [
+            "Todo lo del Lavado Básico",
+            "Limpieza profunda de tapizados y alfombras",
+            "Limpieza y acondicionado de plásticos",
+            "Descontaminación de llantas",
+            "Protección rápida de pintura (sellador o cera en spray)"
+          ],
+          "glosario": [
+            {
+              "termino": "Acondicionado de plásticos",
+              "significado": "un producto que limpia y nutre los plásticos para que no se resequen ni se pongan blanquecinos."
+            },
+            {
+              "termino": "Descontaminación de llantas",
+              "significado": "sacar el polvo de freno que queda pegado y que con agua y shampoo no sale."
+            },
+            {
+              "termino": "Sellador o cera en spray",
+              "significado": "una capa fina que da brillo y ayuda a que el agua y la tierra no se peguen tanto."
+            }
+          ],
+          "duracion": "3 a 4 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": true
+        },
+        {
+          "id": "pulido",
+          "nombre": "Pulido",
+          "resumen": "Corrección de pintura: saca rayas finas, marcas de lavado y opacidad para devolverle el brillo.",
+          "descripcion": "Primero lavamos y descontaminamos la pintura con clay bar. Después la pulimos en una o dos etapas, según cómo esté. Te decimos la verdad antes de empezar: las rayas profundas, las que llegan a la base de la pintura, no se van con un pulido.",
+          "incluye": [
+            "Descontaminación de la pintura con clay bar",
+            "Corrección de pintura en 1 o 2 etapas",
+            "Eliminación de swirls y rayas finas",
+            "Recuperación del brillo y la profundidad del color"
+          ],
+          "glosario": [
+            {
+              "termino": "Corrección de pintura",
+              "significado": "pulir la capa de barniz para emparejarla y sacar los defectos finos de la superficie."
+            },
+            {
+              "termino": "Swirls",
+              "significado": "las marcas circulares finitas que se ven con el sol; casi siempre las deja un lavado mal hecho."
+            },
+            {
+              "termino": "Clay bar",
+              "significado": "una arcilla especial que saca la suciedad pegada que el lavado no saca."
+            },
+            {
+              "termino": "Etapas",
+              "significado": "cada pasada con un pulimento distinto: la primera corrige y la segunda afina el brillo."
+            }
+          ],
+          "duracion": "Alrededor de 1 día",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": 45000,
+          "precioDesdeCamioneta": 60000,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "moto"
+          ],
+          "destacado": false
+        },
+        {
+          "id": "encerado",
+          "nombre": "Encerado",
+          "resumen": "Brillo profundo y una capa que protege la pintura del sol y del agua.",
+          "descripcion": "Lavamos y descontaminamos la pintura, y después aplicamos la cera. Deja un brillo profundo, hace que el agua resbale en gotas y suma protección contra el sol. Cuánto dura depende del uso, de si el vehículo duerme bajo techo y del clima.",
+          "incluye": [
+            "Lavado previo",
+            "Descontaminación de la pintura",
+            "Aplicación de cera",
+            "Brillo profundo y repelencia al agua",
+            "Protección UV"
+          ],
+          "glosario": [
+            {
+              "termino": "Descontaminación",
+              "significado": "sacar la suciedad pegada (tierra, resina, polvo de freno) que el lavado común no saca."
+            },
+            {
+              "termino": "Repelencia al agua",
+              "significado": "el agua forma gotitas y resbala, en lugar de quedarse pegada a la pintura."
+            },
+            {
+              "termino": "Protección UV",
+              "significado": "una barrera contra los rayos del sol, que con el tiempo opacan y decoloran la pintura."
+            }
+          ],
+          "duracion": "2 a 3 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        },
+        {
+          "id": "restauracion-opticas",
+          "nombre": "Restauración de ópticas",
+          "resumen": "Faros opacos o amarillentos, otra vez claros: se ven mejor y ves mejor de noche.",
+          "descripcion": "Lijamos al agua la capa dañada, pulimos hasta recuperar la transparencia y terminamos con un sellado UV para que el sol no las vuelva a castigar tan rápido. Mejora la estética y, sobre todo, la visibilidad cuando manejás de noche.",
+          "incluye": [
+            "Lijado al agua",
+            "Pulido de las ópticas",
+            "Sellado UV"
+          ],
+          "glosario": [
+            {
+              "termino": "Lijado al agua",
+              "significado": "un lijado suave, con agua, que saca la capa amarillenta sin dañar el faro."
+            },
+            {
+              "termino": "Sellado UV",
+              "significado": "una capa transparente que protege el faro del sol para que tarde más en volver a ponerse amarillo."
+            }
+          ],
+          "duracion": "1,5 a 2 h",
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": null,
+          "precioDesdeCamioneta": null,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        },
+        {
+          "id": "tratamiento-ceramico",
+          "nombre": "Tratamiento cerámico",
+          "resumen": "Protección de larga duración.",
+          "descripcion": "Una capa cerámica sobre la pintura.",
+          "incluye": [],
+          "glosario": [],
+          "duracion": null,
+          "duracionCamioneta": null,
+          "duracionMoto": null,
+          "precioDesde": 150000,
+          "precioDesdeCamioneta": 180000,
+          "precioDesdeMoto": null,
+          "vehiculos": [
+            "auto",
+            "camioneta",
+            "moto"
+          ],
+          "destacado": false
+        }
+      ]
+    }
+  },
+  "error400Vehiculos": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "vehiculos": "Elegí al menos un vehículo (auto, camioneta o moto) para el servicio."
+        }
+      }
+    }
+  },
+  "error400ReservaServicioNoOfrecido": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioId": "Ese servicio no se ofrece para camioneta. Elegí otro."
+        }
+      }
+    }
+  },
+  "error403ServicioEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol solo podés ver el catálogo de servicios."
+      }
+    }
+  }
+}

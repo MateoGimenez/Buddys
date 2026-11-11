@@ -1,0 +1,248 @@
+import type { SqlClient } from '../../db/postgres.js';
+import { type Row, bool, int, intOrNull, isoTimestamp, str, strOrNull } from '../../db/rows.js';
+import {
+  type CambiosServicio,
+  DestacadoInactivoError,
+  type NuevoServicio,
+  OrdenInvalidoError,
+  type Servicio,
+  ServicioExisteError,
+  type ServicioRepository,
+  type TerminoGlosario,
+  vehiculosCanonicos,
+} from '../../domain/servicios.js';
+
+/** jsonb llega ya parseado (node-postgres y PGlite). Se verifica igual: si la base y el código se desalinean, falla claro. */
+function textos(row: Row, key: string): string[] {
+  const value = row[key];
+  if (!Array.isArray(value) || !value.every((item): item is string => typeof item === 'string')) {
+    throw new TypeError(`La columna "${key}" debería ser una lista de textos`);
+  }
+  return value;
+}
+
+function glosario(row: Row, key: string): TerminoGlosario[] {
+  const value = row[key];
+  if (!Array.isArray(value)) {
+    throw new TypeError(`La columna "${key}" debería ser una lista`);
+  }
+  return value.map((item: unknown) => {
+    const { termino, significado } = (item ?? {}) as { termino?: unknown; significado?: unknown };
+    if (typeof termino !== 'string' || typeof significado !== 'string') {
+      throw new TypeError(`La columna "${key}" tiene un término mal formado`);
+    }
+    return { termino, significado };
+  });
+}
+
+function toServicio(row: Row): Servicio {
+  return {
+    id: str(row, 'id'),
+    nombre: str(row, 'nombre'),
+    resumen: str(row, 'resumen'),
+    descripcion: str(row, 'descripcion'),
+    incluye: textos(row, 'incluye'),
+    glosario: glosario(row, 'glosario'),
+    duracion: strOrNull(row, 'duracion_estimada'),
+    duracionCamioneta: strOrNull(row, 'duracion_estimada_camioneta'),
+    duracionMoto: strOrNull(row, 'duracion_estimada_moto'),
+    precioDesde: intOrNull(row, 'precio_desde'),
+    precioDesdeCamioneta: intOrNull(row, 'precio_desde_camioneta'),
+    precioDesdeMoto: intOrNull(row, 'precio_desde_moto'),
+    vehiculos: vehiculosCanonicos(textos(row, 'vehiculos')),
+    destacado: bool(row, 'destacado'),
+    activo: bool(row, 'activo'),
+    orden: int(row, 'orden'),
+    updatedAt: isoTimestamp(row, 'updated_at'),
+  };
+}
+
+/** Las listas van como texto JSON con cast ::jsonb (un array de JS, el driver lo mandaría como array de Postgres). */
+const jsonOrNull = (value: unknown): string | null => (value === undefined ? null : JSON.stringify(value));
+
+/*
+ * Las columnas que se devuelven se repiten literalmente en cada consulta (la regla de ESLint exige SQL literal,
+ * sin interpolar).
+ *
+ * Escrituras: todas en una transacción que empieza con pg_advisory_xact_lock(7340002) (7340001 es el del trigger
+ * "nunca sin superadmin"). Así dos cambios simultáneos del catálogo se hacen de a uno: el reordenamiento ve el catálogo
+ * completo (nadie crea un servicio en el medio). En READ COMMITTED, cada sentencia posterior al lock ya ve lo que
+ * confirmó la transacción anterior.
+ */
+
+/**
+ * Catálogo de servicios sobre Postgres (esquema buddys). buddys_app puede leerlo, insertar y actualizar
+ * por columna (nunca el id ni created_at) y no puede borrar: un servicio se desactiva.
+ */
+export class PostgresServicioRepository implements ServicioRepository {
+  constructor(private readonly sql: SqlClient) {}
+
+  list(options: { soloActivos?: boolean } = {}): Promise<Servicio[]> {
+    return listar(this.sql, options.soloActivos ?? false);
+  }
+
+  async findById(id: string): Promise<Servicio | undefined> {
+    const { rows } = await this.sql.query(
+      `SELECT id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
+              duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at
+       FROM buddys.servicios
+       WHERE id = $1`,
+      [id],
+    );
+    const row = rows[0];
+    return row ? toServicio(row) : undefined;
+  }
+
+  create(nuevo: NuevoServicio, now: Date): Promise<Servicio> {
+    // La ruta ya lo rechaza (schemas/servicios.ts); acá por si el repositorio se usa desde otro lado.
+    if (nuevo.destacado && !nuevo.activo) return Promise.reject(new DestacadoInactivoError());
+    const timestamp = now.toISOString();
+    return this.sql.transaction(async (sql) => {
+      await sql.query('SELECT pg_catalog.pg_advisory_xact_lock(7340002)');
+      // Al final del orden. ON CONFLICT DO NOTHING: un id repetido no aborta con error, devuelve 0 filas.
+      const { rows } = await sql.query(
+        `INSERT INTO buddys.servicios (
+           id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada, precio_desde,
+           precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at,
+           duracion_estimada_camioneta, duracion_estimada_moto
+         )
+         SELECT $1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8::integer, $9::integer, $10::integer, $11::text[],
+                $12::boolean, $13::boolean, coalesce(max(orden), 0) + 10, $14::timestamptz,
+                $15::text, $16::text
+         FROM buddys.servicios
+         ON CONFLICT (id) DO NOTHING
+         RETURNING id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
+                   duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at`,
+        [
+          nuevo.id,
+          nuevo.nombre,
+          nuevo.resumen,
+          nuevo.descripcion,
+          JSON.stringify(nuevo.incluye),
+          JSON.stringify(nuevo.glosario),
+          nuevo.duracion,
+          nuevo.precioDesde,
+          nuevo.precioDesdeCamioneta,
+          nuevo.precioDesdeMoto,
+          nuevo.vehiculos,
+          nuevo.destacado,
+          nuevo.activo,
+          timestamp,
+          nuevo.duracionCamioneta,
+          nuevo.duracionMoto,
+        ],
+      );
+      const row = rows[0];
+      if (!row) throw new ServicioExisteError(nuevo.id);
+      return toServicio(row);
+    });
+  }
+
+  update(id: string, cambios: CambiosServicio, now: Date): Promise<Servicio | undefined> {
+    const timestamp = now.toISOString();
+    return this.sql.transaction(async (sql) => {
+      await sql.query('SELECT pg_catalog.pg_advisory_xact_lock(7340002)');
+      const existe = await sql.query('SELECT activo FROM buddys.servicios WHERE id = $1', [id]);
+      const actual = existe.rows[0];
+      if (!actual) return undefined;
+
+      // No se puede destacar un inactivo: ni uno que ya lo está ni uno que se desactiva en el mismo cambio.
+      const quedaActivo = cambios.activo ?? bool(actual, 'activo');
+      if (cambios.destacado === true && !quedaActivo) throw new DestacadoInactivoError();
+
+      // coalesce para los campos que no admiten null; las tres duraciones y los tres precios sí (null = "sin confirmar" /
+      // "usa la de auto" / "Consultá"): ahí un flag distingue "no viene" de "viene null". Desactivar (activo = false) también
+      // desmarca el destacado: un servicio que no se ve en la web no puede ser el destacado.
+      const { rows } = await sql.query(
+        `UPDATE buddys.servicios
+         SET nombre = coalesce($2::text, nombre),
+             resumen = coalesce($3::text, resumen),
+             descripcion = coalesce($4::text, descripcion),
+             incluye = coalesce($5::jsonb, incluye),
+             glosario = coalesce($6::jsonb, glosario),
+             duracion_estimada = CASE WHEN $7::boolean THEN $8::text ELSE duracion_estimada END,
+             precio_desde = CASE WHEN $9::boolean THEN $10::integer ELSE precio_desde END,
+             precio_desde_camioneta = CASE WHEN $11::boolean THEN $12::integer ELSE precio_desde_camioneta END,
+             precio_desde_moto = CASE WHEN $13::boolean THEN $14::integer ELSE precio_desde_moto END,
+             vehiculos = coalesce($18::text[], vehiculos),
+             destacado = CASE WHEN $16::boolean IS FALSE THEN false ELSE coalesce($15::boolean, destacado) END,
+             activo = coalesce($16::boolean, activo),
+             duracion_estimada_camioneta = CASE WHEN $19::boolean THEN $20::text ELSE duracion_estimada_camioneta END,
+             duracion_estimada_moto = CASE WHEN $21::boolean THEN $22::text ELSE duracion_estimada_moto END,
+             updated_at = $17::timestamptz
+         WHERE id = $1
+         RETURNING id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
+                   duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at`,
+        [
+          id,
+          cambios.nombre ?? null,
+          cambios.resumen ?? null,
+          cambios.descripcion ?? null,
+          jsonOrNull(cambios.incluye),
+          jsonOrNull(cambios.glosario),
+          cambios.duracion !== undefined,
+          cambios.duracion ?? null,
+          cambios.precioDesde !== undefined,
+          cambios.precioDesde ?? null,
+          cambios.precioDesdeCamioneta !== undefined,
+          cambios.precioDesdeCamioneta ?? null,
+          cambios.precioDesdeMoto !== undefined,
+          cambios.precioDesdeMoto ?? null,
+          cambios.destacado ?? null,
+          cambios.activo ?? null,
+          timestamp,
+          cambios.vehiculos ?? null,
+          cambios.duracionCamioneta !== undefined,
+          cambios.duracionCamioneta ?? null,
+          cambios.duracionMoto !== undefined,
+          cambios.duracionMoto ?? null,
+        ],
+      );
+      const row = rows[0];
+      return row ? toServicio(row) : undefined;
+    });
+  }
+
+  reorder(ids: readonly string[], now: Date): Promise<Servicio[]> {
+    return this.sql.transaction(async (sql) => {
+      await sql.query('SELECT pg_catalog.pg_advisory_xact_lock(7340002)');
+      const { rows } = await sql.query('SELECT id FROM buddys.servicios');
+      const actuales = new Set(rows.map((row) => str(row, 'id')));
+      const pedidos = new Set(ids);
+      if (pedidos.size !== ids.length || pedidos.size !== actuales.size || ids.some((id) => !actuales.has(id))) {
+        throw new OrdenInvalidoError();
+      }
+      // orden = posición (desde 1) × 10. Solo se tocan (y cambian de updated_at) las filas que se movieron.
+      await sql.query(
+        `UPDATE buddys.servicios AS s
+         SET orden = n.pos * 10, updated_at = $2::timestamptz
+         FROM unnest($1::text[]) WITH ORDINALITY AS n(id, pos)
+         WHERE s.id = n.id AND s.orden IS DISTINCT FROM n.pos * 10`,
+        [ids, now.toISOString()],
+      );
+      return listar(sql, false);
+    });
+  }
+}
+
+/**
+ * Por `orden` y después por `id` (estable aunque dos tengan el mismo orden; COLLATE "C" para que el desempate no
+ * dependa de la configuración regional de la base). Recibe el cliente: sirve dentro de una transacción.
+ */
+async function listar(sql: SqlClient, soloActivos: boolean): Promise<Servicio[]> {
+  const { rows } = soloActivos
+    ? await sql.query(
+        `SELECT id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
+                duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at
+         FROM buddys.servicios
+         WHERE activo
+         ORDER BY orden, id COLLATE "C"`,
+      )
+    : await sql.query(
+        `SELECT id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
+                duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at
+         FROM buddys.servicios
+         ORDER BY orden, id COLLATE "C"`,
+      );
+  return rows.map(toServicio);
+}

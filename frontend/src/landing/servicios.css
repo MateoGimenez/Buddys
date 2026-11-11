@@ -1,0 +1,458 @@
+/* ==========================================================================
+   Servicios: las cards
+   Contrato: reportes/2026-10-26_14_* (cards y revelado). Mobile-first, solo variables semánticas
+   (andan igual en el tema oscuro y en el claro). El revelado al hacer scroll vive en revelar.css.
+   ========================================================================== */
+
+/* ---------- Cards ---------- */
+
+/* Celular: carrusel horizontal. Solo esta lista se desplaza de costado (la página no), con la card siguiente
+   asomando. Llega hasta los bordes de la pantalla y la primera card queda alineada con el margen. */
+.tarjetas-vista {
+  margin-inline: calc(-1 * var(--margen));
+  padding: var(--e-2) var(--margen) var(--e-4);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--margen);
+  scrollbar-width: none;
+}
+
+.tarjetas-vista::-webkit-scrollbar {
+  display: none;
+}
+
+.tarjetas-vista:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+.tarjetas {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e-4);
+  width: max-content;
+}
+
+.tarjetas__celda {
+  flex: none;
+  width: min(84vw, 340px);
+  scroll-snap-align: start;
+}
+
+.tarjetas__indicador {
+  margin-top: var(--e-2);
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto-2);
+}
+
+/* Desde 700 px: grilla (en escritorio, una fila; ver más abajo). Si hay una card abierta, las demás no se estiran con ella */
+.tarjetas:has(.tarjeta[data-abierta='true']) {
+  align-items: start;
+}
+
+.tarjetas__celda {
+  display: grid;
+}
+
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-3);
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
+}
+
+.tarjeta--destacada {
+  border-color: var(--destacada-borde);
+  background: var(--destacada-fondo);
+  box-shadow: var(--sombra-2);
+}
+
+/* Filete rojo sobre el borde superior de la destacada */
+.tarjeta--destacada::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 20px;
+  right: 20px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--filete);
+}
+
+.tarjeta__sello {
+  align-self: flex-start;
+  margin-bottom: 10px;
+  padding: 3px 10px;
+  border: 1px solid var(--acento);
+  border-radius: 999px;
+  color: var(--sello-texto);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.tarjeta__nombre {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 1.45rem + 1vw, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: var(--display-tracking);
+  text-wrap: balance;
+}
+
+.tarjeta__resumen {
+  margin-top: 6px;
+  color: var(--texto-2);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Precio y duración siempre en el mismo lugar, en una chapa de datos */
+.tarjeta__datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-2);
+  background: var(--fondo-hundido);
+}
+
+.tarjeta__dato {
+  padding: 8px 12px;
+}
+
+.tarjeta__dato + .tarjeta__dato {
+  border-left: 1px solid var(--borde);
+}
+
+.tarjeta__dato dt {
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-3);
+}
+
+.tarjeta__dato dd {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: 1.2rem;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Precio esperando al catálogo: ocupa su lugar para que no salte nada cuando llega */
+.tarjeta__precio-cargando {
+  display: inline-block;
+  width: 7.5ch;
+  height: 0.8em;
+  border-radius: var(--radio-1);
+  vertical-align: -0.05em;
+  background: linear-gradient(100deg, var(--esqueleto) 30%, var(--esqueleto-brillo) 50%, var(--esqueleto) 70%);
+  background-size: 300% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tarjeta__precio-cargando {
+    animation: precio-brillo 1.4s linear infinite;
+  }
+}
+
+@keyframes precio-brillo {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.tarjeta__incluye {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.tarjeta__incluye li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.tarjeta__incluye .rombo {
+  translate: 0 -0.05em;
+}
+
+/* Lo que se despliega: se pliega sin desmontarse (la grilla va de 0fr a 1fr) y, cerrado, queda inert */
+.plegable {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.plegable[data-abierto='false'] {
+  grid-template-rows: 0fr;
+  visibility: hidden;
+}
+
+.plegable__interior {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .plegable {
+    transition:
+      grid-template-rows var(--t-media) var(--ease-salida),
+      visibility 0s;
+  }
+
+  /* Al cerrar, se oculta recién cuando terminó de plegarse */
+  .plegable[data-abierto='false'] {
+    transition:
+      grid-template-rows var(--t-media) var(--ease-salida),
+      visibility 0s var(--t-media);
+  }
+}
+
+.tarjeta__detalle {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.tarjeta__descripcion {
+  color: var(--texto-2);
+}
+
+.tarjeta__subtitulo {
+  margin-top: 4px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--texto-3);
+}
+
+.tarjeta__detalle .tarjeta__incluye {
+  padding-top: 0;
+}
+
+.glosario {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radio-2);
+  background: var(--velo-suave);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.glosario__item dt,
+.glosario__item dd {
+  display: inline;
+}
+
+.glosario__item dt {
+  font-weight: 650;
+  color: var(--texto);
+}
+
+.glosario__item dd {
+  color: var(--texto-2);
+}
+
+.tarjeta__acciones {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.tarjeta__ver {
+  justify-self: start;
+  margin-left: -16px; /* alinea el texto con el resto de la card */
+}
+
+.tarjeta__chevron {
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tarjeta__chevron {
+    transition: transform var(--t-media) var(--ease-salida);
+  }
+}
+
+.tarjeta__ver[aria-expanded='true'] .tarjeta__chevron {
+  transform: rotate(180deg);
+}
+
+@media (min-width: 700px) {
+  .tarjetas-vista {
+    margin-inline: 0;
+    padding: var(--e-2) 0 0;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  .tarjetas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: var(--e-5);
+    width: auto;
+  }
+
+  .tarjetas:has(.tarjeta[data-abierta='true']) {
+    align-items: start;
+  }
+
+  .tarjetas__celda {
+    display: grid;
+    width: auto;
+  }
+}
+
+/* Escritorio: UNA sola fila, sean 2 o 6 servicios. Cada card ocupa su parte del ancho pero nunca menos de 17 rem
+   (legible) ni más de 26 rem (con 2 servicios no se estiran: la fila se angosta y queda centrada). Si no entran
+   con ese mínimo, la fila se desplaza de costado con scroll-snap en vez de bajar a otra línea. */
+@media (min-width: 1060px) {
+  .tarjetas-vista {
+    margin-inline: calc(-1 * var(--e-3));
+    padding: var(--e-5) var(--e-3) var(--e-5);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--e-3);
+    scrollbar-width: thin;
+  }
+
+  .tarjetas-vista::-webkit-scrollbar {
+    display: initial;
+    height: 8px;
+  }
+
+  .tarjetas {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(17rem, 1fr);
+    max-width: calc(var(--n, 3) * 26rem + (var(--n, 3) - 1) * var(--e-6));
+    margin-inline: auto;
+    gap: var(--e-6);
+    padding-top: 0;
+  }
+
+  .tarjetas__celda {
+    scroll-snap-align: start;
+  }
+
+  .tarjeta {
+    padding: 24px;
+  }
+
+  .tarjeta--destacada {
+    translate: 0 -12px;
+  }
+
+  .tarjeta--destacada::before {
+    left: 24px;
+    right: 24px;
+  }
+}
+
+/* "Ver el servicio completo": enlace a la página del servicio, con objetivo táctil de 44 px */
+.tarjeta__completo {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 44px;
+  font-size: 0.9375rem;
+}
+
+/* ---------- Selector "Precios para" (Auto / Camioneta / Moto) ---------- */
+
+/* Es el mismo estado que el arranque del hero y el formulario de turno. Reusa las chapas de .selector (base.css);
+   acá solo se acota el ancho: en el celular ocupa todo el margen, en pantalla ancha no se estira de más. */
+.precios-para {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  max-width: 26rem;
+  margin: var(--e-5) 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.precios-para__etiqueta {
+  padding: 0;
+  float: left;
+  width: 100%;
+  margin-bottom: 8px;
+  color: var(--texto-3);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.precios-para__etiqueta + * {
+  clear: both;
+}
+
+.precios-para .selector__opcion {
+  min-height: 48px;
+}
+
+/* El número cambia con un fundido corto; la altura de la chapa no se mueve, así las cards no saltan */
+.tarjeta__precio {
+  display: inline-block;
+}
+
+/* Al cambiar de vehículo la lista entera se vuelve a montar: entra con un fundido corto (solo opacity y
+   transform) en lugar de aparecer de golpe. Sin prefers-reduced-motion no se anima nada. */
+@media (prefers-reduced-motion: no-preference) {
+  .servicios__cambio {
+    animation: servicios-entra 260ms var(--ease-salida) both;
+  }
+}
+
+@keyframes servicios-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tarjeta__precio {
+    animation: precio-entra 220ms var(--ease-salida, ease-out) both;
+  }
+}
+
+@keyframes precio-entra {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
