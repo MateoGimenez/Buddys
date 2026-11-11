@@ -28,11 +28,10 @@ Fecha: 2026-11-11
 - Permiso nuevo `lavados.registrar` (aparece en `GET /api/admin/permisos`): admin y superadmin anotan a cualquiera;
   el empleado solo a su nombre.
 
-### Decisión a confirmar con el dueño
-El **empleado puede cargar el monto** al registrar su lavado (es el momento de cobrar; si no, el ingreso se pierde
+### Decisión confirmada por el dueño (2026-11-11)
+El **empleado carga el servicio y el monto** al registrar su lavado (es el momento de cobrar; si no, el ingreso se pierde
 hasta que un admin lo cargue). Después no lo ve ni lo puede corregir. En los turnos de la web sigue la regla de
-MgDetailing (el empleado no carga montos). Si se prefiere que el empleado nunca cargue montos, es un cambio de una
-línea en `LavadoService.registrar`.
+MgDetailing (el empleado no carga montos).
 
 ## Verificación
 - `npm run verificar` en verde (tipos, lint y todos los tests del backend), con 17 tests nuevos en
