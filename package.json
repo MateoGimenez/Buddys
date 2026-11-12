@@ -4,12 +4,17 @@
   "private": true,
   "description": "Sistema interno de Buddys Wash Detail: API (Node + Express + Supabase) para registrar lavados, cobros por trabajador, finanzas y estadísticas.",
   "scripts": {
-    "instalar": "npm --prefix backend install",
+    "instalar": "npm --prefix backend install && npm --prefix frontend install",
+    "instalar:front": "npm --prefix frontend install",
     "dev": "npm --prefix backend run dev",
+    "dev:front": "npm --prefix frontend run dev",
     "build": "npm --prefix backend run build",
+    "build:front": "npm --prefix frontend run build",
     "start": "npm --prefix backend start",
     "test": "npm --prefix backend test",
-    "verificar": "npm --prefix backend run typecheck && npm --prefix backend run lint && npm --prefix backend test"
+    "test:front": "npm --prefix frontend test",
+    "verificar": "npm --prefix backend run typecheck && npm --prefix backend run lint && npm --prefix backend test",
+    "verificar:front": "npm --prefix frontend run typecheck && npm --prefix frontend run lint && npm --prefix frontend test && npm --prefix frontend run build"
   },
   "engines": {
     "node": ">=24"
