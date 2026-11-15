@@ -1,10 +1,21 @@
 import { Pencil, Plus } from 'lucide-react';
-import { useState, type SyntheticEvent } from 'react';
+import { useId, useState, type SyntheticEvent } from 'react';
 import { ApiError, mensajeDeError } from '../api/client';
 import * as ep from '../api/endpoints';
 import { VEHICULOS, type Servicio, type VehiculoTipo } from '../api/types';
 import { AreaTexto, Aviso, Boton, Campo, Cargando, Encabezado, Vacio } from '../components/ui';
-import { NOMBRE_VEHICULO, enteroDesdeTexto, miles, pesos, precioPara, slug } from '../lib/format';
+import {
+  CAMPO_PRECIO,
+  CATEGORIAS_SERVICIO,
+  NOMBRE_VEHICULO,
+  duracionPara,
+  enteroDesdeTexto,
+  miles,
+  pesos,
+  porCategoria,
+  precioPara,
+  slug,
+} from '../lib/format';
 import { useCarga } from '../lib/useCarga';
 import { useSesion } from '../session/SessionContext';
 
@@ -17,6 +28,7 @@ export function Servicios() {
   const reemplazar = (s: Servicio) => {
     actualizar((lista) => lista.map((x) => (x.id === s.id ? s : x)));
   };
+  const categorias = categoriasConocidas(carga.datos ?? []);
 
   return (
     <>
@@ -31,6 +43,7 @@ export function Servicios() {
 
       {creando ? (
         <NuevoServicio
+          categorias={categorias}
           onListo={() => { setCreando(false); recargar(); }}
           onCancelar={() => { setCreando(false); }}
         />
@@ -42,48 +55,66 @@ export function Servicios() {
       {!carga.datos ? (carga.estado === 'cargando' ? <Cargando /> : null) : carga.datos.length === 0 ? (
         <Vacio titulo="Todavía no hay servicios">{edita ? 'Creá el primero con “Nuevo servicio”.' : ''}</Vacio>
       ) : (
-        <ul className="lista-hojas">
-          {carga.datos.map((s) => (
-            <FilaServicio key={s.id} servicio={s} edita={edita} onCambio={reemplazar} />
-          ))}
-        </ul>
+        porCategoria(carga.datos).map((g) => (
+          <section key={g.categoria} className="categoria" aria-labelledby={`cat-${slug(g.categoria)}`}>
+            <h2 id={`cat-${slug(g.categoria)}`} className="categoria-titulo">
+              {g.categoria}
+              <span className="categoria-cuenta">{g.items.length}</span>
+            </h2>
+            <ul className="lista-hojas">
+              {g.items.map((s) => (
+                <FilaServicio key={s.id} servicio={s} edita={edita} categorias={categorias} onCambio={reemplazar} />
+              ))}
+            </ul>
+          </section>
+        ))
       )}
     </>
   );
 }
 
-function FilaServicio({ servicio, edita, onCambio }: { servicio: Servicio; edita: boolean; onCambio: (s: Servicio) => void }) {
+/** Las categorías de siempre más las que ya tenga el catálogo, para sugerirlas al escribir. */
+function categoriasConocidas(servicios: Servicio[]): string[] {
+  const extra = servicios.map((s) => s.categoria?.trim()).filter((c): c is string => !!c);
+  return [...new Set([...CATEGORIAS_SERVICIO, ...extra])];
+}
+
+function FilaServicio({ servicio, edita, categorias, onCambio }: { servicio: Servicio; edita: boolean; categorias: string[]; onCambio: (s: Servicio) => void }) {
   const [editando, setEditando] = useState(false);
   return (
     <li className="hoja fila-hoja" data-inactivo={servicio.activo ? undefined : ''}>
       <div className="fila-hoja-cabeza">
-        <h2 className="fila-hoja-titulo">{servicio.nombre}</h2>
-        {!servicio.activo ? <span className="etiqueta">Inactivo</span> : null}
+        <h3 className="fila-hoja-titulo">{servicio.nombre}</h3>
+        {servicio.destacado ? <span className="etiqueta">Frecuente</span> : null}
+        {!servicio.activo ? <span className="etiqueta etiqueta-apagada">Inactivo</span> : null}
       </div>
       <p className="fila-hoja-texto">{servicio.resumen}</p>
       {editando ? (
-        <EditarServicio servicio={servicio} onListo={(s) => { setEditando(false); onCambio(s); }} onCancelar={() => { setEditando(false); }} />
+        <EditarServicio
+          servicio={servicio}
+          categorias={categorias}
+          onListo={(s) => { setEditando(false); onCambio(s); }}
+          onCancelar={() => { setEditando(false); }}
+        />
       ) : (
         <>
           <dl className="precios">
-            {VEHICULOS.map((v) => (
-              <div key={v} data-no-ofrece={servicio.vehiculos.includes(v) ? undefined : ''}>
-                <dt>{NOMBRE_VEHICULO[v]}</dt>
-                <dd>
-                  {!servicio.vehiculos.includes(v)
-                    ? 'No se ofrece'
-                    : !edita
-                      ? 'Se ofrece'
-                      : precioPara(servicio, v) === null
-                      ? 'A consultar'
-                      : pesos(precioPara(servicio, v) ?? 0)}
-                </dd>
-              </div>
-            ))}
+            {VEHICULOS.map((v) => {
+              const ofrece = servicio.vehiculos.includes(v);
+              const precio = precioPara(servicio, v);
+              const duracion = duracionPara(servicio, v);
+              return (
+                <div key={v} data-no-ofrece={ofrece ? undefined : ''}>
+                  <dt>{NOMBRE_VEHICULO[v]}</dt>
+                  <dd>{!ofrece ? 'No se ofrece' : !edita ? 'Se ofrece' : precio === null ? 'Consultá' : pesos(precio)}</dd>
+                  {ofrece && duracion ? <dd className="precios-duracion">{duracion}</dd> : null}
+                </div>
+              );
+            })}
           </dl>
           {edita ? (
             <Boton chico variante="fantasma" icono={<Pencil aria-hidden size={18} />} onClick={() => { setEditando(true); }}>
-              Editar precios
+              Editar
             </Boton>
           ) : null}
         </>
@@ -96,17 +127,43 @@ function textoPrecio(n: number | null): string {
   return n === null ? '' : miles(String(n));
 }
 
-function EditarServicio({ servicio, onListo, onCancelar }: { servicio: Servicio; onListo: (s: Servicio) => void; onCancelar: () => void }) {
-  const [precios, setPrecios] = useState<Record<VehiculoTipo, string>>({
+function CampoCategoria({ valor, onCambio, categorias, error }: { valor: string; onCambio: (v: string) => void; categorias: string[]; error?: string | undefined }) {
+  const listaId = useId();
+  return (
+    <>
+      <Campo
+        etiqueta="Categoría"
+        list={listaId}
+        autoComplete="off"
+        maxLength={40}
+        value={valor}
+        onChange={(e) => { onCambio(e.target.value); }}
+        error={error}
+        ayuda="Agrupa los servicios en Registrar. Vacía = “Otros”."
+      />
+      <datalist id={listaId}>
+        {categorias.map((c) => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
+    </>
+  );
+}
+
+function EditarServicio({ servicio, categorias, onListo, onCancelar }: { servicio: Servicio; categorias: string[]; onListo: (s: Servicio) => void; onCancelar: () => void }) {
+  const [precios, setPrecios] = useState<Record<VehiculoTipo, string>>(() => ({
     auto: textoPrecio(servicio.precioDesde),
-    camioneta: textoPrecio(servicio.precioDesdeCamioneta),
+    suv: textoPrecio(servicio.precioDesdeSuv),
+    pickup: textoPrecio(servicio.precioDesdePickup),
     moto: textoPrecio(servicio.precioDesdeMoto),
-  });
+  }));
+  const [categoria, setCategoria] = useState(servicio.categoria ?? '');
   const [vehiculos, setVehiculos] = useState<VehiculoTipo[]>(servicio.vehiculos);
   const [activo, setActivo] = useState(servicio.activo);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const vehId = useId();
 
   const guardar = async (e: SyntheticEvent) => {
     e.preventDefault();
@@ -120,8 +177,10 @@ function EditarServicio({ servicio, onListo, onCancelar }: { servicio: Servicio;
     try {
       const { servicio: s } = await ep.editarServicio(servicio.id, {
         precioDesde: enteroDesdeTexto(precios.auto),
-        precioDesdeCamioneta: enteroDesdeTexto(precios.camioneta),
+        precioDesdeSuv: enteroDesdeTexto(precios.suv),
+        precioDesdePickup: enteroDesdeTexto(precios.pickup),
         precioDesdeMoto: enteroDesdeTexto(precios.moto),
+        categoria: categoria.trim() || null,
         vehiculos: VEHICULOS.filter((v) => vehiculos.includes(v)),
         activo,
       });
@@ -133,12 +192,11 @@ function EditarServicio({ servicio, onListo, onCancelar }: { servicio: Servicio;
     }
   };
 
-  const campoPrecio: Record<VehiculoTipo, string> = { auto: 'precioDesde', camioneta: 'precioDesdeCamioneta', moto: 'precioDesdeMoto' };
-
   return (
     <form className="formulario" onSubmit={(e) => void guardar(e)} noValidate>
       {error ? <Aviso>{error}</Aviso> : null}
-      <fieldset className="grupo-checks" aria-describedby={errores.vehiculos ? `veh-${servicio.id}` : undefined}>
+      <CampoCategoria valor={categoria} onCambio={setCategoria} categorias={categorias} error={errores.categoria} />
+      <fieldset className="grupo-checks" aria-describedby={errores.vehiculos ? vehId : undefined}>
         <legend>Se ofrece para</legend>
         {VEHICULOS.map((v) => (
           <label key={v} className="check">
@@ -152,19 +210,19 @@ function EditarServicio({ servicio, onListo, onCancelar }: { servicio: Servicio;
             {NOMBRE_VEHICULO[v]}
           </label>
         ))}
-        {errores.vehiculos ? <p className="campo-error" id={`veh-${servicio.id}`}>{errores.vehiculos}</p> : null}
+        {errores.vehiculos ? <p className="campo-error" id={vehId}>{errores.vehiculos}</p> : null}
       </fieldset>
       <div className="fila-campos">
         {VEHICULOS.filter((v) => vehiculos.includes(v)).map((v) => (
           <Campo
             key={v}
-            etiqueta={`Precio ${NOMBRE_VEHICULO[v].toLowerCase()}`}
+            etiqueta={`Precio ${NOMBRE_VEHICULO[v]}`}
             prefijo="$"
             inputMode="numeric"
             value={precios[v]}
             onChange={(e) => { setPrecios((p) => ({ ...p, [v]: miles(e.target.value) })); }}
-            error={errores[campoPrecio[v]]}
-            ayuda="Vacío = a consultar."
+            error={errores[CAMPO_PRECIO[v]]}
+            ayuda="Vacío = Consultá."
           />
         ))}
       </div>
@@ -181,10 +239,11 @@ function EditarServicio({ servicio, onListo, onCancelar }: { servicio: Servicio;
   );
 }
 
-function NuevoServicio({ onListo, onCancelar }: { onListo: () => void; onCancelar: () => void }) {
+function NuevoServicio({ categorias, onListo, onCancelar }: { categorias: string[]; onListo: () => void; onCancelar: () => void }) {
   const [nombre, setNombre] = useState('');
   const [resumen, setResumen] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [categoria, setCategoria] = useState('');
   const [precio, setPrecio] = useState('');
   const [vehiculos, setVehiculos] = useState<VehiculoTipo[]>([...VEHICULOS]);
   const [errores, setErrores] = useState<Record<string, string>>({});
@@ -209,6 +268,7 @@ function NuevoServicio({ onListo, onCancelar }: { onListo: () => void; onCancela
         nombre: nombre.trim(),
         resumen: resumen.trim(),
         descripcion: descripcion.trim() || resumen.trim(),
+        categoria: categoria.trim() || null,
         precioDesde: enteroDesdeTexto(precio),
         vehiculos: VEHICULOS.filter((v) => vehiculos.includes(v)),
       });
@@ -231,6 +291,7 @@ function NuevoServicio({ onListo, onCancelar }: { onListo: () => void; onCancela
       <Campo etiqueta="Nombre" value={nombre} maxLength={80} onChange={(e) => { setNombre(e.target.value); }} error={errores.nombre} />
       <Campo etiqueta="En una línea, qué incluye" value={resumen} maxLength={200} onChange={(e) => { setResumen(e.target.value); }} error={errores.resumen} />
       <AreaTexto etiqueta="Descripción (opcional)" value={descripcion} maxLength={1500} onChange={(e) => { setDescripcion(e.target.value); }} error={errores.descripcion} />
+      <CampoCategoria valor={categoria} onCambio={setCategoria} categorias={categorias} error={errores.categoria} />
       <fieldset className="grupo-checks">
         <legend>Se ofrece para</legend>
         {VEHICULOS.map((v) => (
@@ -241,7 +302,7 @@ function NuevoServicio({ onListo, onCancelar }: { onListo: () => void; onCancela
         ))}
         {errores.vehiculos ? <p className="campo-error">{errores.vehiculos}</p> : null}
       </fieldset>
-      <Campo etiqueta="Precio para auto" prefijo="$" inputMode="numeric" value={precio} onChange={(e) => { setPrecio(miles(e.target.value)); }} error={errores.precioDesde} ayuda="Los de camioneta y moto se cargan después con “Editar precios”." />
+      <Campo etiqueta="Precio para auto" prefijo="$" inputMode="numeric" value={precio} onChange={(e) => { setPrecio(miles(e.target.value)); }} error={errores.precioDesde} ayuda="Los de SUV, pick-up y moto se cargan después con “Editar”. Vacío = Consultá." />
       <div className="fila-botones">
         <Boton variante="fantasma" onClick={onCancelar} disabled={guardando}>Cancelar</Boton>
         <Boton type="submit" variante="primario" cargando={guardando}>Crear servicio</Boton>

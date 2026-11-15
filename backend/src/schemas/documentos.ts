@@ -220,13 +220,15 @@ export const listarPresupuestosQuerySchema = z.object({
 /** Los ids de presupuestos y comprobantes son UUID aleatorios. Cualquier otra cosa no puede existir => 404. */
 export const documentoIdSchema = z.uuid();
 
-const FORMA_PAGO_MSG = `La forma de pago tiene que ser una de: ${FORMAS_DE_PAGO.join(', ')}.`;
+export const FORMA_PAGO_MSG = `La forma de pago tiene que ser una de: ${FORMAS_DE_PAGO.join(', ')}.`;
 const NOTAS_COMPROBANTE_MSG = `Las notas tienen que tener hasta ${String(COMPROBANTE_NOTAS_MAX)} caracteres, sin saltos de línea, o null.`;
 
 /** POST /api/admin/bookings/:id/comprobante { formaPago, notas? }. */
 export const emitirComprobanteSchema = z
   .strictObject({
-    formaPago: z.enum(FORMAS_DE_PAGO, { error: FORMA_PAGO_MSG }),
+    // Opcional: sin ella se usa la del turno (la del lavado). Si el turno tampoco tiene, el servicio responde el mismo
+    // 400 en fields.formaPago que cuando era obligatoria.
+    formaPago: z.enum(FORMAS_DE_PAGO, { error: FORMA_PAGO_MSG }).optional(),
     notas: textoOpcionalDeUnaLinea(COMPROBANTE_NOTAS_MAX, NOTAS_COMPROBANTE_MSG).nullable().optional(),
   })
-  .transform((valor): DatosComprobante => ({ formaPago: valor.formaPago, notas: valor.notas ?? null }));
+  .transform((valor): DatosComprobante => ({ formaPago: valor.formaPago ?? null, notas: valor.notas ?? null }));

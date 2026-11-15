@@ -10,7 +10,7 @@ import { VEHICULO_TIPOS, type VehiculoTipo } from './booking.js';
 export const SERVICIO_ID_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const SERVICIO_ID_MAX = 64;
 
-/** Topes del contrato (los mismos que los CHECK de la migración catalogo_editable). */
+/** Topes del contrato (los mismos que los CHECK de las migraciones catalogo_editable y vehiculos_suv_pickup). */
 export const LIMITES_SERVICIO = {
   nombre: 80,
   resumen: 200,
@@ -21,6 +21,7 @@ export const LIMITES_SERVICIO = {
   termino: 60,
   significado: 300,
   duracion: 60,
+  categoria: 40,
   precioMax: 99_999_999,
 } as const;
 
@@ -40,18 +41,24 @@ export interface Servicio {
   glosario: TerminoGlosario[];
   /** Duración para AUTO. Texto libre ("2 a 3 h"). null = sin confirmar. */
   duracion: string | null;
-  /** Duración para CAMIONETA. null = usa la de auto (a diferencia de los precios, no es "Consultá"). */
-  duracionCamioneta: string | null;
+  /** Duración para SUV. null = usa la de auto (a diferencia de los precios, no es "Consultá"). */
+  duracionSuv: string | null;
+  /** Duración para PICK-UP. null = usa la de auto. */
+  duracionPickup: string | null;
   /** Duración para MOTO. null = usa la de auto. */
   duracionMoto: string | null;
   /** Precio para AUTO. Entero en ARS. null = "Consultá". */
   precioDesde: number | null;
-  /** Precio para CAMIONETA. Entero en ARS. null = "Consultá" (nunca se cae al de auto). */
-  precioDesdeCamioneta: number | null;
+  /** Precio para SUV. Entero en ARS. null = "Consultá" (nunca se cae al de auto). */
+  precioDesdeSuv: number | null;
+  /** Precio para PICK-UP. Entero en ARS. null = "Consultá" (nunca se cae al de auto). */
+  precioDesdePickup: number | null;
   /** Precio para MOTO. Entero en ARS. null = "Consultá" (nunca se cae al de auto). */
   precioDesdeMoto: number | null;
-  /** Tipos de vehículo para los que se ofrece, en orden canónico (auto, camioneta, moto). Al menos uno. */
+  /** Tipos de vehículo para los que se ofrece, en orden canónico (auto, suv, pickup, moto). Al menos uno. */
   vehiculos: VehiculoTipo[];
+  /** Grupo del servicio en el panel ("Lavado", "Pulido", "Motos"...), hasta 40 caracteres. null = sin categoría. */
+  categoria: string | null;
   /** Puede haber varios en true a la vez (solo entre los activos). */
   destacado: boolean;
   /** false = ya no se ofrece (no se borra: hay turnos que lo referencian). */
@@ -134,17 +141,20 @@ export function servicioPublico(servicio: Servicio): ServicioPublico {
     incluye: servicio.incluye,
     glosario: servicio.glosario,
     duracion: servicio.duracion,
-    duracionCamioneta: servicio.duracionCamioneta,
+    duracionSuv: servicio.duracionSuv,
+    duracionPickup: servicio.duracionPickup,
     duracionMoto: servicio.duracionMoto,
     precioDesde: servicio.precioDesde,
-    precioDesdeCamioneta: servicio.precioDesdeCamioneta,
+    precioDesdeSuv: servicio.precioDesdeSuv,
+    precioDesdePickup: servicio.precioDesdePickup,
     precioDesdeMoto: servicio.precioDesdeMoto,
     vehiculos: servicio.vehiculos,
+    categoria: servicio.categoria,
     destacado: servicio.destacado,
   };
 }
 
-/** Ordena y filtra a los tipos conocidos, en el orden canónico (auto, camioneta, moto). */
+/** Ordena y filtra a los tipos conocidos, en el orden canónico (auto, suv, pickup, moto). */
 export function vehiculosCanonicos(vehiculos: readonly string[]): VehiculoTipo[] {
   return VEHICULO_TIPOS.filter((tipo) => vehiculos.includes(tipo));
 }

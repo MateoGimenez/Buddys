@@ -71,6 +71,9 @@ describe('turnos', () => {
       turnosDelCliente: 1,
       monto: null,
       trabajador: null,
+      formaPago: null,
+      // El trigger bookings_servicio_principal le dio su fila en lavado_servicios (pulido: "Consultá").
+      servicios: [{ id: 'pulido', nombre: 'Pulido', precioLista: null }],
       createdAt: '2026-10-16T15:00:00.000Z',
       updatedAt: '2026-10-16T15:00:00.000Z',
     });
@@ -270,12 +273,15 @@ describe('servicios', () => {
       incluye: ['Lavado', 'Aplicación'],
       glosario: [{ termino: 'Cerámico', significado: 'un recubrimiento duro y brillante.' }],
       duracion: '1 día',
-      duracionCamioneta: '1 día y medio',
+      duracionSuv: '1 día y medio',
+      duracionPickup: null,
       duracionMoto: null,
       precioDesde: 150000,
-      precioDesdeCamioneta: 180000,
+      precioDesdeSuv: 180000,
+      precioDesdePickup: 190000,
       precioDesdeMoto: null,
-      vehiculos: ['auto', 'camioneta', 'moto'],
+      vehiculos: ['auto', 'suv', 'pickup', 'moto'],
+      categoria: 'Protección',
       destacado: false,
       activo: true,
       ...overrides,
@@ -305,12 +311,16 @@ describe('servicios', () => {
       incluye: expect.arrayContaining(['Corrección de pintura en 1 o 2 etapas']),
       glosario: expect.arrayContaining([{ termino: 'Swirls', significado: expect.any(String) }]),
       duracion: 'Alrededor de 1 día',
-      duracionCamioneta: null,
+      duracionSuv: null,
+      duracionPickup: null,
       duracionMoto: null,
       precioDesde: null,
-      precioDesdeCamioneta: null,
+      precioDesdeSuv: null,
+      precioDesdePickup: null,
       precioDesdeMoto: null,
-      vehiculos: ['auto', 'camioneta', 'moto'],
+      // La migración vehiculos_suv_pickup pasó 'camioneta' a 'suv'.
+      vehiculos: ['auto', 'suv', 'moto'],
+      categoria: null,
       destacado: false,
       activo: true,
       orden: 30,
@@ -361,17 +371,30 @@ describe('servicios', () => {
     const { servicios } = repositories;
     expect(await servicios.create(nuevoServicio(), NOW)).toMatchObject({
       duracion: '1 día',
-      duracionCamioneta: '1 día y medio',
+      duracionSuv: '1 día y medio',
+      duracionPickup: null,
       duracionMoto: null,
     });
-    expect(await servicios.update('tratamiento-ceramico', { duracionMoto: '4 h' }, LATER)).toMatchObject({
-      duracionCamioneta: '1 día y medio',
+    expect(
+      await servicios.update('tratamiento-ceramico', { duracionMoto: '4 h', duracionPickup: '2 días' }, LATER),
+    ).toMatchObject({
+      duracionSuv: '1 día y medio',
+      duracionPickup: '2 días',
       duracionMoto: '4 h',
     });
-    expect(await servicios.update('tratamiento-ceramico', { duracionCamioneta: null }, LATER)).toMatchObject({
+    expect(await servicios.update('tratamiento-ceramico', { duracionSuv: null }, LATER)).toMatchObject({
       duracion: '1 día',
-      duracionCamioneta: null,
+      duracionSuv: null,
+      duracionPickup: '2 días',
       duracionMoto: '4 h',
+    });
+    // Precio de pick-up y categoría: null borra; lo que no viene no cambia.
+    expect(
+      await servicios.update('tratamiento-ceramico', { precioDesdePickup: null, categoria: 'Pulido' }, LATER),
+    ).toMatchObject({ precioDesdeSuv: 180000, precioDesdePickup: null, categoria: 'Pulido' });
+    expect(await servicios.update('tratamiento-ceramico', { categoria: null }, LATER)).toMatchObject({
+      categoria: null,
+      precioDesdePickup: null,
     });
   });
 
@@ -424,7 +447,7 @@ describe('servicios', () => {
     expect(await servicios.update('encerado', { duracion: null, precioDesde: null }, LATER)).toMatchObject({
       duracion: null,
       precioDesde: null,
-      precioDesdeCamioneta: null,
+      precioDesdeSuv: null,
       precioDesdeMoto: null,
       nombre: 'Encerado premium',
     });
@@ -472,16 +495,18 @@ describe('servicios', () => {
       ["UPDATE buddys.servicios SET vehiculos = '{}' WHERE id = 'pulido'", /servicios_vehiculos_valido/],
       ["UPDATE buddys.servicios SET vehiculos = '{auto,auto}' WHERE id = 'pulido'", /servicios_vehiculos_valido/],
       ["UPDATE buddys.servicios SET vehiculos = '{auto,bici}' WHERE id = 'pulido'", /servicios_vehiculos_valido/],
-      [
-        "UPDATE buddys.servicios SET precio_desde_camioneta = 100000000 WHERE id = 'pulido'",
-        /servicios_precio_camioneta_rango/,
-      ],
-      ["UPDATE buddys.servicios SET precio_desde_camioneta = -1 WHERE id = 'pulido'", /servicios_precio_camioneta_rango/],
+      ["UPDATE buddys.servicios SET vehiculos = '{auto,camioneta}' WHERE id = 'pulido'", /servicios_vehiculos_valido/],
+      ["UPDATE buddys.servicios SET precio_desde_suv = 100000000 WHERE id = 'pulido'", /servicios_precio_suv_rango/],
+      ["UPDATE buddys.servicios SET precio_desde_suv = -1 WHERE id = 'pulido'", /servicios_precio_suv_rango/],
+      ["UPDATE buddys.servicios SET precio_desde_pickup = 100000000 WHERE id = 'pulido'", /servicios_precio_pickup_rango/],
+      ["UPDATE buddys.servicios SET precio_desde_pickup = -1 WHERE id = 'pulido'", /servicios_precio_pickup_rango/],
+      ["UPDATE buddys.servicios SET categoria = '  ' WHERE id = 'pulido'", /servicios_categoria_valida/],
+      [`UPDATE buddys.servicios SET categoria = '${'x'.repeat(41)}' WHERE id = 'pulido'`, /servicios_categoria_valida/],
       ["UPDATE buddys.servicios SET precio_desde_moto = 100000000 WHERE id = 'pulido'", /servicios_precio_moto_rango/],
       ["UPDATE buddys.servicios SET precio_desde_moto = -1 WHERE id = 'pulido'", /servicios_precio_moto_rango/],
       ["UPDATE buddys.servicios SET duracion_estimada = '  ' WHERE id = 'pulido'", /servicios_duracion_no_vacia/],
-      ["UPDATE buddys.servicios SET duracion_estimada_camioneta = '  ' WHERE id = 'pulido'", /servicios_duracion_camioneta_valida/],
-      [`UPDATE buddys.servicios SET duracion_estimada_camioneta = '${'x'.repeat(61)}' WHERE id = 'pulido'`, /servicios_duracion_camioneta_valida/],
+      ["UPDATE buddys.servicios SET duracion_suv = '  ' WHERE id = 'pulido'", /servicios_duracion_suv_valida/],
+      [`UPDATE buddys.servicios SET duracion_pickup = '${'x'.repeat(61)}' WHERE id = 'pulido'`, /servicios_duracion_pickup_valida/],
       ["UPDATE buddys.servicios SET duracion_estimada_moto = '' WHERE id = 'pulido'", /servicios_duracion_moto_valida/],
       [`UPDATE buddys.servicios SET duracion_estimada_moto = '${'x'.repeat(61)}' WHERE id = 'pulido'`, /servicios_duracion_moto_valida/],
       ["UPDATE buddys.servicios SET resumen = '' WHERE id = 'pulido'", /servicios_resumen_largo/],

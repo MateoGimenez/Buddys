@@ -121,7 +121,8 @@ export class EstadisticasService {
     const porClave = new Map(serie.map((punto) => [punto.clave, punto.completados]));
     return {
       rango,
-      completados: porServicio.reduce((suma, fila) => suma + fila.completados, 0),
+      // De la serie (un trabajo = un turno) y no de porServicio: un lavado con varios servicios cuenta en cada uno.
+      completados: serie.reduce((suma, punto) => suma + punto.completados, 0),
       porServicio,
       serie: clavesDeSerie(rango, granularidad).map((clave) => ({ clave, completados: porClave.get(clave) ?? 0 })),
     };

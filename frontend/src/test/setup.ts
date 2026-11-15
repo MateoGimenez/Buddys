@@ -1,9 +1,13 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
+import { reiniciarCola } from '../lib/cola';
 
 afterEach(() => {
   cleanup();
+  // La cola sin conexión vive en localStorage: cada test arranca sin lavados pendientes.
+  localStorage.clear();
+  reiniciarCola();
 });
 
 // jsdom no trae <dialog> completo ni scrollTo.

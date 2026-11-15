@@ -25,6 +25,14 @@
           "id": "00000000-0000-4000-8000-000000000002",
           "nombre": "Ana"
         },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "pulido",
+            "nombre": "Pulido",
+            "precioLista": null
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -56,6 +64,14 @@
           "id": "00000000-0000-4000-8000-000000000004",
           "nombre": "Beto"
         },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -84,6 +100,14 @@
         "turnosDelCliente": null,
         "monto": null,
         "trabajador": null,
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "pulido",
+            "nombre": "Pulido",
+            "precioLista": null
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -472,6 +496,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -495,6 +527,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -518,6 +558,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -544,6 +592,14 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -570,6 +626,14 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -601,6 +665,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -624,6 +696,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -647,6 +727,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -673,6 +761,14 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -699,6 +795,14 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -730,6 +834,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -756,6 +868,14 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -782,6 +902,14 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -838,6 +966,14 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -864,6 +1000,14 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -890,6 +1034,14 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -1826,14 +1978,27 @@
         {
           "id": "lavados.registrar",
           "grupo": "Lavados",
-          "texto": "Registrar un lavado de mostrador (servicio, vehículo, cobro y quién lavó)",
+          "texto": "Registrar un lavado de mostrador (servicios, vehículo, cobro, forma de pago y quién lavó)",
           "roles": {
             "superadmin": "si",
             "admin": "si",
             "empleado": "parcial"
           },
           "matiz": {
-            "empleado": "Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige"
+            "empleado": "Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)"
+          }
+        },
+        {
+          "id": "lavados.deshacer",
+          "grupo": "Lavados",
+          "texto": "Deshacer (borrar) un lavado de mostrador",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo uno que registró él, hasta 5 minutos después de registrarlo y si no tiene comprobante"
           }
         },
         {
@@ -1915,7 +2080,7 @@
         {
           "id": "cobro.corregir",
           "grupo": "Cobro",
-          "texto": "Corregir el monto y el trabajador de un turno ya completado",
+          "texto": "Corregir el monto, el trabajador, la forma de pago y los servicios de un turno",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2110,14 +2275,27 @@
         {
           "id": "lavados.registrar",
           "grupo": "Lavados",
-          "texto": "Registrar un lavado de mostrador (servicio, vehículo, cobro y quién lavó)",
+          "texto": "Registrar un lavado de mostrador (servicios, vehículo, cobro, forma de pago y quién lavó)",
           "roles": {
             "superadmin": "si",
             "admin": "si",
             "empleado": "parcial"
           },
           "matiz": {
-            "empleado": "Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige"
+            "empleado": "Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)"
+          }
+        },
+        {
+          "id": "lavados.deshacer",
+          "grupo": "Lavados",
+          "texto": "Deshacer (borrar) un lavado de mostrador",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo uno que registró él, hasta 5 minutos después de registrarlo y si no tiene comprobante"
           }
         },
         {
@@ -2199,7 +2377,7 @@
         {
           "id": "cobro.corregir",
           "grupo": "Cobro",
-          "texto": "Corregir el monto y el trabajador de un turno ya completado",
+          "texto": "Corregir el monto, el trabajador, la forma de pago y los servicios de un turno",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -3230,16 +3408,19 @@
             }
           ],
           "duracion": "1 a 1,5 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         },
         {
@@ -3269,16 +3450,19 @@
             }
           ],
           "duracion": "3 a 4 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": true
         },
         {
@@ -3311,16 +3495,19 @@
             }
           ],
           "duracion": "Alrededor de 1 día",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         },
         {
@@ -3350,16 +3537,19 @@
             }
           ],
           "duracion": "2 a 3 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         },
         {
@@ -3383,16 +3573,19 @@
             }
           ],
           "duracion": "1,5 a 2 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         }
       ]
@@ -3426,16 +3619,19 @@
             }
           ],
           "duracion": "1 a 1,5 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false,
           "activo": true,
           "orden": 10,
@@ -3468,16 +3664,19 @@
             }
           ],
           "duracion": "3 a 4 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": true,
           "activo": true,
           "orden": 20,
@@ -3513,16 +3712,19 @@
             }
           ],
           "duracion": "Alrededor de 1 día",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false,
           "activo": true,
           "orden": 30,
@@ -3555,16 +3757,19 @@
             }
           ],
           "duracion": "2 a 3 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false,
           "activo": true,
           "orden": 40,
@@ -3591,16 +3796,19 @@
             }
           ],
           "duracion": "1,5 a 2 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false,
           "activo": true,
           "orden": 50,
@@ -3620,16 +3828,20 @@
         "incluye": [],
         "glosario": [],
         "duracion": null,
-        "duracionCamioneta": null,
+        "duracionSuv": null,
+        "duracionPickup": null,
         "duracionMoto": null,
         "precioDesde": 150000,
-        "precioDesdeCamioneta": 180000,
+        "precioDesdeSuv": 180000,
+        "precioDesdePickup": 190000,
         "precioDesdeMoto": null,
         "vehiculos": [
           "auto",
-          "camioneta",
+          "suv",
+          "pickup",
           "moto"
         ],
+        "categoria": "Protección",
         "destacado": false,
         "activo": true,
         "orden": 60,
@@ -3670,16 +3882,19 @@
           }
         ],
         "duracion": "Alrededor de 1 día",
-        "duracionCamioneta": null,
+        "duracionSuv": null,
+        "duracionPickup": null,
         "duracionMoto": null,
         "precioDesde": 45000,
-        "precioDesdeCamioneta": 60000,
+        "precioDesdeSuv": 60000,
+        "precioDesdePickup": 65000,
         "precioDesdeMoto": 30000,
         "vehiculos": [
           "auto",
-          "camioneta",
+          "suv",
           "moto"
         ],
+        "categoria": null,
         "destacado": false,
         "activo": true,
         "orden": 30,
@@ -3720,16 +3935,19 @@
           }
         ],
         "duracion": "Alrededor de 1 día",
-        "duracionCamioneta": null,
+        "duracionSuv": null,
+        "duracionPickup": null,
         "duracionMoto": null,
         "precioDesde": 45000,
-        "precioDesdeCamioneta": 60000,
+        "precioDesdeSuv": 60000,
+        "precioDesdePickup": 65000,
         "precioDesdeMoto": null,
         "vehiculos": [
           "auto",
-          "camioneta",
+          "suv",
           "moto"
         ],
+        "categoria": null,
         "destacado": false,
         "activo": true,
         "orden": 30,
@@ -3737,14 +3955,26 @@
       }
     }
   },
-  "error400PrecioCamioneta": {
+  "error400PrecioSuv": {
     "status": 400,
     "body": {
       "error": {
         "code": "VALIDATION_ERROR",
         "message": "Revisá los datos ingresados.",
         "fields": {
-          "precioDesdeCamioneta": "El precio tiene que ser un número entero de pesos, de 0 a 99.999.999, o null (\"Consultá\")."
+          "precioDesdeSuv": "El precio tiene que ser un número entero de pesos, de 0 a 99.999.999, o null (\"Consultá\")."
+        }
+      }
+    }
+  },
+  "error400Categoria": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "categoria": "La categoría no puede tener más de 40 caracteres."
         }
       }
     }
@@ -3794,15 +4024,18 @@
           }
         ],
         "duracion": "Alrededor de 1 día",
-        "duracionCamioneta": null,
+        "duracionSuv": null,
+        "duracionPickup": null,
         "duracionMoto": null,
         "precioDesde": 45000,
-        "precioDesdeCamioneta": 60000,
+        "precioDesdeSuv": 60000,
+        "precioDesdePickup": 65000,
         "precioDesdeMoto": null,
         "vehiculos": [
           "auto",
           "moto"
         ],
+        "categoria": null,
         "destacado": false,
         "activo": true,
         "orden": 30,
@@ -3838,16 +4071,19 @@
             }
           ],
           "duracion": "1 a 1,5 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         },
         {
@@ -3877,16 +4113,19 @@
             }
           ],
           "duracion": "3 a 4 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": true
         },
         {
@@ -3919,15 +4158,18 @@
             }
           ],
           "duracion": "Alrededor de 1 día",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": 45000,
-          "precioDesdeCamioneta": 60000,
+          "precioDesdeSuv": 60000,
+          "precioDesdePickup": 65000,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         },
         {
@@ -3957,16 +4199,19 @@
             }
           ],
           "duracion": "2 a 3 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         },
         {
@@ -3990,16 +4235,19 @@
             }
           ],
           "duracion": "1,5 a 2 h",
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": null,
-          "precioDesdeCamioneta": null,
+          "precioDesdeSuv": null,
+          "precioDesdePickup": null,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
             "moto"
           ],
+          "categoria": null,
           "destacado": false
         },
         {
@@ -4010,16 +4258,20 @@
           "incluye": [],
           "glosario": [],
           "duracion": null,
-          "duracionCamioneta": null,
+          "duracionSuv": null,
+          "duracionPickup": null,
           "duracionMoto": null,
           "precioDesde": 150000,
-          "precioDesdeCamioneta": 180000,
+          "precioDesdeSuv": 180000,
+          "precioDesdePickup": 190000,
           "precioDesdeMoto": null,
           "vehiculos": [
             "auto",
-            "camioneta",
+            "suv",
+            "pickup",
             "moto"
           ],
+          "categoria": "Protección",
           "destacado": false
         }
       ]
@@ -4032,7 +4284,7 @@
         "code": "VALIDATION_ERROR",
         "message": "Revisá los datos ingresados.",
         "fields": {
-          "vehiculos": "Elegí al menos un vehículo (auto, camioneta o moto) para el servicio."
+          "vehiculos": "Elegí al menos un vehículo (auto, SUV, pick-up o moto) para el servicio."
         }
       }
     }
@@ -4044,7 +4296,7 @@
         "code": "VALIDATION_ERROR",
         "message": "Revisá los datos ingresados.",
         "fields": {
-          "servicioId": "Ese servicio no se ofrece para camioneta. Elegí otro."
+          "servicioId": "Ese servicio no se ofrece para pickup. Elegí otro."
         }
       }
     }
@@ -4055,6 +4307,952 @@
       "error": {
         "code": "FORBIDDEN",
         "message": "Con tu rol solo podés ver el catálogo de servicios."
+      }
+    }
+  },
+  "lavadoCrea": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000022",
+        "nombre": "Juan",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": 15000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "formaPago": "transferencia",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:00:00.000Z"
+    }
+  },
+  "lavadoCreaEmpleado": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000023",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:00:00.000Z"
+    }
+  },
+  "lavadoReintentoIdLocal": {
+    "status": 200,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000023",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:00:00.000Z"
+    }
+  },
+  "error409IdLocalAjeno": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CONFLICT",
+        "message": "Ese lavado ya lo registró otra persona."
+      }
+    }
+  },
+  "error400LavadoFormaPago": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "formaPago": "La forma de pago tiene que ser una de: efectivo, transferencia, debito, credito, otro, o null."
+        }
+      }
+    }
+  },
+  "lavadosDiaAdmin": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "lavados": [
+        {
+          "id": "00000000-0000-4000-8000-000000000022",
+          "nombre": "Juan",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 15000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "transferencia",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000023",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 9000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000024",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 4000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "resumen": {
+        "cantidad": 3,
+        "total": 28000,
+        "sinMonto": 0,
+        "porTrabajador": [
+          {
+            "trabajador": {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "nombre": "Ana"
+            },
+            "cantidad": 2,
+            "total": 19000
+          },
+          {
+            "trabajador": {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "nombre": "Beto"
+            },
+            "cantidad": 1,
+            "total": 9000
+          }
+        ],
+        "porFormaPago": [
+          {
+            "formaPago": "transferencia",
+            "cantidad": 1,
+            "total": 15000
+          },
+          {
+            "formaPago": "efectivo",
+            "cantidad": 1,
+            "total": 9000
+          },
+          {
+            "formaPago": null,
+            "cantidad": 1,
+            "total": 4000
+          }
+        ]
+      }
+    }
+  },
+  "lavadosDiaEmpleado": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "lavados": [
+        {
+          "id": "00000000-0000-4000-8000-000000000022",
+          "nombre": "Juan",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "transferencia",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000023",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000024",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "resumen": {
+        "cantidad": 3,
+        "total": null,
+        "sinMonto": 0,
+        "porTrabajador": [
+          {
+            "trabajador": {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "nombre": "Ana"
+            },
+            "cantidad": 2,
+            "total": null
+          },
+          {
+            "trabajador": {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "nombre": "Beto"
+            },
+            "cantidad": 1,
+            "total": null
+          }
+        ],
+        "porFormaPago": [
+          {
+            "formaPago": "efectivo",
+            "cantidad": 1,
+            "total": null
+          },
+          {
+            "formaPago": "transferencia",
+            "cantidad": 1,
+            "total": null
+          },
+          {
+            "formaPago": null,
+            "cantidad": 1,
+            "total": null
+          }
+        ]
+      }
+    }
+  },
+  "patchFormaPago": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "00000000-0000-4000-8000-000000000023",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": 9000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "formaPago": "debito",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error403FormaPagoEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés cambiar la forma de pago: la corrige un administrador."
+      }
+    }
+  },
+  "comprobanteDeLavado": {
+    "status": 201,
+    "body": {
+      "comprobante": {
+        "id": "00000000-0000-4000-8000-000000000025",
+        "numero": 2,
+        "codigo": "R-0002",
+        "fechaEmision": "2026-10-16",
+        "formaPago": "transferencia",
+        "monto": 15000,
+        "clienteNombre": "Juan",
+        "servicioNombre": "Lavado Básico",
+        "vehiculo": "Gol AB123CD",
+        "notas": null
+      }
+    }
+  },
+  "error409DeshacerConComprobante": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "TURNO_CON_COMPROBANTE",
+        "message": "Este lavado ya tiene un comprobante de pago emitido: no se puede deshacer."
+      }
+    }
+  },
+  "error403DeshacerAjeno": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Solo podés deshacer un lavado que registraste vos."
+      }
+    }
+  },
+  "error404Deshacer": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "No encontramos ese lavado."
+      }
+    }
+  },
+  "error403PlazoDeshacer": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "PLAZO_DESHACER_VENCIDO",
+        "message": "Pasaron más de 5 minutos: pedile a un encargado que lo borre desde la planilla."
+      }
+    }
+  },
+  "deshacerLavado": {
+    "status": 204,
+    "body": {}
+  },
+  "lavadoCreaVarios": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000026",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "suv",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": 30000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 25000
+          },
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:00:00.000Z"
+    }
+  },
+  "lavadoCreaVariosEmpleado": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000027",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "suv",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          },
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:00:00.000Z"
+    }
+  },
+  "error400LavadoServiciosRepetidos": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioIds": "No repitas servicios en la lista."
+        }
+      }
+    }
+  },
+  "error400LavadoServicioIdYServicioIds": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioIds": "Mandá servicioIds (la lista) o servicioId (uno solo), no los dos."
+        }
+      }
+    }
+  },
+  "error400LavadoServicioNoOfrecido": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioIds": "\"Lavado Básico\" no se ofrece para Moto. Sacalo de la lista."
+        }
+      }
+    }
+  },
+  "patchServicios": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "00000000-0000-4000-8000-000000000026",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "suv",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "encerado",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": 30000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          },
+          {
+            "id": "restauracion-opticas",
+            "nombre": "Restauración de ópticas",
+            "precioLista": null
+          },
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 25000
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error403ServiciosEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador."
+      }
+    }
+  },
+  "lavadosDiaVariosEmpleado": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "lavados": [
+        {
+          "id": "00000000-0000-4000-8000-000000000022",
+          "nombre": "Juan",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "transferencia",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000024",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000026",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "encerado",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            },
+            {
+              "id": "restauracion-opticas",
+              "nombre": "Restauración de ópticas",
+              "precioLista": null
+            },
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000027",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "resumen": {
+        "cantidad": 4,
+        "total": null,
+        "sinMonto": 0,
+        "porTrabajador": [
+          {
+            "trabajador": {
+              "id": "00000000-0000-4000-8000-000000000002",
+              "nombre": "Ana"
+            },
+            "cantidad": 3,
+            "total": null
+          },
+          {
+            "trabajador": {
+              "id": "00000000-0000-4000-8000-000000000004",
+              "nombre": "Beto"
+            },
+            "cantidad": 1,
+            "total": null
+          }
+        ],
+        "porFormaPago": [
+          {
+            "formaPago": "efectivo",
+            "cantidad": 2,
+            "total": null
+          },
+          {
+            "formaPago": "transferencia",
+            "cantidad": 1,
+            "total": null
+          },
+          {
+            "formaPago": null,
+            "cantidad": 1,
+            "total": null
+          }
+        ]
+      }
+    }
+  },
+  "comprobanteVarios": {
+    "status": 201,
+    "body": {
+      "comprobante": {
+        "id": "00000000-0000-4000-8000-000000000028",
+        "numero": 3,
+        "codigo": "R-0003",
+        "fechaEmision": "2026-10-16",
+        "formaPago": "efectivo",
+        "monto": 30000,
+        "clienteNombre": "Cliente de mostrador",
+        "servicioNombre": "Encerado + Restauración de ópticas + Lavado Básico",
+        "vehiculo": "SUV",
+        "notas": null
       }
     }
   }

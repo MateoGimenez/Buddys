@@ -22,6 +22,14 @@ export interface PgliteDatabase {
   close: () => Promise<void>;
 }
 
+/**
+ * Migraciones solo de DATOS que la base de los tests NO aplica: el catálogo real de Buddys desactiva los servicios
+ * heredados (pulido, encerado...) con los que están escritos casi todos los tests. Su efecto se prueba aparte
+ * (test/migracion-catalogo-buddys.test.ts), sobre una base con todas las demás. El esquema sí es siempre el de
+ * producción: todas las migraciones de esquema se aplican.
+ */
+export const MIGRACIONES_SOLO_DATOS: readonly string[] = ['20261113130000_catalogo_buddys.sql'];
+
 export const migrationFiles = (): string[] =>
   readdirSync(MIGRATIONS_DIR)
     .filter((file) => /^\d{14}_[a-z0-9_]+\.sql$/.test(file))
@@ -60,6 +68,7 @@ async function createMigratedTemplate(): Promise<PGlite> {
   // eslint-disable-next-line no-restricted-syntax -- constante del propio test
   await pg.exec(SUPABASE_STUB);
   for (const file of migrationFiles()) {
+    if (MIGRACIONES_SOLO_DATOS.includes(file)) continue;
     // El SQL viene de los archivos de migración versionados (confiables), no de datos de usuario.
     // eslint-disable-next-line no-restricted-syntax
     await pg.exec(readFileSync(path.join(MIGRATIONS_DIR, file), 'utf8'));

@@ -44,12 +44,15 @@ function toServicio(row: Row): Servicio {
     incluye: textos(row, 'incluye'),
     glosario: glosario(row, 'glosario'),
     duracion: strOrNull(row, 'duracion_estimada'),
-    duracionCamioneta: strOrNull(row, 'duracion_estimada_camioneta'),
+    duracionSuv: strOrNull(row, 'duracion_suv'),
+    duracionPickup: strOrNull(row, 'duracion_pickup'),
     duracionMoto: strOrNull(row, 'duracion_estimada_moto'),
     precioDesde: intOrNull(row, 'precio_desde'),
-    precioDesdeCamioneta: intOrNull(row, 'precio_desde_camioneta'),
+    precioDesdeSuv: intOrNull(row, 'precio_desde_suv'),
+    precioDesdePickup: intOrNull(row, 'precio_desde_pickup'),
     precioDesdeMoto: intOrNull(row, 'precio_desde_moto'),
     vehiculos: vehiculosCanonicos(textos(row, 'vehiculos')),
+    categoria: strOrNull(row, 'categoria'),
     destacado: bool(row, 'destacado'),
     activo: bool(row, 'activo'),
     orden: int(row, 'orden'),
@@ -84,7 +87,7 @@ export class PostgresServicioRepository implements ServicioRepository {
   async findById(id: string): Promise<Servicio | undefined> {
     const { rows } = await this.sql.query(
       `SELECT id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
-              duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at
+              duracion_suv, duracion_pickup, duracion_estimada_moto, precio_desde, precio_desde_suv, precio_desde_pickup, precio_desde_moto, vehiculos, categoria, destacado, activo, orden, updated_at
        FROM buddys.servicios
        WHERE id = $1`,
       [id],
@@ -103,16 +106,16 @@ export class PostgresServicioRepository implements ServicioRepository {
       const { rows } = await sql.query(
         `INSERT INTO buddys.servicios (
            id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada, precio_desde,
-           precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at,
-           duracion_estimada_camioneta, duracion_estimada_moto
+           precio_desde_suv, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at,
+           duracion_suv, duracion_estimada_moto, precio_desde_pickup, duracion_pickup, categoria
          )
          SELECT $1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8::integer, $9::integer, $10::integer, $11::text[],
                 $12::boolean, $13::boolean, coalesce(max(orden), 0) + 10, $14::timestamptz,
-                $15::text, $16::text
+                $15::text, $16::text, $17::integer, $18::text, $19::text
          FROM buddys.servicios
          ON CONFLICT (id) DO NOTHING
          RETURNING id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
-                   duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at`,
+                   duracion_suv, duracion_pickup, duracion_estimada_moto, precio_desde, precio_desde_suv, precio_desde_pickup, precio_desde_moto, vehiculos, categoria, destacado, activo, orden, updated_at`,
         [
           nuevo.id,
           nuevo.nombre,
@@ -122,14 +125,17 @@ export class PostgresServicioRepository implements ServicioRepository {
           JSON.stringify(nuevo.glosario),
           nuevo.duracion,
           nuevo.precioDesde,
-          nuevo.precioDesdeCamioneta,
+          nuevo.precioDesdeSuv,
           nuevo.precioDesdeMoto,
           nuevo.vehiculos,
           nuevo.destacado,
           nuevo.activo,
           timestamp,
-          nuevo.duracionCamioneta,
+          nuevo.duracionSuv,
           nuevo.duracionMoto,
+          nuevo.precioDesdePickup,
+          nuevo.duracionPickup,
+          nuevo.categoria,
         ],
       );
       const row = rows[0];
@@ -150,8 +156,9 @@ export class PostgresServicioRepository implements ServicioRepository {
       const quedaActivo = cambios.activo ?? bool(actual, 'activo');
       if (cambios.destacado === true && !quedaActivo) throw new DestacadoInactivoError();
 
-      // coalesce para los campos que no admiten null; las tres duraciones y los tres precios sí (null = "sin confirmar" /
-      // "usa la de auto" / "Consultá"): ahí un flag distingue "no viene" de "viene null". Desactivar (activo = false) también
+      // coalesce para los campos que no admiten null; las cuatro duraciones, los cuatro precios y la categoría sí (null =
+      // "sin confirmar" / "usa la de auto" / "Consultá" / "sin categoría"): ahí un flag distingue "no viene" de "viene
+      // null". Desactivar (activo = false) también
       // desmarca el destacado: un servicio que no se ve en la web no puede ser el destacado.
       const { rows } = await sql.query(
         `UPDATE buddys.servicios
@@ -162,17 +169,20 @@ export class PostgresServicioRepository implements ServicioRepository {
              glosario = coalesce($6::jsonb, glosario),
              duracion_estimada = CASE WHEN $7::boolean THEN $8::text ELSE duracion_estimada END,
              precio_desde = CASE WHEN $9::boolean THEN $10::integer ELSE precio_desde END,
-             precio_desde_camioneta = CASE WHEN $11::boolean THEN $12::integer ELSE precio_desde_camioneta END,
+             precio_desde_suv = CASE WHEN $11::boolean THEN $12::integer ELSE precio_desde_suv END,
+             precio_desde_pickup = CASE WHEN $23::boolean THEN $24::integer ELSE precio_desde_pickup END,
              precio_desde_moto = CASE WHEN $13::boolean THEN $14::integer ELSE precio_desde_moto END,
              vehiculos = coalesce($18::text[], vehiculos),
              destacado = CASE WHEN $16::boolean IS FALSE THEN false ELSE coalesce($15::boolean, destacado) END,
              activo = coalesce($16::boolean, activo),
-             duracion_estimada_camioneta = CASE WHEN $19::boolean THEN $20::text ELSE duracion_estimada_camioneta END,
+             duracion_suv = CASE WHEN $19::boolean THEN $20::text ELSE duracion_suv END,
+             duracion_pickup = CASE WHEN $25::boolean THEN $26::text ELSE duracion_pickup END,
              duracion_estimada_moto = CASE WHEN $21::boolean THEN $22::text ELSE duracion_estimada_moto END,
+             categoria = CASE WHEN $27::boolean THEN $28::text ELSE categoria END,
              updated_at = $17::timestamptz
          WHERE id = $1
          RETURNING id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
-                   duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at`,
+                   duracion_suv, duracion_pickup, duracion_estimada_moto, precio_desde, precio_desde_suv, precio_desde_pickup, precio_desde_moto, vehiculos, categoria, destacado, activo, orden, updated_at`,
         [
           id,
           cambios.nombre ?? null,
@@ -184,18 +194,24 @@ export class PostgresServicioRepository implements ServicioRepository {
           cambios.duracion ?? null,
           cambios.precioDesde !== undefined,
           cambios.precioDesde ?? null,
-          cambios.precioDesdeCamioneta !== undefined,
-          cambios.precioDesdeCamioneta ?? null,
+          cambios.precioDesdeSuv !== undefined,
+          cambios.precioDesdeSuv ?? null,
           cambios.precioDesdeMoto !== undefined,
           cambios.precioDesdeMoto ?? null,
           cambios.destacado ?? null,
           cambios.activo ?? null,
           timestamp,
           cambios.vehiculos ?? null,
-          cambios.duracionCamioneta !== undefined,
-          cambios.duracionCamioneta ?? null,
+          cambios.duracionSuv !== undefined,
+          cambios.duracionSuv ?? null,
           cambios.duracionMoto !== undefined,
           cambios.duracionMoto ?? null,
+          cambios.precioDesdePickup !== undefined,
+          cambios.precioDesdePickup ?? null,
+          cambios.duracionPickup !== undefined,
+          cambios.duracionPickup ?? null,
+          cambios.categoria !== undefined,
+          cambios.categoria ?? null,
         ],
       );
       const row = rows[0];
@@ -233,14 +249,14 @@ async function listar(sql: SqlClient, soloActivos: boolean): Promise<Servicio[]>
   const { rows } = soloActivos
     ? await sql.query(
         `SELECT id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
-                duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at
+                duracion_suv, duracion_pickup, duracion_estimada_moto, precio_desde, precio_desde_suv, precio_desde_pickup, precio_desde_moto, vehiculos, categoria, destacado, activo, orden, updated_at
          FROM buddys.servicios
          WHERE activo
          ORDER BY orden, id COLLATE "C"`,
       )
     : await sql.query(
         `SELECT id, nombre, resumen, descripcion, incluye, glosario, duracion_estimada,
-                duracion_estimada_camioneta, duracion_estimada_moto, precio_desde, precio_desde_camioneta, precio_desde_moto, vehiculos, destacado, activo, orden, updated_at
+                duracion_suv, duracion_pickup, duracion_estimada_moto, precio_desde, precio_desde_suv, precio_desde_pickup, precio_desde_moto, vehiculos, categoria, destacado, activo, orden, updated_at
          FROM buddys.servicios
          ORDER BY orden, id COLLATE "C"`,
       );

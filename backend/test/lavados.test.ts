@@ -124,11 +124,12 @@ describe('POST /api/admin/lavados (Registrar lavado)', () => {
       return Object.keys((response.body.error.fields ?? {}) as object);
     };
 
-    expect(await campos({ ...LAVADO, servicioId: 'no-existe' })).toEqual(['servicioId']);
+    // Los errores del catálogo van en servicioIds (también con un servicioId suelto: vale como [servicioId]).
+    expect(await campos({ ...LAVADO, servicioId: 'no-existe' })).toEqual(['servicioIds']);
     await context.db.sql.query("UPDATE buddys.servicios SET activo = false WHERE id = 'encerado'");
-    expect(await campos({ ...LAVADO, servicioId: 'encerado' })).toEqual(['servicioId']);
+    expect(await campos({ ...LAVADO, servicioId: 'encerado' })).toEqual(['servicioIds']);
     await context.db.sql.query("UPDATE buddys.servicios SET vehiculos = '{auto}' WHERE id = 'pulido'");
-    expect(await campos({ servicioId: 'pulido', vehiculoTipo: 'moto' })).toEqual(['servicioId']);
+    expect(await campos({ servicioId: 'pulido', vehiculoTipo: 'moto' })).toEqual(['servicioIds']);
     expect(await campos({ servicioId: 'lavado-basico' })).toEqual(['vehiculoTipo']);
     expect(await campos({ ...LAVADO, monto: -1 })).toEqual(['monto']);
     expect(await campos({ ...LAVADO, monto: 10.5 })).toEqual(['monto']);
@@ -237,6 +238,7 @@ describe('GET /api/admin/lavados (planilla del día)', () => {
         { trabajador: { id: nicoId, nombre: 'Nico' }, cantidad: 1, total: 10000 },
         { trabajador: { id: anaId, nombre: 'Ana' }, cantidad: 1, total: 0 },
       ],
+      porFormaPago: [{ formaPago: null, cantidad: 4, total: 32000 }],
     });
 
     const ayer = await admin.get('/api/admin/lavados?fecha=2026-10-15');

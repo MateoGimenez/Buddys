@@ -12,7 +12,6 @@ import { MIGRATIONS_DIR, SUPABASE_STUB, migrationFiles } from './pglite.js';
 
 const DESTACADOS = '20261102100000_varios_destacados.sql';
 const DURACION = '20261102110000_duracion_por_vehiculo.sql';
-const NUEVAS = [DESTACADOS, DURACION];
 const abiertas: PGlite[] = [];
 afterEach(async () => {
   for (const pg of abiertas.splice(0)) if (!pg.closed) await pg.close();
@@ -26,7 +25,7 @@ async function baseAntes(): Promise<PGlite> {
   // eslint-disable-next-line no-restricted-syntax -- constante del propio test
   await pg.exec(SUPABASE_STUB);
   for (const file of migrationFiles()) {
-    if (NUEVAS.includes(file)) continue;
+    if (file >= DESTACADOS) break; // solo las anteriores (vehiculos_suv_pickup cambia estas columnas)
     // eslint-disable-next-line no-restricted-syntax -- migraciones versionadas
     await pg.exec(leer(file));
   }

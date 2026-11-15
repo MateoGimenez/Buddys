@@ -263,7 +263,8 @@ describe('POST /api/bookings con disponibilidad', () => {
     };
     await repo.reservar(datos, NOW);
     expect(textos[0]).toMatch(/pg_advisory_xact_lock\(7340003/);
-    expect(textos.at(-1)).toMatch(/INSERT INTO buddys\.bookings/);
+    // El INSERT va después del lock y de contar los cupos (y antes de releer el turno con sus servicios).
+    expect(textos.findIndex((texto) => texto.includes('INSERT INTO buddys.bookings'))).toBeGreaterThan(1);
     await repo.reservar(datos, NOW);
     await expect(repo.reservar(datos, NOW)).rejects.toThrow(/no tiene lugar/);
   });

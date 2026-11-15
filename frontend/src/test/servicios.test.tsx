@@ -14,9 +14,9 @@ describe('Servicios', () => {
     renderApp('/servicios');
     const lista = (await screen.findByRole('heading', { name: 'Lavado Básico' })).closest('ul') as HTMLElement;
     expect(lista).not.toHaveTextContent('$');
-    expect(lista).not.toHaveTextContent('A consultar');
+    expect(lista).not.toHaveTextContent('Consultá');
     expect(screen.getAllByText('Se ofrece').length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: 'Editar precios' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Editar' })).toBeNull();
   });
 
   it('el encargado sigue viendo los precios', async () => {

@@ -1,4 +1,7 @@
-export const VEHICULO_TIPOS = ['auto', 'camioneta', 'moto'] as const;
+import type { FormaDePago } from './comprobantes.js';
+
+/** Tipos de vehículo, en orden canónico. 'suv' y 'pickup' reemplazaron a 'camioneta' (migración vehiculos_suv_pickup). */
+export const VEHICULO_TIPOS = ['auto', 'suv', 'pickup', 'moto'] as const;
 export const FRANJAS = ['manana', 'tarde'] as const;
 export const ESTADOS = ['pendiente', 'confirmado', 'completado', 'cancelado'] as const;
 /** web = pedido de turno; mostrador = lavado registrado en el panel ("Registrar lavado"), nace completado. */
@@ -8,6 +11,28 @@ export type VehiculoTipo = (typeof VEHICULO_TIPOS)[number];
 export type Franja = (typeof FRANJAS)[number];
 export type Estado = (typeof ESTADOS)[number];
 export type Origen = (typeof ORIGENES)[number];
+
+/** Nombre visible de cada tipo de vehículo (avisos, comprobantes, mensajes de error). */
+export const VEHICULO_NOMBRES: Readonly<Record<VehiculoTipo, string>> = {
+  auto: 'Auto',
+  suv: 'SUV',
+  pickup: 'Pick-up',
+  moto: 'Moto',
+};
+
+/** Cuántos servicios distintos puede llevar un mismo lavado (un auto). */
+export const MAX_SERVICIOS_LAVADO = 10;
+
+/**
+ * Un servicio de un turno o lavado (tabla lavado_servicios), en el orden en que se eligió. `precioLista` es la foto del
+ * precio de lista de ese servicio para el vehículo al momento de registrarlo: null si era "Consultá", si no se conoce
+ * (turnos anteriores a la tabla) o para quien no ve importes (el empleado; ver domain/permisos.ts, vistaDeTurno).
+ */
+export interface ServicioDelTurno {
+  id: string;
+  nombre: string;
+  precioLista: number | null;
+}
 
 /** Datos ya validados de una solicitud de turno (lo que se guarda). */
 export interface NewBooking {
@@ -69,6 +94,16 @@ export interface Booking extends Omit<NewBooking, 'telefono'> {
   monto: number | null;
   /** Quién hizo el trabajo; solo en completados. null = sin asignar (o la persona se borró). */
   trabajador: Trabajador | null;
+  /**
+   * Cómo pagó el cliente (efectivo, transferencia, debito, credito, otro). null = sin indicar. No es un importe: la
+   * ven todos los roles. La usa el cierre de caja de la planilla de lavados.
+   */
+  formaPago: FormaDePago | null;
+  /**
+   * Los servicios del turno (1 a MAX_SERVICIOS_LAVADO), en el orden elegido. El primero es el principal, el mismo que
+   * `servicioId`. Un turno web o viejo tiene uno solo.
+   */
+  servicios: ServicioDelTurno[];
   createdAt: string;
   updatedAt: string;
 }
@@ -140,6 +175,13 @@ export interface ActualizacionTurno {
    */
   monto?: number | null;
   trabajadorId?: string | null;
+  /** Forma de pago (undefined = no se toca; null = sin indicar). No depende del estado del turno. */
+  formaPago?: FormaDePago | null;
+  /**
+   * Servicios del turno (undefined = no se tocan). Reemplaza la lista entera y el principal (el primero). Los que ya
+   * estaban conservan su foto del precio de lista; los nuevos toman el precio de lista vigente para el vehículo.
+   */
+  servicioIds?: string[];
 }
 
 /**
@@ -153,7 +195,8 @@ export interface NuevoLavado {
   vehiculoTipo: VehiculoTipo;
   /** Modelo y/o patente, texto libre. */
   vehiculoModelo: string | null;
-  servicioId: string;
+  /** Ids de servicios activos y ofrecidos para el vehículo (1 a MAX_SERVICIOS_LAVADO, sin repetidos). El primero es el principal. */
+  servicioIds: string[];
   /** YYYY-MM-DD: el día del lavado. */
   fecha: string;
   franja: Franja;
@@ -162,6 +205,28 @@ export interface NuevoLavado {
   /** Quién lavó (perfil activo). */
   trabajadorId: string;
   notasInternas: string | null;
+  /** Cómo pagó el cliente; null = sin indicar. */
+  formaPago: FormaDePago | null;
+  /** Quién lo registró (la sesión): es quien lo puede deshacer en los primeros minutos. */
+  registradoPor: string;
+  /** Id que generó el panel (cola sin conexión); null si no mandó. Único: un reintento no registra otro. */
+  idLocal: string | null;
+}
+
+/** Lo que hace falta para decidir si un lavado de mostrador se puede deshacer (DELETE /api/admin/lavados/:id). */
+export interface RegistroDeLavado {
+  /** Quién lo registró; null en los lavados anteriores a la columna o si la persona se borró. */
+  registradoPor: string | null;
+  /** ISO 8601 UTC. */
+  createdAt: string;
+}
+
+/** Una fila del cierre de caja: lavados del día agrupados por forma de pago (null = sin indicar). */
+export interface TotalFormaDePago {
+  formaPago: FormaDePago | null;
+  cantidad: number;
+  /** Suma de los montos cargados (los sin monto suman 0). */
+  total: number;
 }
 
 /** Estados en los que un turno ya no se puede reprogramar. */
@@ -182,6 +247,10 @@ export interface Reprogramacion {
   estado?: Estado;
   /** Si viene, se cambia la nota interna en la misma escritura (null = borrarla). */
   notasInternas?: string | null;
+  /** Si viene, se cambia la forma de pago en la misma escritura (null = sin indicar). */
+  formaPago?: FormaDePago | null;
+  /** Si viene, se reemplazan los servicios en la misma transacción (como en ActualizacionTurno). */
+  servicioIds?: string[];
 }
 
 /** El turno está cancelado o completado: no se le puede cambiar la fecha. */
@@ -205,10 +274,22 @@ export interface BookingRepository {
    * sin guardar nada. Dos altas simultáneas por el último lugar no pueden entrar las dos.
    */
   reservar(input: NewBooking, now: Date): Promise<Booking>;
-  /** Guarda un lavado de mostrador ya completado, con su cobro. No mira ni ocupa cupos de la agenda. */
-  registrarLavado(input: NuevoLavado, now: Date): Promise<Booking>;
+  /**
+   * Guarda un lavado de mostrador ya completado, con su cobro. No mira ni ocupa cupos de la agenda. undefined si ya
+   * existe un lavado con ese idLocal (no guarda nada: ON CONFLICT DO NOTHING; se busca con lavadoPorIdLocal).
+   */
+  registrarLavado(input: NuevoLavado, now: Date): Promise<Booking | undefined>;
+  /** El lavado con ese id del panel (idLocal) y quién lo registró. undefined si no hay. */
+  lavadoPorIdLocal(idLocal: string): Promise<{ lavado: Booking; registradoPor: string | null } | undefined>;
   /** Los lavados de mostrador con fecha `fecha`, en el orden en que se registraron. */
   lavadosDelDia(fecha: string): Promise<Booking[]>;
+  /**
+   * Cierre de caja: los lavados de mostrador no cancelados de `fecha`, agrupados (en SQL) por forma de pago. Una
+   * fila por forma usada ese día; sin orden garantizado (lo pone el servicio, que sabe quién mira).
+   */
+  formasDePagoDelDia(fecha: string): Promise<TotalFormaDePago[]>;
+  /** Quién registró un lavado de mostrador y cuándo. undefined si no existe, no es de mostrador o el id no es UUID. */
+  registroDeLavado(id: string): Promise<RegistroDeLavado | undefined>;
   /** Lo público del turno para la página de seguimiento. undefined si no existe (o el id no es un UUID). */
   seguimiento(id: string): Promise<SeguimientoTurno | undefined>;
   /** Confirmados con fecha de agenda `fecha` y sin recordatorio enviado, por orden de llegada. */

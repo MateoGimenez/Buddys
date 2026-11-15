@@ -1,4 +1,4 @@
-import type { Franja, VehiculoTipo, Rol, Servicio } from '../api/types';
+import type { Franja, FormaPago, VehiculoTipo, Rol, Servicio } from '../api/types';
 
 /** Zona horaria del taller (la misma que usa el backend para "hoy"). */
 export const ZONA = 'America/Argentina/La_Rioja';
@@ -87,14 +87,85 @@ export function hora(iso: string): string {
   );
 }
 
-export const NOMBRE_VEHICULO: Record<VehiculoTipo, string> = { auto: 'Auto', camioneta: 'Camioneta', moto: 'Moto' };
+export const NOMBRE_VEHICULO: Record<VehiculoTipo, string> = { auto: 'Auto', suv: 'SUV', pickup: 'Pick-up', moto: 'Moto' };
 export const NOMBRE_FRANJA: Record<Franja, string> = { manana: 'Mañana', tarde: 'Tarde' };
 export const NOMBRE_ROL: Record<Rol, string> = { superadmin: 'Dueño (superadmin)', admin: 'Encargado (admin)', empleado: 'Empleado' };
 
+/** El campo de precio de cada vehículo (el de auto es precioDesde). */
+export const CAMPO_PRECIO = {
+  auto: 'precioDesde',
+  suv: 'precioDesdeSuv',
+  pickup: 'precioDesdePickup',
+  moto: 'precioDesdeMoto',
+} as const satisfies Record<VehiculoTipo, keyof Servicio>;
+
+const CAMPO_DURACION = {
+  auto: 'duracion',
+  suv: 'duracionSuv',
+  pickup: 'duracionPickup',
+  moto: 'duracionMoto',
+} as const satisfies Record<VehiculoTipo, keyof Servicio>;
+
+/** Precio de lista para ese vehículo. null = "Consultá": nunca cae al de auto. */
 export function precioPara(servicio: Servicio, vehiculo: VehiculoTipo): number | null {
-  if (vehiculo === 'camioneta') return servicio.precioDesdeCamioneta;
-  if (vehiculo === 'moto') return servicio.precioDesdeMoto;
-  return servicio.precioDesde;
+  return servicio[CAMPO_PRECIO[vehiculo]];
+}
+
+export function duracionPara(servicio: Servicio, vehiculo: VehiculoTipo): string | null {
+  return servicio[CAMPO_DURACION[vehiculo]];
+}
+
+/** Orden de las categorías en Registrar y en Servicios; las que no están acá van después, por nombre. */
+export const CATEGORIAS_SERVICIO = ['Lavado', 'Interior', 'Pulido', 'Protección', 'Pre venta', 'Motos'] as const;
+export const SIN_CATEGORIA = 'Otros';
+
+/** Agrupa servicios por categoría en el orden canónico, respetando el orden de cada lista dentro del grupo. */
+export function porCategoria<T extends { categoria: string | null }>(lista: T[]): { categoria: string; items: T[] }[] {
+  const grupos = new Map<string, T[]>();
+  for (const s of lista) {
+    const c = s.categoria?.trim() || SIN_CATEGORIA;
+    const g = grupos.get(c);
+    if (g) g.push(s);
+    else grupos.set(c, [s]);
+  }
+  const rango = (c: string) => {
+    const i = (CATEGORIAS_SERVICIO as readonly string[]).indexOf(c);
+    return i === -1 ? (c === SIN_CATEGORIA ? 1000 : 100) : i;
+  };
+  return [...grupos.entries()]
+    .sort(([a], [b]) => rango(a) - rango(b) || a.localeCompare(b, 'es'))
+    .map(([categoria, items]) => ({ categoria, items }));
+}
+
+/** Suma de lista de varios servicios para un vehículo. Los "Consultá" no suman: vuelven aparte para avisarlos. */
+export function sumaDeLista(servicios: Servicio[], vehiculo: VehiculoTipo): { total: number; aConsultar: Servicio[] } {
+  let total = 0;
+  const aConsultar: Servicio[] = [];
+  for (const s of servicios) {
+    const p = precioPara(s, vehiculo);
+    if (p === null) aConsultar.push(s);
+    else total += p;
+  }
+  return { total, aConsultar };
+}
+
+/** "Nivel II + Motor". */
+export function unirServicios(nombres: string[]): string {
+  return nombres.join(' + ');
+}
+
+/**
+ * Los servicios de un lavado, para mostrar. Usa `servicios` del turno; si no viniera (respuesta vieja), el principal
+ * con el nombre del catálogo.
+ */
+export function nombresDelTurno(t: { servicioId: string; servicios?: { nombre: string }[] | undefined }, catalogo?: Map<string, string>): string {
+  if (t.servicios?.length) return unirServicios(t.servicios.map((s) => s.nombre));
+  return catalogo?.get(t.servicioId) ?? t.servicioId;
+}
+
+/** "1 servicio", "3 servicios". */
+export function cuantosServicios(n: number): string {
+  return n === 1 ? '1 servicio' : `${String(n)} servicios`;
 }
 
 /** Solo dígitos -> entero, o null si está vacío. */
@@ -132,4 +203,23 @@ export function slug(texto: string): string {
     .slice(0, 64)
     // Después de recortar: si el corte cae en un guion, el id terminaría en "-" y el backend lo rechaza.
     .replace(/^-+|-+$/g, '');
+}
+
+export const NOMBRE_PAGO: Record<FormaPago, string> = {
+  efectivo: 'Efectivo',
+  transferencia: 'Transferencia',
+  debito: 'Débito',
+  credito: 'Crédito',
+  otro: 'Otro',
+};
+
+/** Hora del taller desde la que un lavado cuenta como "tarde" (la misma regla que el backend). */
+export const HORA_TARDE = 14;
+
+/** La franja que el backend le pondría a un lavado anotado en este momento. */
+export function franjaSegunHora(ahora: Date = new Date()): Franja {
+  const h = Number(
+    new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: ZONA }).format(ahora),
+  );
+  return h % 24 < HORA_TARDE ? 'manana' : 'tarde';
 }

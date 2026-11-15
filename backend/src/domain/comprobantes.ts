@@ -4,6 +4,8 @@
  * para que no cambien si después se edita el turno. Un turno tiene a lo sumo uno.
  */
 
+import { VEHICULO_NOMBRES } from './booking.js';
+
 export const FORMAS_DE_PAGO = ['efectivo', 'transferencia', 'debito', 'credito', 'otro'] as const;
 export type FormaDePago = (typeof FORMAS_DE_PAGO)[number];
 
@@ -27,7 +29,8 @@ export interface Comprobante {
 }
 
 export interface DatosComprobante {
-  formaPago: FormaDePago;
+  /** null = la que tiene cargada el turno (la del lavado); si el turno tampoco tiene, FormaDePagoFaltanteError. */
+  formaPago: FormaDePago | null;
   notas: string | null;
 }
 
@@ -53,6 +56,14 @@ export class TurnoSinCobroError extends Error {
   }
 }
 
+/** No se mandó la forma de pago y el turno no tiene una cargada. */
+export class FormaDePagoFaltanteError extends Error {
+  constructor() {
+    super('Falta la forma de pago.');
+    this.name = 'FormaDePagoFaltanteError';
+  }
+}
+
 /** El turno tiene un comprobante emitido: no se puede borrar. */
 export class TurnoConComprobanteError extends Error {
   constructor() {
@@ -62,7 +73,10 @@ export class TurnoConComprobanteError extends Error {
 }
 
 export interface ComprobanteRepository {
-  /** Idempotente por turno. Lanza TurnoNoEncontradoError y TurnoSinCobroError. */
+  /**
+   * Idempotente por turno. Lanza TurnoNoEncontradoError, TurnoSinCobroError y FormaDePagoFaltanteError (sin
+   * formaPago y el turno no tiene una cargada).
+   */
   emitir(
     bookingId: string,
     datos: DatosComprobante,
@@ -80,10 +94,13 @@ export function codigoDeComprobante(numero: number): string {
 
 /**
  * Vehículo del comprobante: el modelo que escribió el cliente (ej.: "Toyota Corolla 2020") o, si no puso ninguno, el
- * tipo ("Camioneta").
+ * nombre visible del tipo ("SUV", "Pick-up"; ver VEHICULO_NOMBRES).
  */
 export function textoDeVehiculo(modelo: string | null, tipo: string): string {
   const limpio = modelo?.trim() ?? '';
   if (limpio !== '') return limpio;
+  const nombres: Readonly<Partial<Record<string, string>>> = VEHICULO_NOMBRES;
+  const nombre = nombres[tipo];
+  if (nombre !== undefined) return nombre;
   return tipo === '' ? tipo : tipo.charAt(0).toUpperCase() + tipo.slice(1);
 }

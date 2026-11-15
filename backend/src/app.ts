@@ -113,7 +113,7 @@ export function createApp(deps: AppDeps): Express {
     logger,
     now,
   });
-  const agenda = new AgendaService({ bookings, perfiles, logger, now });
+  const agenda = new AgendaService({ bookings, servicios, perfiles, logger, now });
   const lavados = new LavadoService({ bookings, servicios, perfiles, logger, now });
   const estadisticas = new EstadisticasService({ estadisticas: estadisticasRepo, now });
   const servicioService = new ServicioService({ servicios, logger, now });

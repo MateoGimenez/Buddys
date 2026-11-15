@@ -7,14 +7,18 @@ import {
 } from '../domain/booking.js';
 import { fechaConfirmadaRange, MAX_DAYS_CONFIRMADA } from '../domain/booking-dates.js';
 import type { PerfilRepository } from '../domain/perfil.js';
-import { puedeCambiarEstado, puedeRegistrarCobro, puedeReprogramar } from '../domain/permisos.js';
+import type { ServicioRepository } from '../domain/servicios.js';
+import { puedeCambiarEstado, puedeCorregirCobro, puedeRegistrarCobro, puedeReprogramar } from '../domain/permisos.js';
 import { AppError } from '../lib/errors.js';
 import type { Logger } from '../lib/logger.js';
 import type { CambiosTurno } from '../schemas/admin.js';
 import type { UsuarioSesion } from './auth.js';
+import { serviciosDelLavado } from './servicios.js';
 
 export interface AgendaServiceDeps {
   bookings: BookingRepository;
+  /** Para comprobar que los servicios nuevos de un turno (servicioIds) estén activos y se ofrezcan para su vehículo. */
+  servicios: ServicioRepository;
   /** Para comprobar que quien hizo el trabajo existe y está activo. */
   perfiles: PerfilRepository;
   logger: Logger;
@@ -30,6 +34,8 @@ export const EMPLEADO_SIN_MONTO_MESSAGE = 'Con tu rol no podés cargar el monto 
 export const EMPLEADO_OTRO_TRABAJADOR_MESSAGE = 'Con tu rol, quien hizo el trabajo sos vos: no podés elegir a otra persona.';
 export const EMPLEADO_COBRO_COMPLETADO_MESSAGE = 'Con tu rol no podés cambiar el cobro de un turno ya completado.';
 export const TRABAJADOR_INVALIDO_MESSAGE = 'Elegí una persona activa del panel.';
+export const EMPLEADO_FORMA_PAGO_MESSAGE = 'Con tu rol no podés cambiar la forma de pago: la corrige un administrador.';
+export const EMPLEADO_SERVICIOS_MESSAGE = 'Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador.';
 
 /** Errores por campo cuando se manda cobro (con valor) para un turno que no queda completado. */
 function erroresCobroSinCompletar(
@@ -65,12 +71,27 @@ export class AgendaService {
    *  - el empleado, al completar un turno, queda él mismo como trabajador; 403 si manda un monto, a otra persona o si
    *    toca el cobro de un turno que ya estaba completado;
    *  - si el estado pasa a algo distinto de completado, monto y trabajador se borran (lo hace el repositorio);
+   *  - la forma de pago (formaPago) la cambia quien corrige el cobro (cobro.corregir; 403 para el empleado), en
+   *    cualquier estado, y no mueve updated_at;
+   *  - los servicios (servicioIds: 1 a 10, sin repetidos, activos y ofrecidos para el vehículo del turno; 400 en
+   *    fields.servicioIds) también los cambia quien corrige el cobro, en cualquier estado: reemplazan la lista y el
+   *    principal (el primero) y mueven updated_at (el servicio se ve en el seguimiento). La misma lista de antes no
+   *    escribe nada;
    *  - todo se valida antes de escribir: o se guarda todo o nada.
    * Cargar o corregir solo el cobro no mueve updated_at (es el "actualizado el" que ve el cliente).
    */
   async modificar(actor: UsuarioSesion, id: string, cambios: CambiosTurno): Promise<Booking> {
-    const { estado, confirmada, notasInternas, monto, trabajadorId } = cambios;
-    const nota = notasInternas === undefined ? {} : { notasInternas };
+    const { estado, confirmada, notasInternas, monto, trabajadorId, formaPago, servicioIds } = cambios;
+    if (formaPago !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_FORMA_PAGO_MESSAGE);
+    if (servicioIds !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_SERVICIOS_MESSAGE);
+    // Los servicios se validan antes de escribir nada (o se guarda todo o nada).
+    const servicios = servicioIds === undefined ? undefined : await this.serviciosNuevos(id, servicioIds);
+    // La forma de pago y los servicios van junto con la nota en cada escritura (no dependen del estado del turno).
+    const nota = {
+      ...(notasInternas !== undefined && { notasInternas }),
+      ...(formaPago !== undefined && { formaPago }),
+      ...(servicios !== undefined && { servicioIds: servicios }),
+    };
 
     // Con fecha/franja: reprogramar. Un turno que se reprograma no está (ni queda) completado: no admite cobro.
     if (confirmada !== undefined) {
@@ -89,6 +110,12 @@ export class AgendaService {
     const now = this.deps.now();
 
     if (!tocaCobro && !empleadoCompleta) {
+      // Solo servicioIds, y son los mismos que ya tenía: no se escribe (el trigger movería updated_at).
+      if (estado === undefined && Object.keys(nota).length === 0) {
+        const actual = await this.deps.bookings.find(id);
+        if (actual === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
+        return actual;
+      }
       // Sin cobro de por medio: estado y/o nota, como siempre (el repositorio borra el cobro si el turno sale de completado).
       const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota }, now);
       if (booking === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
@@ -127,7 +154,8 @@ export class AgendaService {
     const igualCobro =
       (cobro.monto === undefined || cobro.monto === actual.monto) &&
       (cobro.trabajadorId === undefined || cobro.trabajadorId === (actual.trabajador?.id ?? null));
-    if (igualEstado && notasInternas === undefined && igualCobro) return actual;
+    const igualForma = formaPago === undefined || formaPago === actual.formaPago;
+    if (igualEstado && notasInternas === undefined && igualCobro && igualForma && servicios === undefined) return actual;
 
     const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota, ...cobro }, now);
     if (booking === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
@@ -135,6 +163,20 @@ export class AgendaService {
       this.deps.logger.info(`Cobro de turno actualizado id=${booking.id} por=${actor.id}`); // sin el importe
     }
     return booking;
+  }
+
+  /**
+   * Los servicios nuevos del turno, ya verificados contra el catálogo y el vehículo del turno (400 en
+   * fields.servicioIds; 404 si el turno no existe). undefined si son los mismos que ya tiene, en el mismo orden: no hay
+   * nada que escribir.
+   */
+  private async serviciosNuevos(id: string, servicioIds: readonly string[]): Promise<string[] | undefined> {
+    const actual = await this.deps.bookings.find(id);
+    if (actual === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
+    const elegidos = await serviciosDelLavado(this.deps.servicios, servicioIds, actual.vehiculoTipo);
+    const ids = elegidos.map((servicio) => servicio.id);
+    const iguales = ids.length === actual.servicios.length && ids.every((sid, i) => actual.servicios[i]?.id === sid);
+    return iguales ? undefined : ids;
   }
 
   /**

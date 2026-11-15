@@ -2,9 +2,9 @@ import { FileDown, Plus, X } from 'lucide-react';
 import { useState, type SyntheticEvent } from 'react';
 import { ApiError, mensajeDeError } from '../api/client';
 import * as ep from '../api/endpoints';
-import { ESTADOS_PRESUPUESTO, type EstadoPresupuesto, type Presupuesto } from '../api/types';
+import { ESTADOS_PRESUPUESTO, VEHICULOS, type EstadoPresupuesto, type Presupuesto } from '../api/types';
 import { AreaTexto, Aviso, Boton, Campo, Cargando, Encabezado, Selector, Vacio } from '../components/ui';
-import { decimalDesdeTexto, enteroDesdeTexto, fechaCorta, miles, pesos } from '../lib/format';
+import { NOMBRE_VEHICULO, decimalDesdeTexto, enteroDesdeTexto, fechaCorta, miles, pesos } from '../lib/format';
 import { abrirPdf } from '../lib/pdf';
 import { useCarga } from '../lib/useCarga';
 
@@ -181,7 +181,20 @@ function NuevoPresupuesto({ onListo, onCancelar }: { onListo: () => void; onCanc
       <Campo etiqueta="Cliente" value={cliente} maxLength={80} onChange={(e) => { setCliente(e.target.value); }} error={errores.clienteNombre} />
       <div className="fila-campos">
         <Campo etiqueta="Teléfono (opcional)" type="tel" inputMode="tel" value={telefono} onChange={(e) => { setTelefono(e.target.value); }} error={errores.clienteTelefono} />
-        <Campo etiqueta="Vehículo (opcional)" value={vehiculo} maxLength={80} onChange={(e) => { setVehiculo(e.target.value); }} error={errores.vehiculo} />
+        <Campo
+          etiqueta="Vehículo (opcional)"
+          list="presupuesto-vehiculos"
+          placeholder="Ej.: SUV Toyota SW4"
+          value={vehiculo}
+          maxLength={80}
+          onChange={(e) => { setVehiculo(e.target.value); }}
+          error={errores.vehiculo}
+        />
+        <datalist id="presupuesto-vehiculos">
+          {VEHICULOS.map((v) => (
+            <option key={v} value={NOMBRE_VEHICULO[v]} />
+          ))}
+        </datalist>
       </div>
 
       <fieldset className="items">

@@ -361,6 +361,9 @@ describe('POST /api/bookings: logging', () => {
       delete: () => Promise.reject(new Error('x')),
       registrarLavado: () => Promise.reject(new Error('x')),
       lavadosDelDia: () => Promise.reject(new Error('x')),
+      formasDePagoDelDia: () => Promise.reject(new Error('x')),
+      registroDeLavado: () => Promise.reject(new Error('x')),
+      lavadoPorIdLocal: () => Promise.reject(new Error('x')),
     };
     const logger = new MemoryLogger();
     const data = {

@@ -142,7 +142,7 @@ async function equipo() {
 async function turno(context: TestContext, extra: { estado?: string; modelo?: string | null; nombre?: string } = {}): Promise<string> {
   const { rows } = await context.db.sql.query(
     `INSERT INTO buddys.bookings (nombre, telefono, vehiculo_tipo, vehiculo_modelo, servicio_id, fecha_preferida, franja, estado)
-     VALUES ($1, '12345678', 'camioneta', $2, 'pulido', '2026-10-16', 'manana', $3) RETURNING id::text AS id`,
+     VALUES ($1, '12345678', 'pickup', $2, 'pulido', '2026-10-16', 'manana', $3) RETURNING id::text AS id`,
     [extra.nombre ?? 'Juan Pérez', extra.modelo === undefined ? 'Toyota Hilux 2021' : extra.modelo, extra.estado ?? 'confirmado'],
   );
   return String(rows[0]?.id);
@@ -195,7 +195,7 @@ describe('comprobantes', () => {
     const b = await completado(context, admin, 200, { modelo: null });
     await admin.post(`/api/admin/bookings/${a}/comprobante`, { formaPago: 'otro' });
     const r = await admin.post(`/api/admin/bookings/${b}/comprobante`, { formaPago: 'credito' });
-    expect(r.body.comprobante).toMatchObject({ codigo: 'R-0002', vehiculo: 'Camioneta', formaPago: 'credito', notas: null });
+    expect(r.body.comprobante).toMatchObject({ codigo: 'R-0002', vehiculo: 'Pick-up', formaPago: 'credito', notas: null });
   });
 
   it('400 "Primero cargá el cobro del trabajo." si no está completado o no tiene monto', async () => {

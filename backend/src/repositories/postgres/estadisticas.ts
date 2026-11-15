@@ -153,18 +153,34 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
   }
 
   async porServicio({ desde, hasta }: Rango): Promise<FilaServicio[]> {
+    // Cuenta desde lavado_servicios: un lavado con varios servicios suma un pedido en CADA uno (migración
+    // lavado_varios_servicios). Los ingresos de un turno se reparten entre sus servicios en proporción a la foto del
+    // precio de lista (si todos la tienen y suman más de 0); si no, en partes iguales. Así la suma de los ingresos por
+    // servicio da (salvo el redondeo de cada fila) lo cobrado, sin contar dos veces un mismo monto.
     // Todos los servicios con LEFT JOIN: uno activo sin pedidos sale con ceros; uno desactivado solo si tuvo pedidos.
     const { rows } = await this.sql.query(
-      `SELECT s.id AS servicio_id, s.nombre,
-              (count(b.id) FILTER (WHERE b.estado <> 'cancelado'))::int AS pedidos,
-              (count(b.id) FILTER (WHERE b.estado = 'completado'))::int AS completados,
-              coalesce(sum(b.monto) FILTER (WHERE b.estado = 'completado'), 0)::float8 AS ingresos
+      `WITH partes AS (
+         SELECT ls.servicio_id, b.estado,
+                CASE WHEN b.estado = 'completado' AND b.monto IS NOT NULL THEN
+                  b.monto::float8 * CASE
+                    WHEN count(*) OVER w = count(ls.precio_lista) OVER w AND sum(ls.precio_lista) OVER w > 0
+                      THEN ls.precio_lista::float8 / (sum(ls.precio_lista) OVER w)::float8
+                    ELSE 1.0::float8 / (count(*) OVER w)::float8
+                  END
+                END AS ingreso
+         FROM buddys.bookings b
+         JOIN buddys.lavado_servicios ls ON ls.booking_id = b.id
+         WHERE coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
+         WINDOW w AS (PARTITION BY ls.booking_id)
+       )
+       SELECT s.id AS servicio_id, s.nombre,
+              (count(p.servicio_id) FILTER (WHERE p.estado <> 'cancelado'))::int AS pedidos,
+              (count(p.servicio_id) FILTER (WHERE p.estado = 'completado'))::int AS completados,
+              round(coalesce(sum(p.ingreso), 0))::float8 AS ingresos
        FROM buddys.servicios s
-       LEFT JOIN buddys.bookings b
-         ON b.servicio_id = s.id
-        AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
+       LEFT JOIN partes p ON p.servicio_id = s.id
        GROUP BY s.id, s.nombre, s.activo, s.orden
-       HAVING s.activo OR count(b.id) FILTER (WHERE b.estado <> 'cancelado') > 0
+       HAVING s.activo OR count(p.servicio_id) FILTER (WHERE p.estado <> 'cancelado') > 0
        ORDER BY pedidos DESC, completados DESC, s.orden, s.id`,
       [desde, hasta],
     );
@@ -215,11 +231,13 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
     return rows.map((row) => ({ dia: int(row, 'dia'), manana: int(row, 'manana'), tarde: int(row, 'tarde') }));
   }
 
+  /** Por servicio, desde lavado_servicios: un lavado con varios servicios cuenta en cada uno. */
   async misServicios(perfilId: string, { desde, hasta }: Rango): Promise<MisTrabajos['porServicio']> {
     const { rows } = await this.sql.query(
       `SELECT s.id AS servicio_id, s.nombre, count(*)::int AS completados
        FROM buddys.bookings b
-       JOIN buddys.servicios s ON s.id = b.servicio_id
+       JOIN buddys.lavado_servicios ls ON ls.booking_id = b.id
+       JOIN buddys.servicios s ON s.id = ls.servicio_id
        WHERE b.estado = 'completado' AND b.trabajador_id = $3::uuid
          AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
        GROUP BY s.id, s.nombre

@@ -19,7 +19,10 @@ afterEach(closeAllContexts);
 
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const IDS_INICIALES = ['lavado-basico', 'lavado-premium', 'pulido', 'encerado', 'restauracion-opticas'];
-const CAMPOS_PUBLICOS = ['descripcion', 'destacado', 'duracion', 'duracionCamioneta', 'duracionMoto', 'glosario', 'id', 'incluye', 'nombre', 'precioDesde', 'precioDesdeCamioneta', 'precioDesdeMoto', 'resumen', 'vehiculos'];
+const CAMPOS_PUBLICOS = ['categoria', 'descripcion', 'destacado', 'duracion', 'duracionSuv', 'duracionPickup', 'duracionMoto', 'glosario', 'id', 'incluye', 'nombre', 'precioDesde', 'precioDesdeSuv', 'precioDesdePickup', 'precioDesdeMoto', 'resumen', 'vehiculos'].sort();
+/** Los vehículos de los servicios heredados después de la migración vehiculos_suv_pickup ('camioneta' pasó a 'suv'). */
+const VEHICULOS_HEREDADOS = ['auto', 'suv', 'moto'];
+const CUATRO = ['auto', 'suv', 'pickup', 'moto'];
 const CAMPOS_PANEL = [...CAMPOS_PUBLICOS, 'activo', 'orden', 'updatedAt'].sort();
 
 function nuevoServicio(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -111,12 +114,15 @@ describe('POST /api/admin/servicios', () => {
       incluye: [],
       glosario: [],
       duracion: null,
-      duracionCamioneta: null,
+      duracionSuv: null,
+      duracionPickup: null,
       duracionMoto: null,
       precioDesde: null,
-      precioDesdeCamioneta: null,
+      precioDesdeSuv: null,
+      precioDesdePickup: null,
       precioDesdeMoto: null,
-      vehiculos: ['auto', 'camioneta', 'moto'],
+      vehiculos: CUATRO,
+      categoria: null,
       destacado: false,
       activo: true,
       orden: 60,
@@ -149,14 +155,14 @@ describe('POST /api/admin/servicios', () => {
     ]);
   });
 
-  it('crea con la duración de camioneta y de moto (y las recorta)', async () => {
+  it('crea con la duración de SUV, pick-up y moto (y las recorta)', async () => {
     const { client } = await editor();
     const response = await client.post(
       '/api/admin/servicios',
-      nuevoServicio({ duracion: '2 h', duracionCamioneta: '  3 h ', duracionMoto: '' }),
+      nuevoServicio({ duracion: '2 h', duracionSuv: '  3 h ', duracionMoto: '' }),
     );
     expect(response.status).toBe(201);
-    expect(response.body.servicio).toMatchObject({ duracion: '2 h', duracionCamioneta: '3 h', duracionMoto: null });
+    expect(response.body.servicio).toMatchObject({ duracion: '2 h', duracionSuv: '3 h', duracionMoto: null });
   });
 
   const invalid: [label: string, body: Record<string, unknown>, field: string][] = [
@@ -181,10 +187,10 @@ describe('POST /api/admin/servicios', () => {
     ['precio negativo', nuevoServicio({ precioDesde: -1 }), 'precioDesde'],
     ['precio de 100.000.000', nuevoServicio({ precioDesde: 100_000_000 }), 'precioDesde'],
     ['precio como texto', nuevoServicio({ precioDesde: '25000' }), 'precioDesde'],
-    ['precio de camioneta con decimales', nuevoServicio({ precioDesdeCamioneta: 1500.5 }), 'precioDesdeCamioneta'],
-    ['precio de camioneta negativo', nuevoServicio({ precioDesdeCamioneta: -1 }), 'precioDesdeCamioneta'],
-    ['precio de camioneta de 100.000.000', nuevoServicio({ precioDesdeCamioneta: 100_000_000 }), 'precioDesdeCamioneta'],
-    ['precio de camioneta como texto', nuevoServicio({ precioDesdeCamioneta: '25000' }), 'precioDesdeCamioneta'],
+    ['precio de SUV con decimales', nuevoServicio({ precioDesdeSuv: 1500.5 }), 'precioDesdeSuv'],
+    ['precio de SUV negativo', nuevoServicio({ precioDesdeSuv: -1 }), 'precioDesdeSuv'],
+    ['precio de SUV de 100.000.000', nuevoServicio({ precioDesdeSuv: 100_000_000 }), 'precioDesdeSuv'],
+    ['precio de SUV como texto', nuevoServicio({ precioDesdeSuv: '25000' }), 'precioDesdeSuv'],
     ['precio de moto con decimales', nuevoServicio({ precioDesdeMoto: 0.5 }), 'precioDesdeMoto'],
     ['precio de moto negativo', nuevoServicio({ precioDesdeMoto: -1 }), 'precioDesdeMoto'],
     ['precio de moto de 100.000.000', nuevoServicio({ precioDesdeMoto: 100_000_000 }), 'precioDesdeMoto'],
@@ -197,7 +203,7 @@ describe('POST /api/admin/servicios', () => {
     ['control C0 en la descripción', nuevoServicio({ descripcion: `a${String.fromCharCode(0)}b` }), 'descripcion'],
     ['control C1 en un ítem', nuevoServicio({ incluye: [`a${String.fromCharCode(0x9b)}b`] }), 'incluye.0'],
     ['tab en el término', nuevoServicio({ glosario: [{ termino: 'a\tb', significado: 'c' }] }), 'glosario.0.termino'],
-    ['duración de camioneta de 61 caracteres', nuevoServicio({ duracionCamioneta: 'x'.repeat(61) }), 'duracionCamioneta'],
+    ['duración de SUV de 61 caracteres', nuevoServicio({ duracionSuv: 'x'.repeat(61) }), 'duracionSuv'],
     ['duración de moto como número', nuevoServicio({ duracionMoto: 3 }), 'duracionMoto'],
     ['control en la duración', nuevoServicio({ duracion: `1${String.fromCharCode(27)}h` }), 'duracion'],
     ['destacado e inactivo a la vez', nuevoServicio({ destacado: true, activo: false }), 'destacado'],
@@ -283,17 +289,17 @@ describe('PATCH /api/admin/servicios/:id', () => {
     expect(destacados.map((s) => s.id)).toEqual(['lavado-premium', 'encerado']);
   });
 
-  it('edita la duración de camioneta y de moto; null las borra (usan la de auto) y lo que no viene no cambia', async () => {
+  it('edita la duración de SUV y de moto; null las borra (usan la de auto) y lo que no viene no cambia', async () => {
     const { context, client } = await editor();
-    const response = await client.patch('/api/admin/servicios/pulido', { duracionCamioneta: '4 h', duracionMoto: '2 h' });
+    const response = await client.patch('/api/admin/servicios/pulido', { duracionSuv: '4 h', duracionMoto: '2 h' });
     expect(response.status).toBe(200);
-    expect(response.body.servicio).toMatchObject({ duracionCamioneta: '4 h', duracionMoto: '2 h' });
+    expect(response.body.servicio).toMatchObject({ duracionSuv: '4 h', duracionMoto: '2 h' });
     const cleared = await client.patch('/api/admin/servicios/pulido', { duracionMoto: null });
-    expect(cleared.body.servicio).toMatchObject({ duracionCamioneta: '4 h', duracionMoto: null });
+    expect(cleared.body.servicio).toMatchObject({ duracionSuv: '4 h', duracionMoto: null });
     expect(context.logger.text).toMatch(/campos=duracionMoto/);
     const publico = await createClient(context.app).get('/api/servicios');
     expect(publico.body.servicios.find((s: { id: string }) => s.id === 'pulido')).toMatchObject({
-      duracionCamioneta: '4 h',
+      duracionSuv: '4 h',
       duracionMoto: null,
     });
     expect((await client.patch('/api/admin/servicios/pulido', { duracionMoto: 5 })).status).toBe(400);
@@ -482,38 +488,48 @@ describe('POST /api/bookings contra el catálogo de la base', () => {
   });
 });
 
-describe('precios por tipo de vehículo (auto, camioneta, moto)', () => {
-  const PRECIOS = ['precioDesde', 'precioDesdeCamioneta', 'precioDesdeMoto'] as const;
+describe('precios por tipo de vehículo (auto, suv, pickup, moto)', () => {
+  const PRECIOS = ['precioDesde', 'precioDesdeSuv', 'precioDesdePickup', 'precioDesdeMoto'] as const;
 
   it('crear con topes exactos (0 y 99.999.999) y con null; el público los ve', async () => {
     const { context, client } = await editor();
     const creado = await client.post(
       '/api/admin/servicios',
-      nuevoServicio({ precioDesde: 0, precioDesdeCamioneta: 99_999_999, precioDesdeMoto: null }),
+      nuevoServicio({ precioDesde: 0, precioDesdeSuv: 99_999_999, precioDesdeMoto: null }),
     );
     expect(creado.status).toBe(201);
-    expect(creado.body.servicio).toMatchObject({ precioDesde: 0, precioDesdeCamioneta: 99_999_999, precioDesdeMoto: null });
+    expect(creado.body.servicio).toMatchObject({ precioDesde: 0, precioDesdeSuv: 99_999_999, precioDesdeMoto: null });
 
     const publico = await createClient(context.app).get('/api/servicios');
     const ultimo = publico.body.servicios.at(-1);
     expect(ultimo).toMatchObject({
       id: 'tratamiento-ceramico',
       precioDesde: 0,
-      precioDesdeCamioneta: 99_999_999,
+      precioDesdeSuv: 99_999_999,
       precioDesdeMoto: null,
     });
     expect(Object.keys(ultimo).sort()).toEqual(CAMPOS_PUBLICOS);
   });
 
-  it('crear sin mandarlos deja los tres en null', async () => {
+  it('crear sin mandarlos deja los cuatro en null', async () => {
     const { client } = await editor();
     const creado = await client.post('/api/admin/servicios', nuevoServicio());
-    expect(creado.body.servicio).toMatchObject({ precioDesde: null, precioDesdeCamioneta: null, precioDesdeMoto: null });
+    expect(creado.body.servicio).toMatchObject({
+      precioDesde: null,
+      precioDesdeSuv: null,
+      precioDesdePickup: null,
+      precioDesdeMoto: null,
+    });
   });
 
   it.each(PRECIOS)('PATCH de %s: cambia solo ese precio; null lo borra; los otros no se tocan', async (campo) => {
     const { context, client } = await editor();
-    const esperado: Record<string, number> = { precioDesde: 70000, precioDesdeCamioneta: 80000, precioDesdeMoto: 40000 };
+    const esperado: Record<string, number> = {
+      precioDesde: 70000,
+      precioDesdeSuv: 80000,
+      precioDesdePickup: 90000,
+      precioDesdeMoto: 40000,
+    };
     await client.patch('/api/admin/servicios/pulido', esperado).expect(200);
 
     const cambiado = await client.patch('/api/admin/servicios/pulido', { [campo]: 123456 });
@@ -531,7 +547,7 @@ describe('precios por tipo de vehículo (auto, camioneta, moto)', () => {
     expect(context.logger.text).toContain(`campos=${campo}`);
   });
 
-  it.each(['precioDesdeCamioneta', 'precioDesdeMoto'])('PATCH de %s inválido => 400 en su campo y no cambia nada', async (campo) => {
+  it.each(['precioDesdeSuv', 'precioDesdePickup', 'precioDesdeMoto'])('PATCH de %s inválido => 400 en su campo y no cambia nada', async (campo) => {
     const { client } = await editor();
     for (const valor of [-1, 1.5, 100_000_000, '25000', true, [1]]) {
       const response = await client.patch('/api/admin/servicios/pulido', { [campo]: valor });
@@ -540,34 +556,32 @@ describe('precios por tipo de vehículo (auto, camioneta, moto)', () => {
       expect(response.body.error.fields[campo]).toMatch(/entero de pesos, de 0 a 99\.999\.999/);
     }
     const { body } = await client.get('/api/admin/servicios');
-    expect(body.servicios[2]).toMatchObject({ id: 'pulido', precioDesdeCamioneta: null, precioDesdeMoto: null });
+    expect(body.servicios[2]).toMatchObject({ id: 'pulido', precioDesdeSuv: null, precioDesdePickup: null, precioDesdeMoto: null });
   });
 
   it('el empleado no puede editarlos (403) pero sí los ve en el listado del panel', async () => {
     const context = await createTestContext();
     const { client: admin } = await loginAs(context, 'admin');
-    await admin.patch('/api/admin/servicios/pulido', { precioDesdeCamioneta: 90000, precioDesdeMoto: 50000 }).expect(200);
+    await admin.patch('/api/admin/servicios/pulido', { precioDesdeSuv: 90000, precioDesdeMoto: 50000 }).expect(200);
 
     const { client: empleado } = await loginAs(context, 'empleado');
     const patch = await empleado.patch('/api/admin/servicios/pulido', { precioDesdeMoto: 1 });
     expect(patch.status).toBe(403);
     expect(patch.body.error.code).toBe('FORBIDDEN');
-    expect((await empleado.post('/api/admin/servicios', nuevoServicio({ precioDesdeCamioneta: 1 }))).status).toBe(403);
+    expect((await empleado.post('/api/admin/servicios', nuevoServicio({ precioDesdeSuv: 1 }))).status).toBe(403);
 
     const { body } = await empleado.get('/api/admin/servicios');
-    expect(body.servicios[2]).toMatchObject({ precioDesdeCamioneta: 90000, precioDesdeMoto: 50000 });
+    expect(body.servicios[2]).toMatchObject({ precioDesdeSuv: 90000, precioDesdeMoto: 50000 });
   });
 });
 
 describe('servicios por tipo de vehículo', () => {
-  const TRES = ['auto', 'camioneta', 'moto'];
-
-  it('los servicios existentes se ven para los tres vehículos, en el público y en el panel', async () => {
+  it('los servicios existentes (heredados) se ven para auto, suv y moto, en el público y en el panel', async () => {
     const { context, client } = await editor();
     const publico = await createClient(context.app).get('/api/servicios');
-    for (const servicio of publico.body.servicios) expect(servicio.vehiculos, servicio.id).toEqual(TRES);
+    for (const servicio of publico.body.servicios) expect(servicio.vehiculos, servicio.id).toEqual(VEHICULOS_HEREDADOS);
     const { body } = await client.get('/api/admin/servicios');
-    for (const servicio of body.servicios) expect(servicio.vehiculos, servicio.id).toEqual(TRES);
+    for (const servicio of body.servicios) expect(servicio.vehiculos, servicio.id).toEqual(VEHICULOS_HEREDADOS);
   });
 
   it('crear con un subconjunto: sale en orden canónico; el público lo ve; editar cambia solo eso', async () => {
@@ -579,10 +593,10 @@ describe('servicios por tipo de vehículo', () => {
     const publico = await createClient(context.app).get('/api/servicios');
     expect(publico.body.servicios.at(-1)).toMatchObject({ id: 'tratamiento-ceramico', vehiculos: ['auto', 'moto'] });
 
-    const editado = await client.patch('/api/admin/servicios/tratamiento-ceramico', { vehiculos: ['camioneta'] });
-    expect(editado.body.servicio).toMatchObject({ vehiculos: ['camioneta'], nombre: 'Tratamiento cerámico' });
+    const editado = await client.patch('/api/admin/servicios/tratamiento-ceramico', { vehiculos: ['pickup'] });
+    expect(editado.body.servicio).toMatchObject({ vehiculos: ['pickup'], nombre: 'Tratamiento cerámico' });
     const otro = await client.patch('/api/admin/servicios/tratamiento-ceramico', { nombre: 'Cerámico 2' });
-    expect(otro.body.servicio).toMatchObject({ vehiculos: ['camioneta'], nombre: 'Cerámico 2' });
+    expect(otro.body.servicio).toMatchObject({ vehiculos: ['pickup'], nombre: 'Cerámico 2' });
     expect(context.logger.text).toContain('campos=vehiculos');
   });
 
@@ -590,6 +604,7 @@ describe('servicios por tipo de vehículo', () => {
     ['lista vacía', []],
     ['repetidos', ['auto', 'auto']],
     ['tipo desconocido', ['auto', 'bici']],
+    ['camioneta (ya no existe)', ['auto', 'camioneta']],
     ['mayúsculas', ['Auto']],
     ['un texto en vez de lista', 'auto'],
     ['null', null],
@@ -607,7 +622,7 @@ describe('servicios por tipo de vehículo', () => {
     expect(typeof patch.body.error.fields.vehiculos).toBe('string');
     const { body } = await client.get('/api/admin/servicios');
     expect(body.servicios).toHaveLength(5);
-    expect(body.servicios[2].vehiculos).toEqual(TRES);
+    expect(body.servicios[2].vehiculos).toEqual(VEHICULOS_HEREDADOS);
   });
 
   it('el empleado no puede editar los vehículos (403) pero los ve', async () => {
@@ -624,7 +639,7 @@ describe('servicios por tipo de vehículo', () => {
   it('reservar: un servicio que no se ofrece para ese vehículo => 400 en servicioId; para los que sí, 201', async () => {
     const context = await createTestContext();
     const { client: admin } = await loginAs(context, 'admin');
-    await admin.patch('/api/admin/servicios/pulido', { vehiculos: ['auto', 'camioneta'] }).expect(200);
+    await admin.patch('/api/admin/servicios/pulido', { vehiculos: ['auto', 'suv'] }).expect(200);
 
     const moto = await rawPost(context.app, '/api/bookings').send(validBooking({ servicioId: 'pulido', vehiculoTipo: 'moto' }));
     expect(moto.status).toBe(400);
@@ -636,7 +651,7 @@ describe('servicios por tipo de vehículo', () => {
     const bot = await rawPost(context.app, '/api/bookings').send(validBooking({ servicioId: 'pulido', vehiculoTipo: 'moto', website: 'x' }));
     expect(bot.status).toBe(400);
 
-    for (const vehiculoTipo of ['auto', 'camioneta']) {
+    for (const vehiculoTipo of ['auto', 'suv']) {
       const ok = await rawPost(context.app, '/api/bookings').send(validBooking({ servicioId: 'pulido', vehiculoTipo }));
       expect(ok.status, vehiculoTipo).toBe(201);
     }
@@ -685,7 +700,7 @@ describe('de punta a punta: el ciclo de vida de un servicio', () => {
     // 1. Alta desde el panel, ya destacado: desmarca al anterior.
     const creado = await admin.post(
       '/api/admin/servicios',
-      nuevoServicio({ precioDesde: 120000, precioDesdeCamioneta: 150000, duracion: '1 día', destacado: true, incluye: ['Capa cerámica'] }),
+      nuevoServicio({ precioDesde: 120000, precioDesdeSuv: 150000, duracion: '1 día', destacado: true, incluye: ['Capa cerámica'] }),
     );
     expect(creado.status).toBe(201);
 
@@ -700,12 +715,15 @@ describe('de punta a punta: el ciclo de vida de un servicio', () => {
       incluye: ['Capa cerámica'],
       glosario: [],
       duracion: '1 día',
-      duracionCamioneta: null,
+      duracionSuv: null,
+      duracionPickup: null,
       duracionMoto: null,
       precioDesde: 120000,
-      precioDesdeCamioneta: 150000,
+      precioDesdeSuv: 150000,
+      precioDesdePickup: null,
       precioDesdeMoto: null,
-      vehiculos: ['auto', 'camioneta', 'moto'],
+      vehiculos: CUATRO,
+      categoria: null,
       destacado: true,
     });
     // Varios destacados a la vez: el de siempre (lavado-premium) y el nuevo.
@@ -740,5 +758,28 @@ describe('de punta a punta: el ciclo de vida de un servicio', () => {
     expect(ordenado.status).toBe(200);
     expect(ids(ordenado.body)).toEqual(nuevoOrden);
     expect(ids((await publico.get('/api/servicios')).body)).toEqual([...IDS_INICIALES].reverse());
+  });
+});
+
+describe('categoría del servicio (para agrupar en el panel)', () => {
+  it('se crea (con trim), se edita, "" o null la borra; más de 40 caracteres o varias líneas => 400 en fields.categoria', async () => {
+    const { context, client } = await editor();
+    const creado = await client.post('/api/admin/servicios', nuevoServicio({ categoria: '  Protección ' }));
+    expect(creado.status).toBe(201);
+    expect(creado.body.servicio.categoria).toBe('Protección');
+    const publico = await createClient(context.app).get('/api/servicios');
+    expect(publico.body.servicios.at(-1)).toMatchObject({ id: 'tratamiento-ceramico', categoria: 'Protección' });
+
+    expect((await client.patch('/api/admin/servicios/pulido', { categoria: 'Pulido' })).body.servicio.categoria).toBe('Pulido');
+    expect((await client.patch('/api/admin/servicios/pulido', { nombre: 'Pulido 2' })).body.servicio.categoria).toBe('Pulido');
+    expect((await client.patch('/api/admin/servicios/pulido', { categoria: '' })).body.servicio.categoria).toBeNull();
+    expect((await client.patch('/api/admin/servicios/pulido', { categoria: 'Otra' })).body.servicio.categoria).toBe('Otra');
+    expect((await client.patch('/api/admin/servicios/pulido', { categoria: null })).body.servicio.categoria).toBeNull();
+
+    for (const valor of ['x'.repeat(41), 'dos\nlíneas', 5]) {
+      const response = await client.patch('/api/admin/servicios/pulido', { categoria: valor });
+      expect(response.status, JSON.stringify(valor)).toBe(400);
+      expect(Object.keys(response.body.error.fields as object)).toEqual(['categoria']);
+    }
   });
 });

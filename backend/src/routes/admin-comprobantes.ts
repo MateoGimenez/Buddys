@@ -47,7 +47,7 @@ export function adminComprobantesRouter(deps: {
   const router = Router();
   const permiso = requirePermiso(puedeEmitirComprobantes, SIN_PERMISO_MESSAGE);
 
-  // POST /api/admin/bookings/:id/comprobante { formaPago, notas? } => 201 { comprobante } (200 si ya existía)
+  // POST /api/admin/bookings/:id/comprobante { formaPago?, notas? } => 201 { comprobante } (200 si ya existía)
   router.post('/bookings/:id/comprobante', permiso, async (req, res) => {
     const bookingId = parseId(req.params.id, TURNO_NOT_FOUND);
     const datos = parseOrThrow(emitirComprobanteSchema, req.body ?? {});

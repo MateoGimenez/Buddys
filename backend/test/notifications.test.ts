@@ -27,6 +27,8 @@ const BOOKING: Booking = {
   turnosDelCliente: 1,
   monto: null,
   trabajador: null,
+  formaPago: null,
+  servicios: [{ id: 'lavado-premium', nombre: 'Lavado Premium', precioLista: null }],
   createdAt: '2026-10-16T15:00:00.000Z',
   updatedAt: '2026-10-16T15:00:00.000Z',
 };

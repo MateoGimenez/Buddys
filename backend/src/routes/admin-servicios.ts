@@ -24,12 +24,15 @@ function toJson(servicio: Servicio) {
     incluye: servicio.incluye,
     glosario: servicio.glosario,
     duracion: servicio.duracion,
-    duracionCamioneta: servicio.duracionCamioneta,
+    duracionSuv: servicio.duracionSuv,
+    duracionPickup: servicio.duracionPickup,
     duracionMoto: servicio.duracionMoto,
     precioDesde: servicio.precioDesde,
-    precioDesdeCamioneta: servicio.precioDesdeCamioneta,
+    precioDesdeSuv: servicio.precioDesdeSuv,
+    precioDesdePickup: servicio.precioDesdePickup,
     precioDesdeMoto: servicio.precioDesdeMoto,
     vehiculos: servicio.vehiculos,
+    categoria: servicio.categoria,
     destacado: servicio.destacado,
     activo: servicio.activo,
     orden: servicio.orden,
@@ -59,8 +62,8 @@ export function adminServiciosRouter(deps: { servicios: ServicioService }): Rout
     res.json({ servicios: (await servicios.list()).map(toJson) });
   });
 
-  // POST /api/admin/servicios { id, nombre, resumen, descripcion, incluye?, glosario?, duracion?, duracionCamioneta?, duracionMoto?, precioDesde?,
-  // precioDesdeCamioneta?, precioDesdeMoto?, vehiculos?, destacado?, activo? } => 201 { servicio }. orden se asigna solo (al final).
+  // POST /api/admin/servicios { id, nombre, resumen, descripcion, incluye?, glosario?, duracion?, duracionSuv?, duracionPickup?, duracionMoto?,
+  // precioDesde?, precioDesdeSuv?, precioDesdePickup?, precioDesdeMoto?, vehiculos?, categoria?, destacado?, activo? } => 201 { servicio }. orden se asigna solo (al final).
   router.post('/', soloEditores, async (req, res) => {
     const nuevo = parseOrThrow(createServicioSchema, req.body ?? {});
     const creado = await servicios.create(getUsuario(res), nuevo);
@@ -81,7 +84,7 @@ export function adminServiciosRouter(deps: { servicios: ServicioService }): Rout
     if (Object.keys(cambios).length === 0) {
       throw AppError.validation(
         undefined,
-        'Indicá al menos un cambio: nombre, resumen, descripción, incluye, glosario, duración (también la de camioneta y moto), precios, vehículos, destacado o activo.',
+        'Indicá al menos un cambio: nombre, resumen, descripción, incluye, glosario, duración (también la de SUV, pick-up y moto), precios, vehículos, categoría, destacado o activo.',
       );
     }
     const actualizado = await servicios.update(getUsuario(res), id, cambios);

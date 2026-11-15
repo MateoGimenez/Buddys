@@ -13,6 +13,7 @@ export type ErrorCode =
   | 'FORBIDDEN_ORIGIN'
   | 'FORBIDDEN'
   | 'NO_ACCESS'
+  | 'PLAZO_DESHACER_VENCIDO'
   | 'UNAUTHORIZED'
   | 'SESSION_EXPIRED'
   | 'INVALID_CREDENTIALS'
@@ -67,6 +68,18 @@ export class AppError extends Error {
   }
 
   /**
+   * DELETE /api/admin/lavados/:id de quien lo registró, pero ya pasó el plazo para deshacerlo (y su rol no puede
+   * borrar turnos). 403 como FORBIDDEN, con un código propio para que el panel ofrezca pedírselo a un encargado.
+   */
+  static plazoDeshacerVencido(): AppError {
+    return new AppError(
+      403,
+      'PLAZO_DESHACER_VENCIDO',
+      'Pasaron más de 5 minutos: pedile a un encargado que lo borre desde la planilla.',
+    );
+  }
+
+  /**
    * Sesión válida, pero el usuario ya no tiene acceso al panel (desactivado o sin perfil): se borran las cookies y el
    * frontend vuelve al ingreso. Distinto de FORBIDDEN (rol sin permiso), sin tener que preguntar a /auth/me.
    */
@@ -108,13 +121,9 @@ export class AppError extends Error {
     );
   }
 
-  /** DELETE de un turno que ya tiene un comprobante emitido. */
-  static turnoConComprobante(): AppError {
-    return new AppError(
-      409,
-      'TURNO_CON_COMPROBANTE',
-      'Este turno tiene un comprobante de pago emitido: no se puede borrar.',
-    );
+  /** DELETE de un turno (o de un lavado, con su propio mensaje) que ya tiene un comprobante emitido. */
+  static turnoConComprobante(message = 'Este turno tiene un comprobante de pago emitido: no se puede borrar.'): AppError {
+    return new AppError(409, 'TURNO_CON_COMPROBANTE', message);
   }
 
   /** POST /api/bookings: la franja se llenó (o tiene cupo 0) mientras el cliente completaba el formulario. */

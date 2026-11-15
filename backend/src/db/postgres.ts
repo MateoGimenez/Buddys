@@ -34,10 +34,14 @@ const DOCUMENTOS_TABLES = ['presupuestos', 'comprobantes'] as const;
 const PUSH_COLUMNS = ['perfil_id', 'endpoint', 'p256dh', 'auth', 'agente', 'ultimo_aviso_at'] as const;
 /** Columnas que agrega la migración catalogo_editable (las que lee el repositorio de servicios). */
 const CATALOGO_COLUMNS = ['resumen', 'descripcion', 'incluye', 'glosario', 'destacado'] as const;
-/** Columnas que agrega la migración precios_por_vehiculo (precio de camioneta y de moto). */
-const PRECIOS_COLUMNS = ['precio_desde_camioneta', 'precio_desde_moto'] as const;
-/** Columnas que agrega la migración duracion_por_vehiculo (duración de camioneta y de moto). */
-const DURACION_COLUMNS = ['duracion_estimada_camioneta', 'duracion_estimada_moto'] as const;
+/** Columna que agrega la migración precios_por_vehiculo (la de camioneta la reemplazó vehiculos_suv_pickup). */
+const PRECIOS_COLUMNS = ['precio_desde_moto'] as const;
+/** Columna que agrega la migración duracion_por_vehiculo (la de camioneta la reemplazó vehiculos_suv_pickup). */
+const DURACION_COLUMNS = ['duracion_estimada_moto'] as const;
+/** Columnas que agrega la migración vehiculos_suv_pickup (precio y duración de SUV y pick-up, y la categoría). */
+const SUV_PICKUP_COLUMNS = ['precio_desde_suv', 'precio_desde_pickup', 'duracion_suv', 'duracion_pickup', 'categoria'] as const;
+/** Tabla que agrega la migración lavado_varios_servicios (los servicios de cada turno o lavado). */
+const LAVADO_SERVICIOS_TABLES = ['lavado_servicios'] as const;
 /** Columna que agrega la migración servicios_por_vehiculo (para qué vehículos se ofrece cada servicio). */
 const VEHICULOS_COLUMNS = ['vehiculos'] as const;
 /** Columnas que agrega la migración agenda_fecha_confirmada (las que lee el repositorio de turnos). */
@@ -227,6 +231,38 @@ export async function verifyPostgresSchema(client: SqlClient): Promise<void> {
     throw new Error(
       `Faltan columnas en buddys.servicios (${missingDuracion.join(', ')}). ` +
         'Aplicá la migración duracion_por_vehiculo de backend/supabase/migrations/ (ver README, "Migraciones").',
+    );
+  }
+
+  // SUV y pick-up en lugar de camioneta, y la categoría (migración vehiculos_suv_pickup).
+  const suvPickupColumns = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'servicios' AND column_name = ANY($2::text[])`,
+    [PG_SCHEMA, SUV_PICKUP_COLUMNS],
+  );
+  const presentSuvPickup = new Set(suvPickupColumns.rows.map((row) => row.column_name));
+  const missingSuvPickup = SUV_PICKUP_COLUMNS.filter((column) => !presentSuvPickup.has(column));
+  if (missingSuvPickup.length > 0) {
+    throw new Error(
+      `Faltan columnas en buddys.servicios (${missingSuvPickup.join(', ')}). ` +
+        'Aplicá la migración vehiculos_suv_pickup de backend/supabase/migrations/ (ver README, "Migraciones").',
+    );
+  }
+
+  // Varios servicios por lavado (migración lavado_varios_servicios): la tabla y la función del precio de lista.
+  const lavadoServicios = await client.query(
+    'SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 AND tablename = ANY($2::text[])',
+    [PG_SCHEMA, LAVADO_SERVICIOS_TABLES],
+  );
+  const missingLavadoServicios: string[] = LAVADO_SERVICIOS_TABLES.filter(
+    (table) => !lavadoServicios.rows.some((row) => row.tablename === table),
+  );
+  const precioDeLista = await client.query("SELECT to_regprocedure('buddys.precio_de_lista(text,text)') IS NOT NULL AS ok");
+  if (precioDeLista.rows[0]?.ok !== true) missingLavadoServicios.push('función precio_de_lista');
+  if (missingLavadoServicios.length > 0) {
+    throw new Error(
+      `Faltan objetos de la migración de varios servicios por lavado en buddys (${missingLavadoServicios.join(', ')}). ` +
+        'Aplicá la migración lavado_varios_servicios de backend/supabase/migrations/ (ver README, "Migraciones").',
     );
   }
 

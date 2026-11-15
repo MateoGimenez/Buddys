@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { VEHICULO_TIPOS, type VehiculoTipo } from '../domain/booking.js';
+import { MAX_SERVICIOS_LAVADO, VEHICULO_TIPOS, type VehiculoTipo } from '../domain/booking.js';
 import {
   DESTACADO_INACTIVO_MSG,
   LIMITES_SERVICIO as L,
@@ -80,7 +80,7 @@ const glosario = z
   )
   .max(L.glosarioItems, { error: `El glosario puede tener hasta ${String(L.glosarioItems)} términos.` });
 
-/** "" o null => null (sin confirmar; en camioneta y moto, "usa la de auto"). */
+/** "" o null => null (sin confirmar; en suv, pickup y moto, "usa la de auto"). */
 const duracion = z
   .string({ error: 'La duración tiene que ser un texto o null.' })
   .transform(stripBidi)
@@ -102,17 +102,31 @@ const precio = z
   .max(L.precioMax, { error: PRECIO_MSG })
   .nullable();
 
-const VEHICULOS_MSG = 'Elegí al menos un vehículo (auto, camioneta o moto) para el servicio.';
-/** Lista de tipos de vehículo, de 1 a 3, sin repetidos; sale en orden canónico (auto, camioneta, moto). */
+const VEHICULOS_MSG = 'Elegí al menos un vehículo (auto, SUV, pick-up o moto) para el servicio.';
+/** Lista de tipos de vehículo, de 1 a 4, sin repetidos; sale en orden canónico (auto, suv, pickup, moto). */
 const vehiculos = z
   .array(z.unknown(), { error: VEHICULOS_MSG })
   .min(1, { error: VEHICULOS_MSG })
   // Todos los errores salen en fields.vehiculos (y no en vehiculos.0): el panel tiene un solo grupo de casillas.
   .refine((lista): lista is VehiculoTipo[] => lista.every((tipo) => VEHICULO_TIPOS.some((valido) => valido === tipo)), {
-    error: 'Los vehículos válidos son auto, camioneta y moto.',
+    error: 'Los vehículos válidos son auto, suv, pickup y moto.',
   })
   .refine((lista) => new Set(lista).size === lista.length, { error: 'No repitas vehículos en la lista.' })
   .transform(vehiculosCanonicos);
+
+/** Categoría para agrupar en el panel: texto de una línea, hasta 40 caracteres. "" o null => null (sin categoría). */
+const categoria = z
+  .string({ error: 'La categoría tiene que ser un texto o null.' })
+  .transform(stripBidi)
+  .pipe(
+    z
+      .string()
+      .trim()
+      .max(L.categoria, { error: `La categoría no puede tener más de ${String(L.categoria)} caracteres.` })
+      .refine((value) => !CONTROL_CHARS.test(value), { error: 'La categoría tiene caracteres que no se permiten.' })
+      .transform((value) => (value === '' ? null : value)),
+  )
+  .nullable();
 
 const destacado = z.boolean({ error: 'destacado tiene que ser true o false.' });
 const activo = z.boolean({ error: 'activo tiene que ser true o false.' });
@@ -135,12 +149,15 @@ export const createServicioSchema = z.strictObject({
   incluye: incluye.default([]),
   glosario: glosario.default([]),
   duracion: duracion.default(null),
-  duracionCamioneta: duracion.default(null),
+  duracionSuv: duracion.default(null),
+  duracionPickup: duracion.default(null),
   duracionMoto: duracion.default(null),
   precioDesde: precio.default(null),
-  precioDesdeCamioneta: precio.default(null),
+  precioDesdeSuv: precio.default(null),
+  precioDesdePickup: precio.default(null),
   precioDesdeMoto: precio.default(null),
   vehiculos: vehiculos.default([...VEHICULO_TIPOS]),
+  categoria: categoria.default(null),
   destacado: destacado.default(false),
   activo: activo.default(true),
 }).refine((servicio) => !(servicio.destacado && !servicio.activo), {
@@ -160,12 +177,15 @@ export const updateServicioSchema = z.strictObject({
   incluye: incluye.optional(),
   glosario: glosario.optional(),
   duracion: duracion.optional(),
-  duracionCamioneta: duracion.optional(),
+  duracionSuv: duracion.optional(),
+  duracionPickup: duracion.optional(),
   duracionMoto: duracion.optional(),
   precioDesde: precio.optional(),
-  precioDesdeCamioneta: precio.optional(),
+  precioDesdeSuv: precio.optional(),
+  precioDesdePickup: precio.optional(),
   precioDesdeMoto: precio.optional(),
   vehiculos: vehiculos.optional(),
+  categoria: categoria.optional(),
   destacado: destacado.optional(),
   activo: activo.optional(),
 }).refine((cambios) => !(cambios.destacado === true && cambios.activo === false), {
@@ -174,6 +194,26 @@ export const updateServicioSchema = z.strictObject({
   error: DESTACADO_INACTIVO_MSG,
   path: ['destacado'],
 });
+
+export const SERVICIOS_LAVADO_MSG = `Elegí de 1 a ${String(MAX_SERVICIOS_LAVADO)} servicios de la lista.`;
+export const SERVICIOS_REPETIDOS_MSG = 'No repitas servicios en la lista.';
+
+/**
+ * servicioIds de un lavado o turno (POST /api/admin/lavados y PATCH /api/admin/bookings/:id): de 1 a
+ * MAX_SERVICIOS_LAVADO ids con formato de slug, sin repetidos, en el orden elegido (el primero es el principal).
+ * Todos los errores salen en fields.servicioIds (y no en servicioIds.0): el panel tiene una sola lista. Que existan,
+ * estén activos y se ofrezcan para el vehículo lo verifica el servicio (necesita la base).
+ */
+export const servicioIdsSchema = z
+  .array(z.unknown(), { error: SERVICIOS_LAVADO_MSG })
+  .min(1, { error: SERVICIOS_LAVADO_MSG })
+  .max(MAX_SERVICIOS_LAVADO, { error: SERVICIOS_LAVADO_MSG })
+  .refine(
+    (lista): lista is string[] =>
+      lista.every((id) => typeof id === 'string' && id.length <= SERVICIO_ID_MAX && SERVICIO_ID_REGEX.test(id)),
+    { error: 'Elegí servicios de la lista.' },
+  )
+  .refine((lista) => new Set(lista).size === lista.length, { error: SERVICIOS_REPETIDOS_MSG });
 
 /** Tope de ids en el reordenamiento: muy por encima de un catálogo real y lejos del límite de `orden` (smallint). */
 const MAX_IDS_ORDEN = 500;

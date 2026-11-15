@@ -223,16 +223,60 @@ describe('respuestas reales del backend (contrato de la API)', () => {
     // Precios por tipo de vehículo (contrato 2026-11-01_19): catálogo público y del panel. Al final: no mueve nada de arriba.
     cap('serviciosPublico', await createClient(context.app).get('/api/servicios'));
     cap('serviciosAdmin', await admin.get('/api/admin/servicios'));
-    cap('servicioCrea', await admin.post('/api/admin/servicios', { id: 'tratamiento-ceramico', nombre: 'Tratamiento cerámico', resumen: 'Protección de larga duración.', descripcion: 'Una capa cerámica sobre la pintura.', precioDesde: 150000, precioDesdeCamioneta: 180000, precioDesdeMoto: null }));
-    cap('servicioPatchPrecios', await admin.patch('/api/admin/servicios/pulido', { precioDesde: 45000, precioDesdeCamioneta: 60000, precioDesdeMoto: 30000 }));
+    cap('servicioCrea', await admin.post('/api/admin/servicios', { id: 'tratamiento-ceramico', nombre: 'Tratamiento cerámico', resumen: 'Protección de larga duración.', descripcion: 'Una capa cerámica sobre la pintura.', precioDesde: 150000, precioDesdeSuv: 180000, precioDesdePickup: 190000, precioDesdeMoto: null, categoria: 'Protección' }));
+    cap('servicioPatchPrecios', await admin.patch('/api/admin/servicios/pulido', { precioDesde: 45000, precioDesdeSuv: 60000, precioDesdePickup: 65000, precioDesdeMoto: 30000 }));
     cap('servicioPatchBorraPrecio', await admin.patch('/api/admin/servicios/pulido', { precioDesdeMoto: null }));
-    cap('error400PrecioCamioneta', await admin.patch('/api/admin/servicios/pulido', { precioDesdeCamioneta: 100000000 }));
+    cap('error400PrecioSuv', await admin.patch('/api/admin/servicios/pulido', { precioDesdeSuv: 100000000 }));
+    cap('error400Categoria', await admin.patch('/api/admin/servicios/pulido', { categoria: 'x'.repeat(41) }));
     cap('error400PrecioMoto', await admin.patch('/api/admin/servicios/pulido', { precioDesdeMoto: 1.5 }));
     cap('servicioPatchVehiculos', await admin.patch('/api/admin/servicios/pulido', { vehiculos: ['moto', 'auto'] }));
     cap('serviciosPublicoConVehiculos', await createClient(context.app).get('/api/servicios'));
     cap('error400Vehiculos', await admin.patch('/api/admin/servicios/pulido', { vehiculos: [] }));
-    cap('error400ReservaServicioNoOfrecido', await createClient(context.app).post('/api/bookings', { nombre: 'Juan Pérez', telefono: '+54 9 380 412-3456', email: 'juan@example.com', vehiculoTipo: 'camioneta', vehiculoModelo: 'Hilux 2020', servicioId: 'pulido', fechaPreferida: '2026-10-20', franja: 'manana' }));
+    cap('error400ReservaServicioNoOfrecido', await createClient(context.app).post('/api/bookings', { nombre: 'Juan Pérez', telefono: '+54 9 380 412-3456', email: 'juan@example.com', vehiculoTipo: 'pickup', vehiculoModelo: 'Hilux 2020', servicioId: 'pulido', fechaPreferida: '2026-10-20', franja: 'manana' }));
     cap('error403ServicioEmpleado', await empleado.patch('/api/admin/servicios/pulido', { precioDesdeMoto: 1 }));
+
+    // Lavados: forma de pago, cierre de caja y deshacer (contrato 2026-11-13). Al final: no mueve nada de arriba.
+    const lavado = { servicioId: 'lavado-basico', vehiculoTipo: 'auto' } as const;
+    const otroEmpleado = await loginClient(context, 'sin@t.test');
+    const lavadoAdmin = await admin.post('/api/admin/lavados', { ...lavado, monto: 15000, formaPago: 'transferencia', nombre: 'Juan', vehiculoModelo: 'Gol AB123CD' });
+    cap('lavadoCrea', lavadoAdmin);
+    const reintento = { ...lavado, monto: 9000, formaPago: 'efectivo', idLocal: '33333333-3333-4333-8333-333333333333' };
+    const lavadoEmpleado = await empleado.post('/api/admin/lavados', reintento);
+    cap('lavadoCreaEmpleado', lavadoEmpleado);
+    cap('lavadoReintentoIdLocal', await empleado.post('/api/admin/lavados', reintento));
+    cap('error409IdLocalAjeno', await otroEmpleado.post('/api/admin/lavados', reintento));
+    await admin.post('/api/admin/lavados', { ...lavado, monto: 4000 });
+    cap('error400LavadoFormaPago', await admin.post('/api/admin/lavados', { ...lavado, formaPago: 'bitcoin' }));
+    cap('lavadosDiaAdmin', await admin.get('/api/admin/lavados'));
+    cap('lavadosDiaEmpleado', await empleado.get('/api/admin/lavados'));
+    const idAdmin = String(lavadoAdmin.body.lavado.id);
+    const idEmpleado = String(lavadoEmpleado.body.lavado.id);
+    cap('patchFormaPago', await admin.patch(`/api/admin/bookings/${idEmpleado}`, { formaPago: 'debito' }));
+    cap('error403FormaPagoEmpleado', await empleado.patch(`/api/admin/bookings/${idEmpleado}`, { formaPago: 'efectivo' }));
+    cap('comprobanteDeLavado', await admin.post(`/api/admin/bookings/${idAdmin}/comprobante`, {}));
+    cap('error409DeshacerConComprobante', await admin.delete(`/api/admin/lavados/${idAdmin}`));
+    cap('error403DeshacerAjeno', await otroEmpleado.delete(`/api/admin/lavados/${idEmpleado}`));
+    cap('error404Deshacer', await admin.delete('/api/admin/lavados/22222222-2222-4222-8222-222222222222'));
+    const reloj = context.clock.current;
+    context.clock.current = new Date(reloj.getTime() + 6 * 60_000);
+    cap('error403PlazoDeshacer', await empleado.delete(`/api/admin/lavados/${idEmpleado}`));
+    context.clock.current = reloj;
+    cap('deshacerLavado', await empleado.delete(`/api/admin/lavados/${idEmpleado}`));
+
+    // Varios servicios por lavado (contrato 2026-11-13, objetivo multi-servicio). Al final: no mueve nada de arriba.
+    await admin.patch('/api/admin/servicios/lavado-basico', { precioDesde: 20000, precioDesdeSuv: 25000, vehiculos: ['auto', 'suv', 'pickup'] });
+    const varios = { servicioIds: ['lavado-basico', 'encerado'], vehiculoTipo: 'suv', monto: 30000, formaPago: 'efectivo' } as const;
+    const lavadoVarios = await admin.post('/api/admin/lavados', varios);
+    cap('lavadoCreaVarios', lavadoVarios);
+    cap('lavadoCreaVariosEmpleado', await empleado.post('/api/admin/lavados', varios));
+    cap('error400LavadoServiciosRepetidos', await admin.post('/api/admin/lavados', { ...varios, servicioIds: ['encerado', 'encerado'] }));
+    cap('error400LavadoServicioIdYServicioIds', await admin.post('/api/admin/lavados', { ...varios, servicioId: 'encerado' }));
+    cap('error400LavadoServicioNoOfrecido', await admin.post('/api/admin/lavados', { ...varios, vehiculoTipo: 'moto' }));
+    const idVarios = String(lavadoVarios.body.lavado.id);
+    cap('patchServicios', await admin.patch(`/api/admin/bookings/${idVarios}`, { servicioIds: ['encerado', 'restauracion-opticas', 'lavado-basico'] }));
+    cap('error403ServiciosEmpleado', await empleado.patch(`/api/admin/bookings/${idVarios}`, { servicioIds: ['pulido'] }));
+    cap('lavadosDiaVariosEmpleado', await empleado.get('/api/admin/lavados'));
+    cap('comprobanteVarios', await admin.post(`/api/admin/bookings/${idVarios}/comprobante`, {}));
 
     const generadas = normalizar(capturas);
     if (process.env.ACTUALIZAR_FIXTURES === '1') {

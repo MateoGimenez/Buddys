@@ -34,6 +34,26 @@ describe('los fixtures del panel tienen la forma de las respuestas reales del ba
     expect(real.lavadoAdmin?.status).toBe(201);
   });
 
+  it('POST /api/admin/lavados devuelve { lavado, deshacerHasta } con deshacerHasta = creación + 5 minutos', () => {
+    for (const clave of ['lavadoAdmin', 'lavadoAdminMinimo', 'lavadoEmpleado']) {
+      const { lavado: l, deshacerHasta } = cuerpo<{ lavado: Turno; deshacerHasta: string }>(clave);
+      expect(Object.keys(cuerpo<object>(clave)).sort(), clave).toEqual(['deshacerHasta', 'lavado']);
+      expect(Date.parse(deshacerHasta) - Date.parse(l.createdAt), clave).toBe(5 * 60_000);
+    }
+  });
+
+  it('el cierre de caja de los tests sigue el orden del backend (con y sin importes)', () => {
+    // Con importes: más cobrado primero. Sin importes: más lavados primero; empate por el orden de las formas, null al final.
+    const ordenAdmin = (p: PlanillaDelDia) => p.resumen.porFormaPago.map((f) => f.total ?? 0);
+    expect(ordenAdmin(planillaAdmin('2026-10-16'))).toEqual([...ordenAdmin(planillaAdmin('2026-10-16'))].sort((a, b) => b - a));
+    for (const p of [planillaEmpleado('2026-10-16'), cuerpo<PlanillaDelDia>('planillaEmpleado')]) {
+      const cantidades = p.resumen.porFormaPago.map((f) => f.cantidad);
+      expect(cantidades).toEqual([...cantidades].sort((a, b) => b - a));
+    }
+    const formasEmpleado = planillaEmpleado('2026-10-16').resumen.porFormaPago.map((f) => f.formaPago);
+    expect(formasEmpleado.at(-1)).toBeNull();
+  });
+
   it('la planilla de los tests tiene la forma de GET /api/admin/lavados', () => {
     const delBackend = cuerpo<PlanillaDelDia>('planillaAdmin');
     expect(forma(planillaAdmin('2026-10-16'))).toEqual(forma(delBackend));
@@ -46,6 +66,8 @@ describe('los fixtures del panel tienen la forma de las respuestas reales del ba
     expect(p.lavados.every((l) => l.monto === null)).toBe(true);
     expect(p.resumen.total).toBeNull();
     expect(p.resumen.porTrabajador.every((r) => r.total === null)).toBe(true);
+    expect(p.resumen.porFormaPago.length).toBeGreaterThan(0);
+    expect(p.resumen.porFormaPago.every((f) => f.total === null)).toBe(true);
     expect(cuerpo<{ booking: Turno }>('patchEmpleado').booking.monto).toBeNull();
     // y la fixture del empleado respeta lo mismo
     const f = planillaEmpleado('2026-10-16');
@@ -59,6 +81,11 @@ describe('los fixtures del panel tienen la forma de las respuestas reales del ba
     expect(errores.prohibidoEmpleado).toMatchObject({ status: 403, body: { error: { code: 'FORBIDDEN' } } });
     // El empleado no puede pedir la lista de trabajadores: el panel no la pide (ver registrar.test.tsx).
     expect(real.trabajadoresEmpleado?.status).toBe(403);
+    // Deshacer e idLocal: los códigos que el panel distingue.
+    expect(errores.plazoVencido).toMatchObject({ status: 403, body: { error: { code: 'PLAZO_DESHACER_VENCIDO' } } });
+    expect(errores.deshacerAjeno).toMatchObject({ status: 403, body: { error: { code: 'FORBIDDEN' } } });
+    expect(errores.conComprobante).toMatchObject({ status: 409, body: { error: { code: 'TURNO_CON_COMPROBANTE' } } });
+    expect(errores.idLocalAjeno).toMatchObject({ status: 409, body: { error: { code: 'CONFLICT' } } });
     // Logout siempre 204, sin body; un POST sin Content-Type JSON es 415.
     expect(real.logout?.status).toBe(204);
     expect(real.postSinContentType?.status).toBe(415);

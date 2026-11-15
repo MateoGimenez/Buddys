@@ -27,7 +27,7 @@ export function Mas() {
           <ul className="menu">
             {secciones.map((s) => (
               <li key={s.ruta}>
-                <Link to={s.ruta} className="menu-item">
+                <Link to={s.ruta} className="menu-item" viewTransition>
                   <s.icono aria-hidden size={22} />
                   <span className="menu-texto">
                     <span className="menu-nombre">{s.nombre}</span>

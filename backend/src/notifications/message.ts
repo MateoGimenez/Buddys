@@ -1,9 +1,8 @@
-import type { Booking, Franja } from '../domain/booking.js';
+import { type Booking, type Franja, VEHICULO_NOMBRES } from '../domain/booking.js';
 
 const MAX_COMMENT = 200;
 const DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'] as const;
 const FRANJAS: Readonly<Record<Franja, string>> = { manana: 'Mañana', tarde: 'Tarde' };
-const VEHICULOS = { auto: 'Auto', camioneta: 'Camioneta', moto: 'Moto' } as const;
 
 /** "2026-10-20" -> "lun 20/10" (sin zona horaria: es una fecha de calendario). */
 function fechaArgentina(isoDate: string): string {
@@ -29,7 +28,7 @@ function recortar(text: string): string {
  * base). `publicUrl` sin barra final; si no hay, no se incluye el panel.
  */
 export function formatBookingMessage(booking: Booking, servicioNombre: string, publicUrl?: string): string {
-  const vehiculo = [VEHICULOS[booking.vehiculoTipo], booking.vehiculoModelo].filter(Boolean).join(' ');
+  const vehiculo = [VEHICULO_NOMBRES[booking.vehiculoTipo], booking.vehiculoModelo].filter(Boolean).join(' ');
   const lines = [
     '🚗 Nuevo turno Buddys Wash Detail',
     descripcionTurno(servicioNombre, booking.fechaPreferida, booking.franja),

@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { NOMBRE_ROL } from '../lib/format';
 import { useSesion, useUsuario } from '../session/SessionContext';
+import { Senal } from './Senal';
 
 export interface Seccion {
   ruta: string;
@@ -78,7 +79,7 @@ export function Layout() {
         <ul>
           {secciones.map((s) => (
             <li key={s.ruta}>
-              <NavLink to={s.ruta} className="riel-link">
+              <NavLink to={s.ruta} className="riel-link" viewTransition>
                 <s.icono aria-hidden size={20} />
                 {s.nombre}
               </NavLink>
@@ -92,6 +93,7 @@ export function Layout() {
       </nav>
 
       <main id="contenido" className="contenido" tabIndex={-1}>
+        <Senal usuarioId={usuario.id} />
         <Outlet />
       </main>
 
@@ -99,14 +101,14 @@ export function Layout() {
         <ul>
           {principales.map((s) => (
             <li key={s.ruta}>
-              <NavLink to={s.ruta} className="tab">
+              <NavLink to={s.ruta} className="tab" viewTransition>
                 <s.icono aria-hidden size={22} />
                 <span>{s.nombre}</span>
               </NavLink>
             </li>
           ))}
           <li>
-            <NavLink to="/mas" className="tab">
+            <NavLink to="/mas" className="tab" viewTransition>
               <Menu aria-hidden size={22} />
               <span>Más</span>
             </NavLink>

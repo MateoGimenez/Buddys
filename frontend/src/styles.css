@@ -29,6 +29,12 @@
   --radio-chico: 7px;
   --sombra: 0 1px 2px rgb(23 32 77 / 8%), 0 4px 14px rgb(23 32 77 / 6%);
   --tabs-alto: 64px;
+  --barra-alto: 56px;
+  /* Movimiento: arranca rápido y se asienta (nada de rebotes elásticos). Lo que sale, sale más rápido. */
+  --curva: cubic-bezier(0.16, 1, 0.3, 1);
+  --curva-salida: cubic-bezier(0.4, 0, 1, 1);
+  --t-toque: 110ms;
+  --t-estado: 200ms;
   --fuente: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   color-scheme: light;
@@ -186,6 +192,38 @@ a {
   outline: none;
 }
 
+/* Estado de la señal: discreto, arriba del contenido. Solo aparece si hay algo que decir. */
+.senal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.senal-ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 2px solid var(--alerta);
+  background: var(--alerta-claro);
+  color: var(--alerta);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.senal-sin-red {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: #fff;
+}
+
+.senal-rechazos {
+  margin: 4px 0 6px;
+  padding-inline-start: 20px;
+}
+
 .riel {
   display: none;
 }
@@ -308,6 +346,10 @@ a {
 
   .contenido {
     padding: 28px 32px 48px;
+  }
+
+  :root {
+    --barra-alto: 62px;
   }
 
   .barra-logo {
@@ -705,6 +747,47 @@ a {
   color: #fff;
 }
 
+/* La marca de la opción elegida es una sola pieza que se desliza (en vez de apagarse una y prenderse otra). */
+.segmentado-barra .segmentado-opciones[data-indicador] {
+  position: relative;
+  isolation: isolate;
+}
+
+.segmentado-barra .segmentado-opciones[data-indicador]::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: calc(100% / var(--n));
+  background: var(--tinta);
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform 240ms var(--curva);
+  z-index: -1;
+}
+
+.segmentado-barra .segmentado-opciones[data-indicador] .opcion {
+  background: transparent;
+  transition: color var(--t-estado) ease-out;
+}
+
+.segmentado-barra .segmentado-opciones[data-indicador] .opcion:hover:not([data-elegida]) {
+  background: var(--carbon-claro);
+}
+
+/* Al tocar, la opción se hunde un poco: el dedo sabe que tocó antes de que cambie nada. */
+.segmentado-grilla .opcion,
+.segmentado-fichas .opcion {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    transform var(--t-toque) ease-out;
+}
+
+.segmentado-grilla .opcion:active,
+.segmentado-fichas .opcion:active {
+  transform: scale(0.97);
+}
+
 .segmentado-grilla .opcion {
   min-block-size: 72px;
   border: 2px solid var(--linea-fuerte);
@@ -753,11 +836,58 @@ a {
 
 .segmentado-barra .opcion-texto {
   padding: 0;
+  white-space: nowrap;
+}
+
+/* Cuatro vehículos a 360 px: "Pick-up" entra en una línea. */
+.segmentado-barra .opcion {
+  padding-inline: 4px;
 }
 
 .opcion-detalle {
   font-size: 0.875rem;
   color: var(--tinta-2);
+}
+
+/* Fichas (forma de pago): opcionales, se sacan tocando de nuevo. Efectivo y Transferencia, las más usadas,
+   ocupan media fila cada una; Débito, Crédito y Otro, un tercio. */
+.segmentado-fichas .segmentado-opciones {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.segmentado-fichas .opcion {
+  grid-column: span 2;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 52px;
+  padding: 8px 6px;
+  border: 2px solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  text-align: center;
+}
+
+.segmentado-fichas .opcion:nth-child(-n + 2) {
+  grid-column: span 3;
+}
+
+.segmentado-fichas .opcion-texto {
+  padding: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.segmentado-fichas .opcion[data-elegida] {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: #fff;
+}
+
+.opcion-marca {
+  flex: none;
+  color: var(--rosa);
 }
 
 .grupo-checks,
@@ -848,7 +978,8 @@ a {
   margin-inline: -16px;
   margin-bottom: -16px;
   padding: 12px 16px 16px;
-  background: linear-gradient(to bottom, rgb(255 255 255 / 0%), var(--papel) 30%);
+  /* Se funde arriba en pocos píxeles: el resumen de servicios queda sobre papel limpio, sin texto que se vea detrás. */
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0%), var(--papel) 14px);
   border-radius: 0 0 var(--radio) var(--radio);
 }
 
@@ -984,8 +1115,26 @@ a {
   border: 2px solid var(--canario-borde);
   border-top: 3px dashed var(--tinta-3);
   border-radius: 0 0 var(--radio) var(--radio);
-  animation: arrancar 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: arrancar 460ms var(--curva);
   transform-origin: top left;
+}
+
+/* El sello del talón: un círculo que se estampa y la tilde que se dibuja adentro. */
+.talon-sello {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 50%;
+  background: var(--ok);
+  color: #fff;
+  animation: estampar 420ms var(--curva) 120ms both;
+}
+
+.talon-tilde path {
+  stroke-width: 3.2;
+  animation: dibujar 280ms ease-out 300ms both;
 }
 
 .talon-icono {
@@ -1005,15 +1154,116 @@ a {
   color: var(--tinta-2);
 }
 
+.talon {
+  position: relative;
+  overflow: hidden;
+}
+
+.talon[data-en-cola] .talon-icono {
+  color: var(--alerta);
+}
+
+.talon-cola {
+  font-weight: 650;
+  color: var(--alerta);
+}
+
+/* Lavado deshecho: la copia rosa, la de las correcciones. */
+.talon-borrado {
+  background: var(--rosa-claro);
+  border-color: var(--rosa);
+}
+
+.talon-borrado .talon-icono {
+  color: var(--rosa-fuerte);
+}
+
+.talon-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.talon-deshacer {
+  border-color: var(--tinta);
+  background: var(--papel);
+}
+
+.talon-cuenta {
+  min-inline-size: 3.2ch;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--tinta);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  text-align: center;
+}
+
+/* El plazo para deshacer se consume como una tira por el borde de abajo del talón. */
+.talon-plazo {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  block-size: 5px;
+  background: rgb(23 32 77 / 10%);
+}
+
+.talon-plazo span {
+  display: block;
+  block-size: 100%;
+  background: var(--tinta);
+  transform-origin: left center;
+  transition: transform 200ms linear;
+}
+
+.talon-error {
+  flex: 1 1 100%;
+}
+
+/* La hoja se arranca por el troquel: se descubre de arriba hacia abajo, con un leve giro, y se asienta. */
 @keyframes arrancar {
-  from {
+  0% {
     clip-path: inset(0 0 100% 0);
     transform: translateY(-10px) rotate(-1.2deg);
   }
 
-  to {
+  65% {
+    clip-path: inset(0);
+    transform: translateY(2px) rotate(0.3deg);
+  }
+
+  100% {
     clip-path: inset(0);
     transform: none;
+  }
+}
+
+@keyframes estampar {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes dibujar {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
   }
 }
 
@@ -1153,6 +1403,8 @@ a {
   block-size: 100%;
   background: var(--tinta-2);
   border-radius: 4px;
+  transform-origin: left center;
+  transition: transform 320ms var(--curva);
 }
 
 .ranking-fila[data-primero] .ranking-barra span {
@@ -1170,6 +1422,79 @@ a {
   text-align: end;
   font-size: 0.875rem;
   color: var(--tinta-2);
+}
+
+/* Caja del día: el cierre, como la cinta de una registradora. Importes grandes alineados a la derecha. */
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.caja-titulo {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.caja-tabla {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.caja-tabla th,
+.caja-tabla td {
+  padding: 10px 0;
+  text-align: start;
+  vertical-align: baseline;
+}
+
+.caja-tabla tbody tr + tr {
+  border-top: 1px dashed var(--linea-fuerte);
+}
+
+.caja-tabla .caja-forma {
+  font-weight: 650;
+  font-size: 1.0625rem;
+}
+
+.caja-tabla tr[data-sin-indicar] .caja-forma {
+  font-weight: 550;
+  color: var(--tinta-2);
+}
+
+.caja-tabla .caja-cantidad {
+  padding-inline: 8px;
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+  white-space: nowrap;
+  text-align: end;
+}
+
+.caja-tabla .caja-importe {
+  font-size: 1.1875rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.caja-tabla tfoot tr {
+  border-top: 3px double var(--tinta);
+}
+
+.caja-tabla tfoot .caja-forma {
+  font-weight: 800;
+}
+
+.caja-tabla tfoot .caja-importe {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.caja-nota {
+  font-size: 0.9375rem;
+  color: var(--alerta);
+  font-weight: 600;
 }
 
 .franja {
@@ -1225,8 +1550,9 @@ a {
 
 .copia-cabeza {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  gap: 4px 10px;
 }
 
 .copia-serie {
@@ -1240,6 +1566,23 @@ a {
 .copia-hora {
   font-size: 0.875rem;
   color: var(--tinta-3);
+}
+
+.copia-pago {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--tinta-3);
+  background: rgb(255 255 255 / 70%);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.copia-pago-falta {
+  border-style: dashed;
+  color: var(--tinta-3);
+  font-weight: 550;
 }
 
 .copia-monto {
@@ -1339,9 +1682,21 @@ a {
 
 .precios {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
+}
+
+@media (min-width: 560px) {
+  .precios {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.precios .precios-duracion {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--tinta-2);
 }
 
 .precios div {
@@ -1806,15 +2161,389 @@ a {
   font-size: 0.875rem;
 }
 
+/* ------------------------------------------------------------------ Servicios del lavado (elegir varios) */
+
+.servicios {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.servicios > legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: 650;
+}
+
+.servicios-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* El nombre de la categoría, como la cabecera de una columna del talonario: queda pegado arriba mientras se baja
+   por sus servicios, así con 14 servicios nunca se pierde en qué parte de la lista está el pulgar. */
+.servicios-categoria {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 32px;
+  padding-block: 4px;
+  font-size: 0.8125rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tinta-2);
+  border-bottom: 2px dashed var(--linea);
+}
+
+.servicios[data-pegajoso] .servicios-categoria {
+  position: sticky;
+  top: var(--barra-alto);
+  z-index: 3;
+  margin-inline: -4px;
+  padding-inline: 4px;
+  background: var(--papel);
+}
+
+.servicios-categoria[data-frecuentes] {
+  color: var(--tinta);
+}
+
+.servicios-fichas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .servicios-fichas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ficha {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-areas: 'casilla texto' 'casilla precio';
+  align-content: center;
+  column-gap: 10px;
+  min-block-size: 60px;
+  padding: 10px 10px 10px 12px;
+  border: 2px solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  background: var(--papel);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    transform var(--t-toque) ease-out;
+}
+
+.ficha input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ficha:hover:not([data-elegida]) {
+  background: var(--carbon-claro);
+}
+
+.ficha:active {
+  transform: scale(0.97);
+}
+
+.ficha:has(input:focus-visible) {
+  outline: 3px solid var(--carbon);
+  outline-offset: 2px;
+}
+
+.ficha[data-elegida] {
+  border-color: var(--tinta);
+  background: var(--rosa-claro);
+  box-shadow: inset 0 0 0 1px var(--tinta);
+}
+
+.ficha[data-deshabilitada] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ficha-casilla {
+  grid-area: casilla;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border: 2px solid var(--tinta-3);
+  border-radius: 6px;
+  background: var(--papel);
+  color: #fff;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.ficha[data-elegida] .ficha-casilla {
+  border-color: var(--tinta);
+  background: var(--tinta);
+}
+
+.ficha-texto {
+  grid-area: texto;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.ficha-precio {
+  grid-area: precio;
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+}
+
+.ficha-precio[data-consultar] {
+  color: var(--alerta);
+  font-weight: 600;
+}
+
+/* La tilde se dibuja como con birome: el trazo avanza de la base a la punta. */
+.tilde {
+  display: block;
+  overflow: visible;
+}
+
+.tilde path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 180ms ease-in;
+}
+
+.ficha[data-elegida] .tilde path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 220ms var(--curva) 40ms;
+}
+
+.talon-tilde path {
+  stroke-dashoffset: 0;
+}
+
+.servicios-sacados {
+  padding: 8px 12px;
+  border-radius: var(--radio-chico);
+  background: var(--alerta-claro);
+  color: var(--alerta);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  animation: asomar var(--t-estado) var(--curva);
+}
+
+/* Resumen de lo elegido, arriba del botón y al alcance del pulgar. */
+.pie-resumen {
+  margin-bottom: 8px;
+  text-align: center;
+  font-weight: 650;
+  color: var(--tinta);
+}
+
+.pie-resumen-cuenta {
+  display: inline-block;
+  animation: latir-una 240ms var(--curva);
+}
+
+.pie-resumen-consultar {
+  color: var(--alerta);
+}
+
+@keyframes latir-una {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes asomar {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* "Más datos": el cuerpo asoma al abrir. */
+.plegable[open] .plegable-cuerpo {
+  animation: asomar 220ms var(--curva);
+}
+
+/* Copias de la planilla: al abrir un día entran escalonadas, una atrás de otra como hojas que caen al talonario.
+   El retraso tiene tope (8 copias): nunca hay que esperar para leer. */
+.copia {
+  animation: caer 260ms var(--curva) both;
+  animation-delay: calc(var(--orden, 0) * 35ms);
+}
+
+@keyframes caer {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* "Lavados por enviar": el icono respira despacio mientras hay algo en la cola. */
+.senal-latido {
+  animation: respirar 1.8s ease-in-out infinite;
+}
+
+@keyframes respirar {
+  0%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: translateY(-2px);
+  }
+}
+
+/* Esqueleto con la forma de Registrar (barra de vehículos y fichas): la pantalla no salta cuando llega el catálogo. */
+.esqueleto-formulario {
+  padding: 16px;
+  border-radius: var(--radio);
+  background: var(--papel);
+  box-shadow: var(--sombra);
+}
+
+.esqueleto-formulario .esqueleto-fila {
+  block-size: 48px;
+  border-radius: var(--radio-chico);
+}
+
+.esqueleto-grilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.esqueleto-grilla .esqueleto-fila {
+  block-size: 60px;
+}
+
+/* ------------------------------------------------------------------ Servicios (catálogo) por categoría */
+
+.categoria {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.categoria-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  font-size: 1rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--tinta);
+}
+
+.categoria-cuenta {
+  font-size: 0.875rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  color: var(--tinta-2);
+}
+
+/* ------------------------------------------------------------------ Cambio de sección (View Transitions) */
+
+/* Solo el contenido cambia: la barra y las pestañas quedan quietas. La página vieja se va rápido y la nueva asoma
+   8 px. Donde el navegador no tiene View Transitions, se cambia de golpe como siempre. */
+.contenido {
+  view-transition-name: contenido;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(contenido) {
+  animation-duration: 0s;
+}
+
+::view-transition-old(contenido) {
+  animation: vt-sale 110ms var(--curva-salida) both;
+}
+
+::view-transition-new(contenido) {
+  animation: vt-entra 240ms var(--curva) both;
+}
+
+@keyframes vt-sale {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
 /* ------------------------------------------------------------------ Movimiento reducido */
 
+/* Sin desplazamientos, giros ni escalas: todo llega a su estado final al instante. Lo que confirma algo (el talón,
+   la tilde, el color de lo elegido) se sigue viendo igual, solo que sin viaje. La cuenta regresiva de "Deshacer"
+   sigue bajando por saltos (la mueve el reloj, no una transición) y el número de segundos sigue a la vista. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .btn:active:not(:disabled),
+  .ficha:active,
+  .segmentado-grilla .opcion:active,
+  .segmentado-fichas .opcion:active {
+    transform: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

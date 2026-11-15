@@ -1,11 +1,12 @@
 import type { SqlClient } from '../../db/postgres.js';
-import { type Row, int, oneOf, str, strOrNull } from '../../db/rows.js';
+import { type Row, int, oneOf, oneOfOrNull, str, strOrNull } from '../../db/rows.js';
 import {
   type Comprobante,
   type ComprobanteRepository,
   type DatosComprobante,
   type EmisionComprobante,
   FORMAS_DE_PAGO,
+  FormaDePagoFaltanteError,
   TurnoNoEncontradoError,
   TurnoSinCobroError,
   codigoDeComprobante,
@@ -68,7 +69,14 @@ export class PostgresComprobanteRepository implements ComprobanteRepository {
       if (existente) return { comprobante: existente, creado: false };
 
       const turno = await tx.query(
-        `SELECT b.estado, b.monto, b.nombre, b.vehiculo_tipo, b.vehiculo_modelo, s.nombre AS servicio_nombre
+        // Con varios servicios, el comprobante dice sus nombres unidos con " + " (en el orden elegido).
+        `SELECT b.estado, b.monto, b.forma_pago, b.nombre, b.vehiculo_tipo, b.vehiculo_modelo,
+                coalesce(
+                  (SELECT string_agg(sv.nombre, ' + ' ORDER BY ls.orden)
+                   FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+                   WHERE ls.booking_id = b.id),
+                  s.nombre
+                ) AS servicio_nombre
          FROM buddys.bookings b
          JOIN buddys.servicios s ON s.id = b.servicio_id
          WHERE b.id = $1::uuid`,
@@ -78,6 +86,9 @@ export class PostgresComprobanteRepository implements ComprobanteRepository {
       if (!fila) throw new TurnoNoEncontradoError();
       const monto = fila.monto;
       if (str(fila, 'estado') !== 'completado' || typeof monto !== 'number') throw new TurnoSinCobroError();
+      // Sin forma de pago en el pedido: la que se cargó con el lavado (o al corregir el cobro).
+      const formaPago = datos.formaPago ?? oneOfOrNull(FORMAS_DE_PAGO, fila, 'forma_pago');
+      if (formaPago === null) throw new FormaDePagoFaltanteError();
 
       // La foto del momento: el nombre, el servicio, el vehículo y el monto se copian.
       await tx.query(
@@ -87,7 +98,7 @@ export class PostgresComprobanteRepository implements ComprobanteRepository {
         [
           bookingId,
           contexto.hoy,
-          datos.formaPago,
+          formaPago,
           recortar(str(fila, 'nombre'), 120),
           recortar(str(fila, 'servicio_nombre'), 120),
           recortar(textoDeVehiculo(strOrNull(fila, 'vehiculo_modelo'), str(fila, 'vehiculo_tipo')), 80) || null,

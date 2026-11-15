@@ -1,5 +1,5 @@
 import type { SqlClient } from '../../db/postgres.js';
-import { type Row, int, intOrNull, isoTimestamp, oneOf, oneOfOrNull, str, strOrNull } from '../../db/rows.js';
+import { type Row, int, intOrNull, isoTimestamp, num, oneOf, oneOfOrNull, str, strOrNull } from '../../db/rows.js';
 import {
   type ActualizacionTurno,
   type Booking,
@@ -10,16 +10,19 @@ import {
   type NewBooking,
   type Reprogramacion,
   type SeguimientoTurno,
+  type ServicioDelTurno,
   ESTADOS,
   FRANJAS,
   MIN_DIGITOS_BUSQUEDA,
   type NuevoLavado,
   ORIGENES,
+  type RegistroDeLavado,
+  type TotalFormaDePago,
   type Trabajador,
   TurnoCerradoError,
   VEHICULO_TIPOS,
 } from '../../domain/booking.js';
-import { TurnoConComprobanteError } from '../../domain/comprobantes.js';
+import { FORMAS_DE_PAGO, TurnoConComprobanteError } from '../../domain/comprobantes.js';
 import { verificarLugar } from '../../domain/disponibilidad.js';
 import { telefonoWhatsapp } from '../../domain/telefono.js';
 import { cuposEntre } from './disponibilidad.js';
@@ -29,6 +32,28 @@ import { isUuid } from './uuid.js';
 function toTrabajador(row: Row): Trabajador | null {
   const id = strOrNull(row, 'trabajador_id');
   return id === null ? null : { id, nombre: str(row, 'trabajador_nombre') };
+}
+
+/**
+ * Los servicios del turno: un json (ya parseado por el driver) con { id, nombre, precioLista } en el orden elegido. Se
+ * verifica igual: si la base y el código se desalinean, falla claro.
+ */
+function toServicios(row: Row): ServicioDelTurno[] {
+  const value = row.servicios;
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new TypeError('La columna "servicios" debería ser una lista con al menos un servicio');
+  }
+  return value.map((item: unknown) => {
+    const { id, nombre, precioLista } = (item ?? {}) as { id?: unknown; nombre?: unknown; precioLista?: unknown };
+    if (
+      typeof id !== 'string' ||
+      typeof nombre !== 'string' ||
+      (precioLista !== null && (typeof precioLista !== 'number' || !Number.isSafeInteger(precioLista)))
+    ) {
+      throw new TypeError('La columna "servicios" tiene un servicio mal formado');
+    }
+    return { id, nombre, precioLista };
+  });
 }
 
 function toBooking(row: Row): Booking {
@@ -55,6 +80,8 @@ function toBooking(row: Row): Booking {
     turnosDelCliente: intOrNull(row, 'turnos_del_cliente'),
     monto: intOrNull(row, 'monto'),
     trabajador: toTrabajador(row),
+    formaPago: oneOfOrNull(FORMAS_DE_PAGO, row, 'forma_pago'),
+    servicios: toServicios(row),
     createdAt: isoTimestamp(row, 'created_at'),
     updatedAt: isoTimestamp(row, 'updated_at'),
   };
@@ -81,27 +108,90 @@ function patronesBusqueda(q: string | undefined): { texto: string | null; digito
  * convierte el tipo date; id, como texto.
  *
  * turnos_del_cliente: una subconsulta correlacionada por fila (count sobre el índice parcial
- * bookings_telefono_whatsapp_idx), dentro de la misma consulta: sin N+1. En un INSERT ... RETURNING la subconsulta
- * no ve la fila que se está insertando (misma instantánea del comando): por eso ahí se suma 1.
+ * bookings_telefono_whatsapp_idx), dentro de la misma consulta: sin N+1.
+ *
+ * servicios: otra subconsulta correlacionada por fila (PK de lavado_servicios, que empieza por booking_id): la lista
+ * { id, nombre, precioLista } en el orden elegido (migración lavado_varios_servicios). Todo turno tiene al menos su
+ * fila principal (la agrega el trigger bookings_servicio_principal); si igual faltara, sale el servicio de
+ * bookings.servicio_id sin precio, para no romper la respuesta.
+ *
+ * Las escrituras devuelven el turno con una lectura aparte (buscarTurno) DESPUÉS de escribir: un INSERT o UPDATE ...
+ * RETURNING no ve las filas de lavado_servicios que se escriben en la misma sentencia (ni las del trigger).
  */
 
-/** INSERT de un turno nuevo ("pendiente"). Recibe el cliente: sirve dentro de la transacción del alta pública. */
+/** Un turno por id (ya validado como UUID), con el cliente que se le pase: sirve dentro de una transacción. */
+async function buscarTurno(sql: SqlClient, id: string): Promise<Booking | undefined> {
+  const { rows } = await sql.query(
+    `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
+            to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
+            to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
+            b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
+            t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+            CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
+                 ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
+            END AS turnos_del_cliente,
+            coalesce(
+              (SELECT json_agg(json_build_object('id', ls.servicio_id, 'nombre', sv.nombre, 'precioLista', ls.precio_lista) ORDER BY ls.orden)
+               FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+               WHERE ls.booking_id = b.id),
+              (SELECT json_build_array(json_build_object('id', sp.id, 'nombre', sp.nombre, 'precioLista', NULL))
+               FROM buddys.servicios sp WHERE sp.id = b.servicio_id)
+            ) AS servicios
+     FROM buddys.bookings b
+     LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+     WHERE b.id = $1::uuid`,
+    [id],
+  );
+  const row = rows[0];
+  return row ? toBooking(row) : undefined;
+}
+
+/** Igual que buscarTurno, pero el turno tiene que existir (se acaba de escribir en la misma transacción). */
+async function turnoEscrito(sql: SqlClient, id: string): Promise<Booking> {
+  const booking = await buscarTurno(sql, id);
+  if (booking === undefined) throw new Error('El turno no se encontró después de escribirlo');
+  return booking;
+}
+
+/**
+ * Reemplaza la lista de servicios del turno (lavado_servicios) por `servicioIds`, en ese orden (orden 0 = el principal).
+ * Los que ya estaban conservan su foto de precio_lista; los nuevos toman el precio de lista vigente para el vehículo
+ * del turno (buddys.precio_de_lista). Borrar y volver a insertar (y no UPDATE) evita choques con el UNIQUE de
+ * (booking_id, orden) al reordenar. Va dentro de la transacción de quien la llama.
+ */
+async function reemplazarServicios(sql: SqlClient, bookingId: string, servicioIds: readonly string[]): Promise<void> {
+  const previos = await sql.query(
+    'DELETE FROM buddys.lavado_servicios WHERE booking_id = $1::uuid RETURNING servicio_id, precio_lista',
+    [bookingId],
+  );
+  await sql.query(
+    `INSERT INTO buddys.lavado_servicios (booking_id, servicio_id, orden, precio_lista)
+     SELECT b.id, n.id, (n.pos - 1)::smallint,
+            CASE WHEN p.id IS NOT NULL THEN p.precio ELSE buddys.precio_de_lista(n.id, b.vehiculo_tipo) END
+     FROM unnest($2::text[]) WITH ORDINALITY AS n(id, pos)
+     JOIN buddys.bookings b ON b.id = $1::uuid
+     LEFT JOIN unnest($3::text[], $4::integer[]) AS p(id, precio) ON p.id = n.id`,
+    [
+      bookingId,
+      servicioIds,
+      previos.rows.map((row) => str(row, 'servicio_id')),
+      previos.rows.map((row) => intOrNull(row, 'precio_lista')),
+    ],
+  );
+}
+
+/**
+ * INSERT de un turno nuevo ("pendiente"). Recibe el cliente: sirve dentro de la transacción del alta pública. El
+ * trigger bookings_servicio_principal le agrega su servicio en lavado_servicios (con la foto del precio de lista).
+ */
 async function insertBooking(sql: SqlClient, input: NewBooking, now: Date): Promise<Booking> {
   const timestamp = now.toISOString();
   const { rows } = await sql.query(
-    `INSERT INTO buddys.bookings AS b (
+    `INSERT INTO buddys.bookings (
        nombre, telefono, telefono_whatsapp, email, vehiculo_tipo, vehiculo_modelo,
        servicio_id, fecha_preferida, franja, comentario, estado, created_at, updated_at
      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, $9, $10, 'pendiente', $11::timestamptz, $11::timestamptz)
-     RETURNING id::text AS id, nombre, telefono, telefono_whatsapp, email, vehiculo_tipo, vehiculo_modelo, origen, servicio_id,
-               to_char(fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, franja,
-               to_char(fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, franja_confirmada,
-               comentario, estado, notas_internas, monto, created_at, updated_at,
-               NULL::text AS trabajador_id, NULL::text AS trabajador_nombre,
-               CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
-                    ELSE (SELECT count(*)::int FROM buddys.bookings c
-                          WHERE c.telefono_whatsapp = b.telefono_whatsapp) + 1
-               END AS turnos_del_cliente`,
+     RETURNING id::text AS id`,
     [
       input.nombre,
       input.telefono,
@@ -120,7 +210,7 @@ async function insertBooking(sql: SqlClient, input: NewBooking, now: Date): Prom
   if (!row) {
     throw new Error('INSERT de turno no devolvió la fila creada');
   }
-  return toBooking(row);
+  return turnoEscrito(sql, str(row, 'id'));
 }
 
 /**
@@ -131,52 +221,115 @@ export class PostgresBookingRepository implements BookingRepository {
   constructor(private readonly sql: SqlClient) {}
 
   create(input: NewBooking, now: Date): Promise<Booking> {
-    return insertBooking(this.sql, input, now);
+    return this.sql.transaction((sql) => insertBooking(sql, input, now));
   }
 
   /**
    * Lavado de mostrador: nace completado, con su cobro y `origen = 'mostrador'`. No toma el bloqueo de la fecha ni
-   * mira cupos (no ocupa lugar en la agenda). Va en un WITH para traer el nombre del trabajador en la misma consulta;
-   * la subconsulta de turnos_del_cliente no ve la fila nueva (misma instantánea): por eso se suma 1.
+   * mira cupos (no ocupa lugar en la agenda). En una transacción: el turno (servicio_id = el primero de la lista), su
+   * lista de servicios y la lectura final.
+   * Con idLocal repetido no inserta (el índice único bookings_id_local_key es el árbitro, también ante dos reintentos
+   * simultáneos) y devuelve undefined.
    */
-  async registrarLavado(input: NuevoLavado, now: Date): Promise<Booking> {
-    const { rows } = await this.sql.query(
-      `WITH b AS (
-         INSERT INTO buddys.bookings (
+  registrarLavado(input: NuevoLavado, now: Date): Promise<Booking | undefined> {
+    const [principal] = input.servicioIds;
+    if (principal === undefined) return Promise.reject(new Error('Un lavado necesita al menos un servicio'));
+    return this.sql.transaction(async (sql) => {
+      const { rows } = await sql.query(
+        `INSERT INTO buddys.bookings (
            nombre, telefono, telefono_whatsapp, vehiculo_tipo, vehiculo_modelo, servicio_id, fecha_preferida, franja,
-           estado, notas_internas, monto, trabajador_id, origen, created_at, updated_at
+           estado, notas_internas, monto, trabajador_id, origen, forma_pago, registrado_por, id_local, created_at, updated_at
          ) VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8, 'completado', $9, $10::integer, $11::uuid, 'mostrador',
-                   $12::timestamptz, $12::timestamptz)
-         RETURNING *
-       )
-       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
+                   $13::text, $14::uuid, $15::uuid, $12::timestamptz, $12::timestamptz)
+         ON CONFLICT (id_local) WHERE id_local IS NOT NULL DO NOTHING
+         RETURNING id::text AS id`,
+        [
+          input.nombre,
+          input.telefono,
+          input.telefono === null ? null : telefonoWhatsapp(input.telefono),
+          input.vehiculoTipo,
+          input.vehiculoModelo,
+          principal,
+          input.fecha,
+          input.franja,
+          input.notasInternas,
+          input.monto,
+          input.trabajadorId,
+          now.toISOString(),
+          input.formaPago,
+          input.registradoPor,
+          input.idLocal,
+        ],
+      );
+      const row = rows[0];
+      if (!row) {
+        if (input.idLocal !== null) return undefined; // ya existía uno con ese idLocal
+        throw new Error('INSERT de lavado no devolvió la fila creada');
+      }
+      const id = str(row, 'id');
+      // El trigger ya agregó el principal; con un solo servicio no hay nada más que escribir.
+      if (input.servicioIds.length > 1) await reemplazarServicios(sql, id, input.servicioIds);
+      return turnoEscrito(sql, id);
+    });
+  }
+
+  async lavadoPorIdLocal(idLocal: string): Promise<{ lavado: Booking; registradoPor: string | null } | undefined> {
+    if (!isUuid(idLocal)) return undefined;
+    // Mismo predicado que el índice único parcial bookings_id_local_key.
+    const { rows } = await this.sql.query(
+      `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
-              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
+              b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
               t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
               CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
-                   ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp) + 1
-              END AS turnos_del_cliente
-       FROM b
-       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id`,
-      [
-        input.nombre,
-        input.telefono,
-        input.telefono === null ? null : telefonoWhatsapp(input.telefono),
-        input.vehiculoTipo,
-        input.vehiculoModelo,
-        input.servicioId,
-        input.fecha,
-        input.franja,
-        input.notasInternas,
-        input.monto,
-        input.trabajadorId,
-        now.toISOString(),
-      ],
+                   ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
+              END AS turnos_del_cliente,
+              coalesce(
+                (SELECT json_agg(json_build_object('id', ls.servicio_id, 'nombre', sv.nombre, 'precioLista', ls.precio_lista) ORDER BY ls.orden)
+                 FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+                 WHERE ls.booking_id = b.id),
+                (SELECT json_build_array(json_build_object('id', sp.id, 'nombre', sp.nombre, 'precioLista', NULL))
+                 FROM buddys.servicios sp WHERE sp.id = b.servicio_id)
+              ) AS servicios,
+              b.registrado_por::text AS registrado_por
+       FROM buddys.bookings b
+       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+       WHERE b.id_local = $1::uuid AND b.id_local IS NOT NULL`,
+      [idLocal],
     );
     const row = rows[0];
-    if (!row) throw new Error('INSERT de lavado no devolvió la fila creada');
-    return toBooking(row);
+    return row ? { lavado: toBooking(row), registradoPor: strOrNull(row, 'registrado_por') } : undefined;
+  }
+
+  async formasDePagoDelDia(fecha: string): Promise<TotalFormaDePago[]> {
+    // Mismo filtro que lavadosDelDia (índice parcial bookings_mostrador_fecha_idx), sin los cancelados.
+    const { rows } = await this.sql.query(
+      `SELECT b.forma_pago, count(*)::int AS cantidad, coalesce(sum(b.monto), 0)::float8 AS total
+       FROM buddys.bookings b
+       WHERE b.origen = 'mostrador'
+         AND coalesce(b.fecha_confirmada, b.fecha_preferida) = $1::date
+         AND b.estado <> 'cancelado'
+       GROUP BY b.forma_pago`,
+      [fecha],
+    );
+    return rows.map((row) => ({
+      formaPago: oneOfOrNull(FORMAS_DE_PAGO, row, 'forma_pago'),
+      cantidad: int(row, 'cantidad'),
+      total: num(row, 'total'),
+    }));
+  }
+
+  async registroDeLavado(id: string): Promise<RegistroDeLavado | undefined> {
+    if (!isUuid(id)) return undefined;
+    const { rows } = await this.sql.query(
+      `SELECT b.registrado_por::text AS registrado_por, b.created_at
+       FROM buddys.bookings b
+       WHERE b.id = $1::uuid AND b.origen = 'mostrador'`,
+      [id],
+    );
+    const row = rows[0];
+    return row ? { registradoPor: strOrNull(row, 'registrado_por'), createdAt: isoTimestamp(row, 'created_at') } : undefined;
   }
 
   async lavadosDelDia(fecha: string): Promise<Booking[]> {
@@ -185,11 +338,18 @@ export class PostgresBookingRepository implements BookingRepository {
       `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
-              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
+              b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
               t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
               CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                    ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
-              END AS turnos_del_cliente
+              END AS turnos_del_cliente,
+              coalesce(
+                (SELECT json_agg(json_build_object('id', ls.servicio_id, 'nombre', sv.nombre, 'precioLista', ls.precio_lista) ORDER BY ls.orden)
+                 FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+                 WHERE ls.booking_id = b.id),
+                (SELECT json_build_array(json_build_object('id', sp.id, 'nombre', sp.nombre, 'precioLista', NULL))
+                 FROM buddys.servicios sp WHERE sp.id = b.servicio_id)
+              ) AS servicios
        FROM buddys.bookings b
        LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
        WHERE b.origen = 'mostrador'
@@ -217,9 +377,15 @@ export class PostgresBookingRepository implements BookingRepository {
 
   async seguimiento(id: string): Promise<SeguimientoTurno | undefined> {
     if (!isUuid(id)) return undefined;
-    // SOLO los campos públicos: nada de datos del cliente ni notas.
+    // SOLO los campos públicos: nada de datos del cliente ni notas. Con varios servicios, sus nombres unidos con " + ".
     const { rows } = await this.sql.query(
-      `SELECT b.id::text AS id, s.nombre AS servicio_nombre,
+      `SELECT b.id::text AS id,
+              coalesce(
+                (SELECT string_agg(sv.nombre, ' + ' ORDER BY ls.orden)
+                 FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+                 WHERE ls.booking_id = b.id),
+                s.nombre
+              ) AS servicio_nombre,
               to_char(coalesce(b.fecha_confirmada, b.fecha_preferida), 'YYYY-MM-DD') AS fecha,
               coalesce(b.franja_confirmada, b.franja) AS franja, b.estado, b.updated_at
        FROM buddys.bookings b
@@ -242,7 +408,13 @@ export class PostgresBookingRepository implements BookingRepository {
   async recordatoriosPendientes(fecha: string): Promise<CandidatoRecordatorio[]> {
     // `estado <> 'cancelado'` es redundante a propósito: es el predicado del índice parcial bookings_agenda_idx.
     const { rows } = await this.sql.query(
-      `SELECT b.id::text AS id, b.email, b.telefono_whatsapp, s.nombre AS servicio_nombre,
+      `SELECT b.id::text AS id, b.email, b.telefono_whatsapp,
+              coalesce(
+                (SELECT string_agg(sv.nombre, ' + ' ORDER BY ls.orden)
+                 FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+                 WHERE ls.booking_id = b.id),
+                s.nombre
+              ) AS servicio_nombre,
               to_char(coalesce(b.fecha_confirmada, b.fecha_preferida), 'YYYY-MM-DD') AS fecha,
               coalesce(b.franja_confirmada, b.franja) AS franja
        FROM buddys.bookings b
@@ -294,11 +466,18 @@ export class PostgresBookingRepository implements BookingRepository {
         `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
                 to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
                 to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
-                b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
+                b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
                 t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
                 CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                      ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
-                END AS turnos_del_cliente
+                END AS turnos_del_cliente,
+                coalesce(
+                  (SELECT json_agg(json_build_object('id', ls.servicio_id, 'nombre', sv.nombre, 'precioLista', ls.precio_lista) ORDER BY ls.orden)
+                   FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+                   WHERE ls.booking_id = b.id),
+                  (SELECT json_build_array(json_build_object('id', sp.id, 'nombre', sp.nombre, 'precioLista', NULL))
+                   FROM buddys.servicios sp WHERE sp.id = b.servicio_id)
+                ) AS servicios
          FROM buddys.bookings b
          LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
          WHERE ($1::text IS NULL OR b.estado = $1::text)
@@ -333,125 +512,111 @@ export class PostgresBookingRepository implements BookingRepository {
     return { bookings: page.rows.map(toBooking), total: totalRow ? int(totalRow, 'total') : 0 };
   }
 
-  async find(id: string): Promise<Booking | undefined> {
-    if (!isUuid(id)) return undefined;
-    const { rows } = await this.sql.query(
-      `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
-              to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
-              to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
-              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
-              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
-              CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
-                   ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
-              END AS turnos_del_cliente
-       FROM buddys.bookings b
-       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
-       WHERE b.id = $1::uuid`,
-      [id],
-    );
-    const row = rows[0];
-    return row ? toBooking(row) : undefined;
+  find(id: string): Promise<Booking | undefined> {
+    if (!isUuid(id)) return Promise.resolve(undefined);
+    return buscarTurno(this.sql, id);
   }
 
-  async actualizar(
+  actualizar(
     id: string,
-    { estado, notasInternas, monto, trabajadorId }: ActualizacionTurno,
+    { estado, notasInternas, monto, trabajadorId, formaPago, servicioIds }: ActualizacionTurno,
     now: Date,
   ): Promise<Booking | undefined> {
     // Un id que no es UUID no puede existir (y Postgres rechazaría el cast): igual que "no existe".
-    if (!isUuid(id)) return undefined;
-    // coalesce($1, estado): sin estado nuevo, queda el que tenía. La nota: $2 dice si se toca (null es un valor
-    // válido: borrarla). Sin condición de estado: la nota se puede cambiar aunque el turno esté cerrado.
-    // Cobro ($6 y $8 dicen si se toca; $7 y $9 son los valores): si el estado final no es "completado" quedan en
-    // null (CHECK bookings_cobro_solo_completado). updated_at solo se mueve si cambia el estado o la nota: cargar o
-    // corregir el cobro no es un cambio para el cliente (y el trigger tampoco corre; migración estadisticas_cobro).
-    // Va en un WITH para traer el nombre del trabajador en la misma consulta (UPDATE ... RETURNING no hace JOIN).
-    const { rows } = await this.sql.query(
-      `WITH b AS (
-         UPDATE buddys.bookings AS u
+    if (!isUuid(id)) return Promise.resolve(undefined);
+    const principal = servicioIds?.[0] ?? null;
+    return this.sql.transaction(async (sql) => {
+      // coalesce($1, estado): sin estado nuevo, queda el que tenía. La nota: $2 dice si se toca (null es un valor
+      // válido: borrarla). Sin condición de estado: la nota se puede cambiar aunque el turno esté cerrado.
+      // Cobro ($6 y $8 dicen si se toca; $7 y $9 son los valores): si el estado final no es "completado" quedan en
+      // null (CHECK bookings_cobro_solo_completado). updated_at solo se mueve si cambia el estado, la nota o los
+      // servicios: cargar o corregir el cobro no es un cambio para el cliente (y el trigger tampoco corre; migración
+      // estadisticas_cobro). Forma de pago ($10 dice si se toca; $11 es el valor): no depende del estado y tampoco
+      // mueve updated_at (migración forma_pago_deshacer_lavado). Servicios ($12: el principal nuevo, o null si no se
+      // tocan): el servicio de los avisos y del seguimiento cambia, así que sí mueve updated_at.
+      const { rowCount } = await sql.query(
+        `UPDATE buddys.bookings AS u
          SET estado = coalesce($1::text, u.estado),
              notas_internas = CASE WHEN $2::boolean THEN $3::text ELSE u.notas_internas END,
              monto = CASE WHEN coalesce($1::text, u.estado) <> 'completado' THEN NULL
                           WHEN $6::boolean THEN $7::integer ELSE u.monto END,
              trabajador_id = CASE WHEN coalesce($1::text, u.estado) <> 'completado' THEN NULL
                                   WHEN $8::boolean THEN $9::uuid ELSE u.trabajador_id END,
+             forma_pago = CASE WHEN $10::boolean THEN $11::text ELSE u.forma_pago END,
+             servicio_id = coalesce($12::text, u.servicio_id),
              updated_at = CASE WHEN ($1::text IS NOT NULL AND $1::text IS DISTINCT FROM u.estado) OR $2::boolean
+                                    OR $12::text IS NOT NULL
                                THEN $4::timestamptz ELSE u.updated_at END
-         WHERE u.id = $5::uuid
-         RETURNING u.*
-       )
-       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
-              to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
-              to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
-              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
-              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
-              CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
-                   ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
-              END AS turnos_del_cliente
-       FROM b
-       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id`,
-      [
-        estado ?? null,
-        notasInternas !== undefined,
-        notasInternas ?? null,
-        now.toISOString(),
-        id,
-        monto !== undefined,
-        monto ?? null,
-        trabajadorId !== undefined,
-        trabajadorId ?? null,
-      ],
-    );
-    const row = rows[0];
-    return row ? toBooking(row) : undefined;
+         WHERE u.id = $5::uuid`,
+        [
+          estado ?? null,
+          notasInternas !== undefined,
+          notasInternas ?? null,
+          now.toISOString(),
+          id,
+          monto !== undefined,
+          monto ?? null,
+          trabajadorId !== undefined,
+          trabajadorId ?? null,
+          formaPago !== undefined,
+          formaPago ?? null,
+          principal,
+        ],
+      );
+      if (rowCount === 0) return undefined;
+      if (servicioIds !== undefined) await reemplazarServicios(sql, id, servicioIds);
+      return turnoEscrito(sql, id);
+    });
   }
 
   updateEstado(id: string, estado: Estado, now: Date): Promise<Booking | undefined> {
     return this.actualizar(id, { estado }, now);
   }
 
-  async reprogramar(id: string, { confirmada, estado, notasInternas }: Reprogramacion, now: Date): Promise<Booking | undefined> {
+  async reprogramar(
+    id: string,
+    { confirmada, estado, notasInternas, formaPago, servicioIds }: Reprogramacion,
+    now: Date,
+  ): Promise<Booking | undefined> {
     if (!isUuid(id)) return undefined;
-    // La condición "no cerrado" va en el mismo UPDATE: si otro pedido lo cancela o completa en el medio, no se
-    // reprograma igual. coalesce($3, estado): sin estado nuevo, queda el que tenía. La nota, como en actualizar().
-    const { rows } = await this.sql.query(
-      `WITH b AS (
-       UPDATE buddys.bookings AS b
-       SET fecha_confirmada = $1::date, franja_confirmada = $2::text,
-           -- Si cambia la fecha o la franja de agenda, el recordatorio ya enviado no sirve: se limpia la marca.
-           -- (En el SET, b.* son los valores de ANTES del UPDATE.)
-           recordatorio_enviado_at = CASE
-             WHEN coalesce($1::date, b.fecha_preferida) IS DISTINCT FROM coalesce(b.fecha_confirmada, b.fecha_preferida)
-               OR coalesce($2::text, b.franja) IS DISTINCT FROM coalesce(b.franja_confirmada, b.franja)
-             THEN NULL ELSE b.recordatorio_enviado_at END,
-           estado = coalesce($3::text, b.estado),
-           notas_internas = CASE WHEN $4::boolean THEN $5::text ELSE b.notas_internas END,
-           updated_at = $6::timestamptz
-       WHERE b.id = $7::uuid AND b.estado NOT IN ('cancelado', 'completado')
-       RETURNING b.*
-       )
-       SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
-              to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
-              to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
-              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
-              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
-              CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
-                   ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
-              END AS turnos_del_cliente
-       FROM b
-       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id`,
-      [
-        confirmada?.fecha ?? null,
-        confirmada?.franja ?? null,
-        estado ?? null,
-        notasInternas !== undefined,
-        notasInternas ?? null,
-        now.toISOString(),
-        id,
-      ],
-    );
-    const row = rows[0];
-    if (row) return toBooking(row);
+    const principal = servicioIds?.[0] ?? null;
+    const booking = await this.sql.transaction(async (sql) => {
+      // La condición "no cerrado" va en el mismo UPDATE: si otro pedido lo cancela o completa en el medio, no se
+      // reprograma igual. coalesce($3, estado): sin estado nuevo, queda el que tenía. La nota, la forma de pago y los
+      // servicios, como en actualizar().
+      const { rowCount } = await sql.query(
+        `UPDATE buddys.bookings AS b
+         SET fecha_confirmada = $1::date, franja_confirmada = $2::text,
+             -- Si cambia la fecha o la franja de agenda, el recordatorio ya enviado no sirve: se limpia la marca.
+             -- (En el SET, b.* son los valores de ANTES del UPDATE.)
+             recordatorio_enviado_at = CASE
+               WHEN coalesce($1::date, b.fecha_preferida) IS DISTINCT FROM coalesce(b.fecha_confirmada, b.fecha_preferida)
+                 OR coalesce($2::text, b.franja) IS DISTINCT FROM coalesce(b.franja_confirmada, b.franja)
+               THEN NULL ELSE b.recordatorio_enviado_at END,
+             estado = coalesce($3::text, b.estado),
+             notas_internas = CASE WHEN $4::boolean THEN $5::text ELSE b.notas_internas END,
+             forma_pago = CASE WHEN $8::boolean THEN $9::text ELSE b.forma_pago END,
+             servicio_id = coalesce($10::text, b.servicio_id),
+             updated_at = $6::timestamptz
+         WHERE b.id = $7::uuid AND b.estado NOT IN ('cancelado', 'completado')`,
+        [
+          confirmada?.fecha ?? null,
+          confirmada?.franja ?? null,
+          estado ?? null,
+          notasInternas !== undefined,
+          notasInternas ?? null,
+          now.toISOString(),
+          id,
+          formaPago !== undefined,
+          formaPago ?? null,
+          principal,
+        ],
+      );
+      if (rowCount === 0) return undefined;
+      if (servicioIds !== undefined) await reemplazarServicios(sql, id, servicioIds);
+      return turnoEscrito(sql, id);
+    });
+    if (booking !== undefined) return booking;
 
     // No se actualizó: o no existe, o está cerrado.
     const actual = await this.sql.query('SELECT estado FROM buddys.bookings WHERE id = $1::uuid', [id]);
@@ -467,11 +632,18 @@ export class PostgresBookingRepository implements BookingRepository {
       `SELECT b.id::text AS id, b.nombre, b.telefono, b.telefono_whatsapp, b.email, b.vehiculo_tipo, b.vehiculo_modelo, b.origen, b.servicio_id,
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
-              b.comentario, b.estado, b.notas_internas, b.monto, b.created_at, b.updated_at,
+              b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
               t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
               CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                    ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
-              END AS turnos_del_cliente
+              END AS turnos_del_cliente,
+              coalesce(
+                (SELECT json_agg(json_build_object('id', ls.servicio_id, 'nombre', sv.nombre, 'precioLista', ls.precio_lista) ORDER BY ls.orden)
+                 FROM buddys.lavado_servicios ls JOIN buddys.servicios sv ON sv.id = ls.servicio_id
+                 WHERE ls.booking_id = b.id),
+                (SELECT json_build_array(json_build_object('id', sp.id, 'nombre', sp.nombre, 'precioLista', NULL))
+                 FROM buddys.servicios sp WHERE sp.id = b.servicio_id)
+              ) AS servicios
        FROM buddys.bookings b
        LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
        WHERE b.estado <> 'cancelado'
@@ -485,6 +657,7 @@ export class PostgresBookingRepository implements BookingRepository {
   async delete(id: string): Promise<boolean> {
     if (!isUuid(id)) return false;
     // Un turno con comprobante emitido no se borra (la FK es ON DELETE RESTRICT): se avisa con un error de negocio.
+    // Sus servicios (lavado_servicios) se van con él: ON DELETE CASCADE.
     const emitido = await this.sql.query('SELECT 1 AS ok FROM buddys.comprobantes WHERE booking_id = $1::uuid', [id]);
     if (emitido.rows.length > 0) throw new TurnoConComprobanteError();
     const { rowCount } = await this.sql.query('DELETE FROM buddys.bookings WHERE id = $1::uuid', [id]);

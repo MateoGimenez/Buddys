@@ -42,6 +42,8 @@ export const TELEFONO_MSG = 'Revisá el teléfono: usá solo números, espacios,
 const EMAIL_MSG = 'Revisá el email.';
 /** Mismo mensaje si el servicio no tiene formato de id, no existe o está inactivo (ver BookingService). */
 export const SERVICIO_MSG = 'Elegí un servicio de la lista.';
+/** Mismo texto en el pedido de turno y en "Registrar lavado". */
+export const VEHICULO_TIPO_MSG = 'Elegí el tipo de vehículo (auto, suv, pickup o moto).';
 
 /**
  * Esquema de POST /api/bookings. Se arma por request porque el rango de fechas depende de "hoy".
@@ -93,7 +95,7 @@ export function createBookingSchema(range: { min: string; max: string }) {
         .default(null),
     ),
 
-    vehiculoTipo: z.enum(VEHICULO_TIPOS, { error: 'Elegí el tipo de vehículo (auto, camioneta o moto).' }),
+    vehiculoTipo: z.enum(VEHICULO_TIPOS, { error: VEHICULO_TIPO_MSG }),
 
     vehiculoModelo: z.preprocess(
       nullToUndefined,

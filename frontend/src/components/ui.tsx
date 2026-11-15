@@ -1,11 +1,13 @@
-import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, Loader2 } from 'lucide-react';
 import {
   useEffect,
   useId,
   useRef,
   type ButtonHTMLAttributes,
+  type CSSProperties,
   type InputHTMLAttributes,
   type ReactNode,
+  type Ref,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
@@ -19,6 +21,7 @@ interface BotonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   cargando?: boolean;
   icono?: ReactNode;
   chico?: boolean;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Boton({ variante = 'secundario', cargando = false, icono, chico, children, className, disabled, ...rest }: BotonProps) {
@@ -122,7 +125,9 @@ export function Segmentado<T extends string>({
   opciones,
   valor,
   onCambio,
+  onQuitar,
   error,
+  ayuda,
   variante = 'barra',
   leyendaOculta,
 }: {
@@ -131,36 +136,59 @@ export function Segmentado<T extends string>({
   opciones: Opcion<T>[];
   valor: T | null;
   onCambio: (v: T) => void;
+  /** Si está, tocar la opción elegida la saca (la elección es opcional). */
+  onQuitar?: () => void;
   error?: string | undefined;
-  variante?: 'barra' | 'grilla';
+  ayuda?: ReactNode;
+  variante?: 'barra' | 'grilla' | 'fichas';
   leyendaOculta?: boolean;
 }) {
-  const errorId = useId();
+  const id = useId();
+  const errorId = `${id}-error`;
+  const ayudaId = `${id}-ayuda`;
+  const describedBy = [error ? errorId : '', ayuda ? ayudaId : ''].filter(Boolean).join(' ') || undefined;
+  // En la barra, la marca de la opción elegida es una sola pieza que se desliza de una opción a la otra.
+  const iElegida = opciones.findIndex((o) => o.valor === valor);
+  const indicador =
+    variante === 'barra' && iElegida >= 0 ? ({ '--n': opciones.length, '--i': iElegida } as CSSProperties) : undefined;
   return (
-    <fieldset className={`segmentado segmentado-${variante}`} aria-describedby={error ? errorId : undefined}>
+    <fieldset className={`segmentado segmentado-${variante}`} aria-describedby={describedBy} data-error={error ? '' : undefined}>
       <legend className={leyendaOculta ? 'solo-lectores' : undefined}>{leyenda}</legend>
-      <div className="segmentado-opciones">
-        {opciones.map((o) => (
-          <label key={o.valor} className="opcion" data-elegida={valor === o.valor ? '' : undefined} data-deshabilitada={o.deshabilitada ? '' : undefined}>
-            <input
-              type="radio"
-              name={nombre}
-              value={o.valor}
-              checked={valor === o.valor}
-              disabled={o.deshabilitada}
-              onChange={() => {
-                onCambio(o.valor);
-              }}
-            />
-            <span className="opcion-texto">{o.etiqueta}</span>
-            {o.detalle ? <span className="opcion-detalle">{o.detalle}</span> : null}
-          </label>
-        ))}
+      <div className="segmentado-opciones" style={indicador} data-indicador={indicador ? '' : undefined}>
+        {opciones.map((o) => {
+          const elegida = valor === o.valor;
+          return (
+            <label key={o.valor} className="opcion" data-elegida={elegida ? '' : undefined} data-deshabilitada={o.deshabilitada ? '' : undefined}>
+              <input
+                type="radio"
+                name={nombre}
+                value={o.valor}
+                checked={elegida}
+                disabled={o.deshabilitada}
+                onChange={() => {
+                  onCambio(o.valor);
+                }}
+                onClick={() => {
+                  // Un radio ya marcado no dispara change: el clic (o la barra espaciadora) sobre él lo saca.
+                  if (elegida && onQuitar) onQuitar();
+                }}
+              />
+              {variante === 'fichas' && elegida ? <Check aria-hidden size={18} strokeWidth={3} className="opcion-marca" /> : null}
+              <span className="opcion-texto">{o.etiqueta}</span>
+              {o.detalle ? <span className="opcion-detalle">{o.detalle}</span> : null}
+            </label>
+          );
+        })}
       </div>
       {error ? (
         <p className="campo-error" id={errorId}>
           <AlertTriangle aria-hidden size={16} />
           {error}
+        </p>
+      ) : null}
+      {ayuda ? (
+        <p className="campo-ayuda" id={ayudaId}>
+          {ayuda}
         </p>
       ) : null}
     </fieldset>
@@ -203,11 +231,26 @@ export function Esqueleto({ filas = 3 }: { filas?: number }) {
   );
 }
 
-export function Cargando({ texto = 'Cargando…' }: { texto?: string }) {
+/** Esqueleto con la forma de Registrar: la barra de vehículos y las fichas de servicios. */
+function EsqueletoFormulario() {
+  return (
+    <div className="esqueleto esqueleto-formulario" aria-hidden>
+      <div className="esqueleto-fila" />
+      <div className="esqueleto-grilla">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="esqueleto-fila" />
+        ))}
+      </div>
+      <div className="esqueleto-fila" />
+    </div>
+  );
+}
+
+export function Cargando({ texto = 'Cargando…', forma = 'filas' }: { texto?: string; forma?: 'filas' | 'formulario' }) {
   return (
     <div role="status" aria-live="polite">
       <span className="solo-lectores">{texto}</span>
-      <Esqueleto />
+      {forma === 'formulario' ? <EsqueletoFormulario /> : <Esqueleto />}
     </div>
   );
 }

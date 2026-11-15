@@ -24,7 +24,7 @@ async function baseAntes(): Promise<PGlite> {
   // eslint-disable-next-line no-restricted-syntax -- constante del propio test
   await pg.exec(SUPABASE_STUB);
   for (const file of migrationFiles()) {
-    if (file === NUEVA) continue;
+    if (file >= NUEVA) break; // solo las anteriores (las posteriores cambian estas columnas)
     // eslint-disable-next-line no-restricted-syntax -- migraciones versionadas
     await pg.exec(leer(file));
   }

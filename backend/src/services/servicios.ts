@@ -1,3 +1,4 @@
+import { VEHICULO_NOMBRES, type VehiculoTipo } from '../domain/booking.js';
 import {
   type CambiosServicio,
   DestacadoInactivoError,
@@ -18,6 +19,32 @@ export interface ServicioServiceDeps {
 }
 
 const NOT_FOUND_MESSAGE = 'No encontramos ese servicio.';
+
+/** Un servicio de la lista que no existe o está inactivo (mismo texto que un id mal formado). */
+export const SERVICIO_NO_DISPONIBLE_MSG = 'Elegí servicios de la lista: alguno ya no está disponible.';
+
+/**
+ * Los servicios de un lavado o turno (servicioIds ya validados en formato: 1 a 10, sin repetidos), verificados contra
+ * el catálogo: cada uno tiene que existir, estar activo y ofrecerse para el vehículo. Una sola lectura del catálogo
+ * (los activos). Si no, 400 VALIDATION_ERROR en fields.servicioIds. Devuelve los servicios en el mismo orden.
+ */
+export async function serviciosDelLavado(
+  servicios: ServicioRepository,
+  servicioIds: readonly string[],
+  vehiculoTipo: VehiculoTipo,
+): Promise<Servicio[]> {
+  const activos = new Map((await servicios.list({ soloActivos: true })).map((servicio) => [servicio.id, servicio]));
+  return servicioIds.map((id) => {
+    const servicio = activos.get(id);
+    if (servicio === undefined) throw AppError.validation({ servicioIds: SERVICIO_NO_DISPONIBLE_MSG });
+    if (!servicio.vehiculos.includes(vehiculoTipo)) {
+      throw AppError.validation({
+        servicioIds: `"${servicio.nombre}" no se ofrece para ${VEHICULO_NOMBRES[vehiculoTipo]}. Sacalo de la lista.`,
+      });
+    }
+    return servicio;
+  });
+}
 
 /** 400 en el campo destacado: no se puede destacar un servicio inactivo. */
 const destacadoInactivo = (error: DestacadoInactivoError): AppError =>

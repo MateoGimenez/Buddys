@@ -90,43 +90,11 @@
       }
     }
   },
-  "lavadosVencida": {
-    "status": 401,
-    "body": {
-      "error": {
-        "code": "SESSION_EXPIRED",
-        "message": "Tu sesión venció. Estamos renovándola; si no se renueva, iniciá sesión de nuevo."
-      }
-    }
-  },
-  "refreshOk": {
-    "status": 200,
-    "body": {
-      "usuario": {
-        "id": "00000000-0000-4000-8000-00000000a0a0",
-        "email": "ana@buddys.test",
-        "nombre": "Ana",
-        "rol": "superadmin"
-      }
-    }
-  },
-  "refreshSinSesion": {
-    "status": 401,
-    "body": {
-      "error": {
-        "code": "UNAUTHORIZED",
-        "message": "Tu sesión no es válida o venció. Iniciá sesión de nuevo."
-      }
-    }
-  },
-  "logout": {
-    "status": 204
-  },
   "lavadoAdmin": {
     "status": 201,
     "body": {
       "lavado": {
-        "id": "dd7f154b-8f1f-41aa-a4e5-f1b3f012f630",
+        "id": "c3b73bea-cc63-4d1e-aa70-97562f84dc26",
         "nombre": "Juan",
         "telefono": "3804123456",
         "telefonoWhatsapp": "5493804123456",
@@ -148,16 +116,25 @@
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 12000
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
-      }
+      },
+      "deshacerHasta": "2026-10-16T15:05:00.000Z"
     }
   },
   "lavadoAdminMinimo": {
     "status": 201,
     "body": {
       "lavado": {
-        "id": "ca680b95-a823-4850-8e68-ab8201b5d983",
+        "id": "a8175f8d-4373-46ca-a3b4-fe67a9f9b3dc",
         "nombre": "Cliente de mostrador",
         "telefono": null,
         "telefonoWhatsapp": null,
@@ -179,16 +156,25 @@
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 12000
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
-      }
+      },
+      "deshacerHasta": "2026-10-16T15:05:00.000Z"
     }
   },
   "lavadoEmpleado": {
     "status": 201,
     "body": {
       "lavado": {
-        "id": "db3e91d3-6310-40d3-b55c-2d2b49b143c9",
+        "id": "4c86995f-c929-4862-bf38-44bdbd426e74",
         "nombre": "Cliente de mostrador",
         "telefono": null,
         "telefonoWhatsapp": null,
@@ -210,9 +196,18 @@
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
-      }
+      },
+      "deshacerHasta": "2026-10-16T15:05:00.000Z"
     }
   },
   "lavadoEmpleadoOtro": {
@@ -274,13 +269,191 @@
       }
     }
   },
+  "lavadoVariosAdmin": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "c8a33608-a7a3-4b76-91c5-2cc94c84f36e",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "suv",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-premium",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": 30000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
+        "formaPago": "transferencia",
+        "servicios": [
+          {
+            "id": "lavado-premium",
+            "nombre": "Lavado Premium",
+            "precioLista": 25000
+          },
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:05:00.000Z"
+    }
+  },
+  "lavadoVariosEmpleado": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "29e810b9-8634-4c2b-aacd-f51ee23e94bd",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "suv",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-00000000b0b0",
+          "nombre": "Beto"
+        },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          },
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:05:00.000Z"
+    }
+  },
+  "lavadoLegadoServicioId": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "aabca53f-63cc-411f-ad56-e1d76c094e24",
+        "nombre": "Cliente de mostrador",
+        "telefono": null,
+        "telefonoWhatsapp": null,
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": null,
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": null,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-00000000b0b0",
+          "nombre": "Beto"
+        },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:05:00.000Z"
+    }
+  },
+  "lavadoServiciosRepetidos": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioIds": "No repitas servicios en la lista."
+        }
+      }
+    }
+  },
+  "lavadoServiciosDemasiados": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioIds": "Elegí de 1 a 10 servicios de la lista."
+        }
+      }
+    }
+  },
+  "lavadoServiciosVacio": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioIds": "Elegí de 1 a 10 servicios de la lista."
+        }
+      }
+    }
+  },
+  "lavadoServicioIdYServicioIds": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "servicioIds": "Mandá servicioIds (la lista) o servicioId (uno solo), no los dos."
+        }
+      }
+    }
+  },
   "planillaAdmin": {
     "status": 200,
     "body": {
       "fecha": "2026-10-16",
       "lavados": [
         {
-          "id": "dd7f154b-8f1f-41aa-a4e5-f1b3f012f630",
+          "id": "c3b73bea-cc63-4d1e-aa70-97562f84dc26",
           "nombre": "Juan",
           "telefono": "3804123456",
           "telefonoWhatsapp": "5493804123456",
@@ -302,11 +475,19 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 12000
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
         {
-          "id": "ca680b95-a823-4850-8e68-ab8201b5d983",
+          "id": "a8175f8d-4373-46ca-a3b4-fe67a9f9b3dc",
           "nombre": "Cliente de mostrador",
           "telefono": null,
           "telefonoWhatsapp": null,
@@ -328,11 +509,19 @@
             "id": "00000000-0000-4000-8000-00000000a0a0",
             "nombre": "Ana"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 12000
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
         {
-          "id": "db3e91d3-6310-40d3-b55c-2d2b49b143c9",
+          "id": "4c86995f-c929-4862-bf38-44bdbd426e74",
           "nombre": "Cliente de mostrador",
           "telefono": null,
           "telefonoWhatsapp": null,
@@ -354,11 +543,97 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 12000
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
         {
-          "id": "c0ba84b8-e5a3-4659-936c-fe66e5389605",
+          "id": "c8a33608-a7a3-4b76-91c5-2cc94c84f36e",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-premium",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 30000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
+          "formaPago": "transferencia",
+          "servicios": [
+            {
+              "id": "lavado-premium",
+              "nombre": "Lavado Premium",
+              "precioLista": 25000
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "29e810b9-8634-4c2b-aacd-f51ee23e94bd",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 15000
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "aabca53f-63cc-411f-ad56-e1d76c094e24",
           "nombre": "Cliente de mostrador",
           "telefono": null,
           "telefonoWhatsapp": null,
@@ -380,108 +655,55 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
-          "createdAt": "2026-10-16T15:00:00.000Z",
-          "updatedAt": "2026-10-16T15:00:00.000Z"
-        },
-        {
-          "id": "2f571e2c-55ca-4249-8dd2-563ba01e143b",
-          "nombre": "Cliente de mostrador",
-          "telefono": null,
-          "telefonoWhatsapp": null,
-          "email": null,
-          "vehiculoTipo": "moto",
-          "vehiculoModelo": null,
-          "origen": "mostrador",
-          "servicioId": "lavado-basico",
-          "fechaPreferida": "2026-10-16",
-          "franja": "manana",
-          "fechaConfirmada": null,
-          "franjaConfirmada": null,
-          "comentario": null,
-          "estado": "completado",
-          "notasInternas": null,
-          "turnosDelCliente": null,
-          "monto": null,
-          "trabajador": {
-            "id": "00000000-0000-4000-8000-00000000a0a0",
-            "nombre": "Ana"
-          },
-          "createdAt": "2026-10-16T15:00:00.000Z",
-          "updatedAt": "2026-10-16T15:00:00.000Z"
-        },
-        {
-          "id": "a727e721-3d86-4cb9-b01d-a45a38ca7b26",
-          "nombre": "Cliente de mostrador",
-          "telefono": null,
-          "telefonoWhatsapp": null,
-          "email": null,
-          "vehiculoTipo": "auto",
-          "vehiculoModelo": null,
-          "origen": "mostrador",
-          "servicioId": "lavado-basico",
-          "fechaPreferida": "2026-10-16",
-          "franja": "manana",
-          "fechaConfirmada": null,
-          "franjaConfirmada": null,
-          "comentario": null,
-          "estado": "completado",
-          "notasInternas": null,
-          "turnosDelCliente": null,
-          "monto": null,
-          "trabajador": {
-            "id": "00000000-0000-4000-8000-00000000a0a0",
-            "nombre": "Ana"
-          },
-          "createdAt": "2026-10-16T15:00:00.000Z",
-          "updatedAt": "2026-10-16T15:00:00.000Z"
-        },
-        {
-          "id": "93b1f2ac-da1f-4342-9bf8-b2dcf705ca97",
-          "nombre": "Cliente de mostrador",
-          "telefono": null,
-          "telefonoWhatsapp": null,
-          "email": null,
-          "vehiculoTipo": "auto",
-          "vehiculoModelo": null,
-          "origen": "mostrador",
-          "servicioId": "lavado-basico",
-          "fechaPreferida": "2026-10-16",
-          "franja": "manana",
-          "fechaConfirmada": null,
-          "franjaConfirmada": null,
-          "comentario": null,
-          "estado": "completado",
-          "notasInternas": null,
-          "turnosDelCliente": null,
-          "monto": null,
-          "trabajador": {
-            "id": "00000000-0000-4000-8000-00000000a0a0",
-            "nombre": "Ana"
-          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 12000
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
       ],
       "resumen": {
-        "cantidad": 7,
-        "total": 21000,
-        "sinMonto": 5,
+        "cantidad": 6,
+        "total": 51000,
+        "sinMonto": 3,
         "porTrabajador": [
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-00000000a0a0",
-              "nombre": "Ana"
-            },
-            "cantidad": 4,
-            "total": 0
-          },
           {
             "trabajador": {
               "id": "00000000-0000-4000-8000-00000000b0b0",
               "nombre": "Beto"
             },
-            "cantidad": 3,
+            "cantidad": 4,
             "total": 21000
+          },
+          {
+            "trabajador": {
+              "id": "00000000-0000-4000-8000-00000000a0a0",
+              "nombre": "Ana"
+            },
+            "cantidad": 2,
+            "total": 30000
+          }
+        ],
+        "porFormaPago": [
+          {
+            "formaPago": "transferencia",
+            "cantidad": 1,
+            "total": 30000
+          },
+          {
+            "formaPago": "efectivo",
+            "cantidad": 1,
+            "total": 12000
+          },
+          {
+            "formaPago": null,
+            "cantidad": 4,
+            "total": 9000
           }
         ]
       }
@@ -493,7 +715,7 @@
       "fecha": "2026-10-16",
       "lavados": [
         {
-          "id": "dd7f154b-8f1f-41aa-a4e5-f1b3f012f630",
+          "id": "c3b73bea-cc63-4d1e-aa70-97562f84dc26",
           "nombre": "Juan",
           "telefono": "3804123456",
           "telefonoWhatsapp": "5493804123456",
@@ -515,11 +737,19 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
         {
-          "id": "ca680b95-a823-4850-8e68-ab8201b5d983",
+          "id": "a8175f8d-4373-46ca-a3b4-fe67a9f9b3dc",
           "nombre": "Cliente de mostrador",
           "telefono": null,
           "telefonoWhatsapp": null,
@@ -541,11 +771,19 @@
             "id": "00000000-0000-4000-8000-00000000a0a0",
             "nombre": "Ana"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
         {
-          "id": "db3e91d3-6310-40d3-b55c-2d2b49b143c9",
+          "id": "4c86995f-c929-4862-bf38-44bdbd426e74",
           "nombre": "Cliente de mostrador",
           "telefono": null,
           "telefonoWhatsapp": null,
@@ -567,11 +805,97 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
         {
-          "id": "c0ba84b8-e5a3-4659-936c-fe66e5389605",
+          "id": "c8a33608-a7a3-4b76-91c5-2cc94c84f36e",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-premium",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
+          "formaPago": "transferencia",
+          "servicios": [
+            {
+              "id": "lavado-premium",
+              "nombre": "Lavado Premium",
+              "precioLista": null
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "29e810b9-8634-4c2b-aacd-f51ee23e94bd",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "aabca53f-63cc-411f-ad56-e1d76c094e24",
           "nombre": "Cliente de mostrador",
           "telefono": null,
           "telefonoWhatsapp": null,
@@ -593,107 +917,54 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
-          "createdAt": "2026-10-16T15:00:00.000Z",
-          "updatedAt": "2026-10-16T15:00:00.000Z"
-        },
-        {
-          "id": "2f571e2c-55ca-4249-8dd2-563ba01e143b",
-          "nombre": "Cliente de mostrador",
-          "telefono": null,
-          "telefonoWhatsapp": null,
-          "email": null,
-          "vehiculoTipo": "moto",
-          "vehiculoModelo": null,
-          "origen": "mostrador",
-          "servicioId": "lavado-basico",
-          "fechaPreferida": "2026-10-16",
-          "franja": "manana",
-          "fechaConfirmada": null,
-          "franjaConfirmada": null,
-          "comentario": null,
-          "estado": "completado",
-          "notasInternas": null,
-          "turnosDelCliente": null,
-          "monto": null,
-          "trabajador": {
-            "id": "00000000-0000-4000-8000-00000000a0a0",
-            "nombre": "Ana"
-          },
-          "createdAt": "2026-10-16T15:00:00.000Z",
-          "updatedAt": "2026-10-16T15:00:00.000Z"
-        },
-        {
-          "id": "a727e721-3d86-4cb9-b01d-a45a38ca7b26",
-          "nombre": "Cliente de mostrador",
-          "telefono": null,
-          "telefonoWhatsapp": null,
-          "email": null,
-          "vehiculoTipo": "auto",
-          "vehiculoModelo": null,
-          "origen": "mostrador",
-          "servicioId": "lavado-basico",
-          "fechaPreferida": "2026-10-16",
-          "franja": "manana",
-          "fechaConfirmada": null,
-          "franjaConfirmada": null,
-          "comentario": null,
-          "estado": "completado",
-          "notasInternas": null,
-          "turnosDelCliente": null,
-          "monto": null,
-          "trabajador": {
-            "id": "00000000-0000-4000-8000-00000000a0a0",
-            "nombre": "Ana"
-          },
-          "createdAt": "2026-10-16T15:00:00.000Z",
-          "updatedAt": "2026-10-16T15:00:00.000Z"
-        },
-        {
-          "id": "93b1f2ac-da1f-4342-9bf8-b2dcf705ca97",
-          "nombre": "Cliente de mostrador",
-          "telefono": null,
-          "telefonoWhatsapp": null,
-          "email": null,
-          "vehiculoTipo": "auto",
-          "vehiculoModelo": null,
-          "origen": "mostrador",
-          "servicioId": "lavado-basico",
-          "fechaPreferida": "2026-10-16",
-          "franja": "manana",
-          "fechaConfirmada": null,
-          "franjaConfirmada": null,
-          "comentario": null,
-          "estado": "completado",
-          "notasInternas": null,
-          "turnosDelCliente": null,
-          "monto": null,
-          "trabajador": {
-            "id": "00000000-0000-4000-8000-00000000a0a0",
-            "nombre": "Ana"
-          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
       ],
       "resumen": {
-        "cantidad": 7,
+        "cantidad": 6,
         "total": null,
-        "sinMonto": 5,
+        "sinMonto": 3,
         "porTrabajador": [
           {
             "trabajador": {
-              "id": "00000000-0000-4000-8000-00000000a0a0",
-              "nombre": "Ana"
+              "id": "00000000-0000-4000-8000-00000000b0b0",
+              "nombre": "Beto"
             },
             "cantidad": 4,
             "total": null
           },
           {
             "trabajador": {
-              "id": "00000000-0000-4000-8000-00000000b0b0",
-              "nombre": "Beto"
+              "id": "00000000-0000-4000-8000-00000000a0a0",
+              "nombre": "Ana"
             },
-            "cantidad": 3,
+            "cantidad": 2,
+            "total": null
+          }
+        ],
+        "porFormaPago": [
+          {
+            "formaPago": null,
+            "cantidad": 4,
+            "total": null
+          },
+          {
+            "formaPago": "efectivo",
+            "cantidad": 1,
+            "total": null
+          },
+          {
+            "formaPago": "transferencia",
+            "cantidad": 1,
             "total": null
           }
         ]
@@ -709,7 +980,8 @@
         "cantidad": 0,
         "total": 0,
         "sinMonto": 0,
-        "porTrabajador": []
+        "porTrabajador": [],
+        "porFormaPago": []
       }
     }
   },
@@ -729,7 +1001,7 @@
     "status": 200,
     "body": {
       "booking": {
-        "id": "dd7f154b-8f1f-41aa-a4e5-f1b3f012f630",
+        "id": "c3b73bea-cc63-4d1e-aa70-97562f84dc26",
         "nombre": "Juan",
         "telefono": "3804123456",
         "telefonoWhatsapp": "5493804123456",
@@ -751,8 +1023,25 @@
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
-        "updatedAt": "2026-11-12T05:17:34.147Z"
+        "updatedAt": "2026-11-14T20:08:17.850Z"
+      }
+    }
+  },
+  "patchServiciosEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador."
       }
     }
   },
@@ -760,7 +1049,7 @@
     "status": 200,
     "body": {
       "booking": {
-        "id": "dd7f154b-8f1f-41aa-a4e5-f1b3f012f630",
+        "id": "c3b73bea-cc63-4d1e-aa70-97562f84dc26",
         "nombre": "Juan",
         "telefono": "3804123456",
         "telefonoWhatsapp": "5493804123456",
@@ -782,16 +1071,24 @@
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 12000
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
     }
   },
-  "patchAdminMontoNull": {
+  "patchAdminServicios": {
     "status": 200,
     "body": {
       "booking": {
-        "id": "dd7f154b-8f1f-41aa-a4e5-f1b3f012f630",
+        "id": "c3b73bea-cc63-4d1e-aa70-97562f84dc26",
         "nombre": "Juan",
         "telefono": "3804123456",
         "telefonoWhatsapp": "5493804123456",
@@ -799,7 +1096,51 @@
         "vehiculoTipo": "auto",
         "vehiculoModelo": "Gol AB123CD",
         "origen": "mostrador",
-        "servicioId": "lavado-basico",
+        "servicioId": "lavado-premium",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": 1,
+        "monto": 15000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-premium",
+            "nombre": "Lavado Premium",
+            "precioLista": null
+          },
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 12000
+          }
+        ],
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-11-14T20:08:17.877Z"
+      }
+    }
+  },
+  "patchAdminMontoNull": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "c3b73bea-cc63-4d1e-aa70-97562f84dc26",
+        "nombre": "Juan",
+        "telefono": "3804123456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "mostrador",
+        "servicioId": "lavado-premium",
         "fechaPreferida": "2026-10-16",
         "franja": "manana",
         "fechaConfirmada": null,
@@ -813,8 +1154,21 @@
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-premium",
+            "nombre": "Lavado Premium",
+            "precioLista": null
+          },
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 12000
+          }
+        ],
         "createdAt": "2026-10-16T15:00:00.000Z",
-        "updatedAt": "2026-10-16T15:00:00.000Z"
+        "updatedAt": "2026-11-14T20:08:17.877Z"
       }
     }
   },
@@ -825,7 +1179,7 @@
         "code": "VALIDATION_ERROR",
         "message": "Revisá los datos ingresados.",
         "fields": {
-          "estado": "Indicá el estado nuevo, la fecha y la franja confirmadas, la nota interna o el cobro."
+          "estado": "Indicá el estado nuevo, la fecha y la franja confirmadas, la nota interna, el cobro o los servicios."
         }
       }
     }
@@ -896,8 +1250,8 @@
           "nombre": "Ana",
           "rol": "superadmin",
           "activo": true,
-          "createdAt": "2026-11-12T05:17:33.623Z",
-          "updatedAt": "2026-11-12T05:17:33.631Z"
+          "createdAt": "2026-11-14T20:08:17.549Z",
+          "updatedAt": "2026-11-14T20:08:17.553Z"
         },
         {
           "id": "00000000-0000-4000-8000-00000000b0b0",
@@ -905,8 +1259,8 @@
           "nombre": "Beto",
           "rol": "empleado",
           "activo": true,
-          "createdAt": "2026-11-12T05:17:33.634Z",
-          "updatedAt": "2026-11-12T05:17:33.635Z"
+          "createdAt": "2026-11-14T20:08:17.554Z",
+          "updatedAt": "2026-11-14T20:08:17.555Z"
         }
       ],
       "gestionCuentas": true
@@ -938,5 +1292,37 @@
         "message": "Con tu rol no podés ver ni cargar los gastos del taller."
       }
     }
+  },
+  "lavadosVencida": {
+    "status": 401,
+    "body": {
+      "error": {
+        "code": "SESSION_EXPIRED",
+        "message": "Tu sesión venció. Estamos renovándola; si no se renueva, iniciá sesión de nuevo."
+      }
+    }
+  },
+  "refreshOk": {
+    "status": 200,
+    "body": {
+      "usuario": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana",
+        "rol": "superadmin"
+      }
+    }
+  },
+  "refreshSinSesion": {
+    "status": 401,
+    "body": {
+      "error": {
+        "code": "UNAUTHORIZED",
+        "message": "Tu sesión no es válida o venció. Iniciá sesión de nuevo."
+      }
+    }
+  },
+  "logout": {
+    "status": 204
   }
 }

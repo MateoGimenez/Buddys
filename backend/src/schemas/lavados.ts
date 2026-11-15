@@ -2,10 +2,11 @@ import { z } from 'zod';
 import { FRANJAS, MONTO_MAX, VEHICULO_TIPOS } from '../domain/booking.js';
 import { SERVICIO_ID_MAX, SERVICIO_ID_REGEX } from '../domain/servicios.js';
 import { isValidCalendarDate } from '../lib/dates.js';
-import { MAX_NOTAS_INTERNAS, charLength } from './admin.js';
+import { MAX_NOTAS_INTERNAS, charLength, formaPagoTurnoSchema } from './admin.js';
 import {
   SERVICIO_MSG,
   TELEFONO_MSG,
+  VEHICULO_TIPO_MSG,
   blankToNull,
   cleanPhoneText,
   countDigits,
@@ -14,6 +15,7 @@ import {
   nullToUndefined,
   stripBidi,
 } from './bookings.js';
+import { SERVICIOS_LAVADO_MSG, servicioIdsSchema } from './servicios.js';
 
 /** Hasta cuántos días para atrás se puede registrar un lavado que se olvidó cargar. */
 export const LAVADO_DIAS_ATRAS = 31;
@@ -21,6 +23,7 @@ export const LAVADO_DIAS_ATRAS = 31;
 const MONTO_MSG = `El monto tiene que ser un número entero de pesos, de 0 a ${MONTO_MAX.toLocaleString('es-AR')}.`;
 const TRABAJADOR_MSG = 'Elegí quién hizo el lavado.';
 const FECHA_MSG = 'Elegí una fecha válida (YYYY-MM-DD).';
+const SERVICIOS_DOS_FORMAS_MSG = 'Mandá servicioIds (la lista) o servicioId (uno solo), no los dos.';
 const NOTAS_MSG = `La nota tiene que tener hasta ${String(MAX_NOTAS_INTERNAS)} caracteres.`;
 
 /** Texto opcional de una línea: "" u omitido => null. */
@@ -42,20 +45,25 @@ const textoOpcional = (max: number, campo: string) =>
   );
 
 /**
- * POST /api/admin/lavados. Estricto (un campo desconocido se rechaza). Acá solo el formato: que el servicio exista,
- * esté activo y se ofrezca para el vehículo, que la persona exista y esté activa, y los permisos, los verifica
+ * POST /api/admin/lavados. Estricto (un campo desconocido se rechaza). Acá solo el formato: que los servicios existan,
+ * estén activos y se ofrezcan para el vehículo, que la persona exista y esté activa, y los permisos, los verifica
  * LavadoService. Se arma por request porque el rango de fechas depende de "hoy".
  *
- * Obligatorios: servicioId y vehiculoTipo. El resto es opcional: fecha (hoy), franja (según la hora), trabajadorId
- * (quien registra), monto (null: se completa después), nombre ("Cliente de mostrador"), teléfono, modelo/patente y nota.
+ * Obligatorios: servicioIds (1 a 10, sin repetidos; el primero es el principal) y vehiculoTipo. Por compatibilidad con
+ * la cola sin conexión del panel, un `servicioId` suelto (sin servicioIds) vale como [servicioId]; mandar los dos es
+ * un error (fields.servicioIds). Sale siempre con servicioIds. El resto es opcional: fecha (hoy), franja (según la hora), trabajadorId
+ * (quien registra), monto (null: se completa después), formaPago (null: sin indicar), nombre ("Cliente de mostrador"),
+ * teléfono, modelo/patente, nota e idLocal (el id que genera la cola sin conexión del panel: un reintento no duplica).
  */
 export function registrarLavadoSchema(range: { min: string; max: string }) {
   return z.strictObject({
+    servicioIds: servicioIdsSchema.optional(),
     servicioId: z
       .string({ error: SERVICIO_MSG })
       .max(SERVICIO_ID_MAX, { error: SERVICIO_MSG })
-      .regex(SERVICIO_ID_REGEX, { error: SERVICIO_MSG }),
-    vehiculoTipo: z.enum(VEHICULO_TIPOS, { error: 'Elegí el tipo de vehículo (auto, camioneta o moto).' }),
+      .regex(SERVICIO_ID_REGEX, { error: SERVICIO_MSG })
+      .optional(),
+    vehiculoTipo: z.enum(VEHICULO_TIPOS, { error: VEHICULO_TIPO_MSG }),
     monto: z
       .number({ error: MONTO_MSG })
       .int({ error: MONTO_MSG })
@@ -77,6 +85,11 @@ export function registrarLavadoSchema(range: { min: string; max: string }) {
       })
       .optional(),
     franja: z.enum(FRANJAS, { error: 'La franja tiene que ser manana o tarde.' }).optional(),
+    formaPago: formaPagoTurnoSchema.default(null),
+    idLocal: z
+      .uuid({ error: 'El idLocal tiene que ser un UUID.' })
+      .transform((id) => id.toLowerCase())
+      .optional(),
     nombre: textoOpcional(80, 'el nombre'),
     telefono: z.preprocess(
       nullToUndefined,
@@ -113,7 +126,18 @@ export function registrarLavadoSchema(range: { min: string; max: string }) {
         .transform(blankToNull)
         .default(null),
     ),
-  });
+  })
+    .superRefine(({ servicioIds, servicioId }, ctx) => {
+      if (servicioIds !== undefined && servicioId !== undefined) {
+        ctx.addIssue({ code: 'custom', path: ['servicioIds'], message: SERVICIOS_DOS_FORMAS_MSG });
+      } else if (servicioIds === undefined && servicioId === undefined) {
+        ctx.addIssue({ code: 'custom', path: ['servicioIds'], message: SERVICIOS_LAVADO_MSG });
+      }
+    })
+    .transform(({ servicioIds, servicioId, ...resto }) => ({
+      ...resto,
+      servicioIds: servicioIds ?? (servicioId === undefined ? [] : [servicioId]),
+    }));
 }
 
 /** GET /api/admin/lavados?fecha=YYYY-MM-DD (sin fecha: hoy). */

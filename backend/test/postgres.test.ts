@@ -35,6 +35,7 @@ const TABLES = [
   'gastos',
   'horario_semanal',
   'insumos',
+  'lavado_servicios',
   'metas_mensuales',
   'movimientos_stock',
   'perfiles',
@@ -57,7 +58,7 @@ describe('esquema Postgres (migraciones de supabase/migrations/ aplicadas en PGl
 
     const grants = await pg.query<{ grants: number }>(
       `SELECT count(*)::int AS grants FROM unnest(ARRAY['anon', 'authenticated', 'service_role']) AS r(role)
-       CROSS JOIN unnest(ARRAY['servicios', 'bookings', 'roles', 'perfiles', 'horario_semanal', 'dias_especiales', 'push_suscripciones']) AS t(name)
+       CROSS JOIN unnest(ARRAY['servicios', 'bookings', 'roles', 'perfiles', 'horario_semanal', 'dias_especiales', 'push_suscripciones', 'lavado_servicios']) AS t(name)
        WHERE has_table_privilege(r.role, 'buddys.' || t.name, 'SELECT, INSERT, UPDATE, DELETE')
           OR has_schema_privilege(r.role, 'buddys', 'USAGE')
           OR has_schema_privilege(r.role, 'buddys_private', 'USAGE')
@@ -232,10 +233,24 @@ describe('esquema Postgres (migraciones de supabase/migrations/ aplicadas en PGl
 
   it('verifyPostgresSchema: sin la migración de precios por vehículo falla con un mensaje claro que nombra las columnas y la migración', async () => {
     const { pg, sql } = await pglite();
-    await pg.exec('ALTER TABLE buddys.servicios DROP COLUMN precio_desde_camioneta, DROP COLUMN precio_desde_moto');
+    await pg.exec('ALTER TABLE buddys.servicios DROP COLUMN precio_desde_moto');
     await expect(verifyPostgresSchema(sql)).rejects.toThrow(
-      /Faltan columnas en buddys\.servicios \(precio_desde_camioneta, precio_desde_moto\).*precios_por_vehiculo/,
+      /Faltan columnas en buddys\.servicios \(precio_desde_moto\).*precios_por_vehiculo/,
     );
+  });
+
+  it('verifyPostgresSchema: sin la migración vehiculos_suv_pickup falla nombrando las columnas y la migración', async () => {
+    const { pg, sql } = await pglite();
+    await pg.exec('ALTER TABLE buddys.servicios DROP COLUMN precio_desde_pickup, DROP COLUMN categoria');
+    await expect(verifyPostgresSchema(sql)).rejects.toThrow(
+      /Faltan columnas en buddys\.servicios \(precio_desde_pickup, categoria\).*vehiculos_suv_pickup/,
+    );
+  });
+
+  it('verifyPostgresSchema: sin la migración lavado_varios_servicios falla nombrando la tabla y la migración', async () => {
+    const { pg, sql } = await pglite();
+    await pg.exec('DROP TABLE buddys.lavado_servicios CASCADE');
+    await expect(verifyPostgresSchema(sql)).rejects.toThrow(/\(lavado_servicios\).*lavado_varios_servicios/);
   });
 
   it('verifyPostgresSchema: sin la migración de servicios por vehículo falla con un mensaje claro que nombra la columna y la migración', async () => {

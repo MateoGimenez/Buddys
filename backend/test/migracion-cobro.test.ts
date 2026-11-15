@@ -6,8 +6,8 @@ import { MIGRATIONS_DIR, SUPABASE_STUB, migrationFiles } from './pglite.js';
 
 /*
  * Migración 20261027100000_estadisticas_cobro_trabajador aplicada sobre una base que YA tiene turnos (como el
- * Supabase de producción): primero se aplican todas las migraciones anteriores, se cargan turnos viejos y recién
- * después se aplica la nueva.
+ * Supabase de producción): primero se aplican las migraciones anteriores, se cargan turnos viejos y recién
+ * después se aplica la nueva. Las posteriores no: alguna (forma_pago_deshacer_lavado) ya nombra columnas de esta.
  */
 
 const NUEVA = '20261027100000_estadisticas_cobro_trabajador.sql';
@@ -24,7 +24,7 @@ async function baseAntes(): Promise<PGlite> {
   // eslint-disable-next-line no-restricted-syntax -- constante del propio test
   await pg.exec(SUPABASE_STUB);
   for (const file of migrationFiles()) {
-    if (file === NUEVA) continue;
+    if (file >= NUEVA) continue; // solo las anteriores
     // eslint-disable-next-line no-restricted-syntax -- migraciones versionadas
     await pg.exec(leer(file));
   }

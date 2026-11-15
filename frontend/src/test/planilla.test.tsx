@@ -28,7 +28,8 @@ describe('Planilla del día', () => {
     const api = apiFalsa({ ...sesionAdmin(), 'GET /api/admin/lavados': { status: 200, body: planillaAdmin(hoy()) } });
     renderApp('/planilla');
 
-    expect(await screen.findByText('$ 72.000')).toBeInTheDocument();
+    // En el resumen y en el total de la caja.
+    expect(await screen.findAllByText('$ 72.000')).toHaveLength(2);
     expect(api.de('GET', '/api/admin/lavados')[0]?.path).toBe(`/api/admin/lavados?fecha=${hoy()}`);
     const ranking = screen.getByRole('heading', { name: 'Quién lavó más' }).parentElement;
     if (!ranking) throw new Error('sin ranking');

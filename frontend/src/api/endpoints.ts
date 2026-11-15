@@ -7,6 +7,7 @@ import type {
   FormaPago,
   Gasto,
   Insumo,
+  LavadoRegistrado,
   ListaInsumos,
   MetaActual,
   MisTrabajos,
@@ -14,6 +15,7 @@ import type {
   NuevoGasto,
   NuevoInsumo,
   NuevoLavado,
+  NuevoLavadoLegado,
   NuevoPresupuesto,
   NuevoServicio,
   NuevoUsuario,
@@ -37,8 +39,12 @@ export const cerrarSesion = () => api<undefined>('/api/auth/logout', { method: '
 export const permisos = () => api<Permisos>('/api/admin/permisos');
 
 // Lavados
-export const registrarLavado = (datos: NuevoLavado) =>
-  api<{ lavado: Turno }>('/api/admin/lavados', { method: 'POST', body: datos });
+/** `NuevoLavadoLegado` solo para lo que había quedado en la cola sin conexión con un único servicioId. */
+export const registrarLavado = (datos: NuevoLavado | NuevoLavadoLegado) =>
+  api<LavadoRegistrado>('/api/admin/lavados', { method: 'POST', body: datos });
+/** Deshacer un lavado recién registrado (quien lo anotó, dentro del plazo; o quien puede borrar turnos). 204. */
+export const deshacerLavado = (id: string) =>
+  api<undefined>(`/api/admin/lavados/${encodeURIComponent(id)}`, { method: 'DELETE' });
 export const planilla = (fecha: string) => api<PlanillaDelDia>(`/api/admin/lavados${query({ fecha })}`);
 export const corregirTurno = (id: string, cambio: CambioTurno) =>
   api<{ booking: Turno }>(`/api/admin/bookings/${encodeURIComponent(id)}`, { method: 'PATCH', body: cambio });

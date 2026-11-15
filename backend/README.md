@@ -7,7 +7,8 @@ cada respuesta está guardado en `test/fixtures/respuestas-api.json` (un test ve
 Hace esto:
 
 0. **Registra lavados** (`POST /api/admin/lavados`): el auto que llega sin turno, con servicio, vehículo, cuánto se
-   cobró y quién lo lavó. Cuenta en ingresos, metas y el ranking del equipo (quién lava más). Ver
+   cobró, cómo pagó (forma de pago, para el cierre de caja) y quién lo lavó. Quien lo registró lo puede **deshacer**
+   en los 5 minutos siguientes (`DELETE /api/admin/lavados/:id`). Cuenta en ingresos, metas y el ranking del equipo (quién lava más). Ver
    [Registrar lavado](#registrar-lavado-post-y-get-apiadminlavados).
 1. Las rutas **públicas** de turnos (catálogo, disponibilidad, pedir turno, seguimiento) vienen de MgDetailing y
    están **apagadas por defecto** (`TURNOS_ONLINE=false`, responden 404). Con `TURNOS_ONLINE=true` vuelven.
@@ -135,6 +136,8 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 
 | Grupo | Capacidad | superadmin | admin | empleado |
 |---|---|---|---|---|
+| Lavados | Registrar un lavado de mostrador (servicio, vehículo, cobro, forma de pago y quién lavó) | sí | sí | parcial: solo a su nombre; carga el monto al registrarlo, pero después no lo ve ni lo corrige |
+| Lavados | Deshacer (borrar) un lavado de mostrador | sí | sí | parcial: solo uno que registró él, hasta 5 minutos después de registrarlo y si no tiene comprobante |
 | Turnos | Ver los turnos y la agenda | sí | sí | sí |
 | Turnos | Cambiar el estado de un turno | sí | sí | parcial: solo a Completado |
 | Turnos | Cambiar la fecha y la franja de un turno | sí | sí | no |
@@ -142,7 +145,7 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 | Turnos | Escribir notas internas | sí | sí | sí |
 | Turnos | Buscar turnos y ver el historial de un cliente | sí | sí | sí |
 | Cobro | Registrar cuánto se cobró por un trabajo y quién lo hizo | sí | sí | parcial: al completar queda como quien lo hizo, sin cargar el monto |
-| Cobro | Corregir el monto y el trabajador de un turno ya completado | sí | sí | no |
+| Cobro | Corregir el monto, el trabajador, la forma de pago y los servicios de un turno | sí | sí | no |
 | Catálogo | Ver los servicios | sí | sí | sí |
 | Catálogo | Crear, editar y ordenar servicios | sí | sí | no |
 | Disponibilidad | Ver horario, días especiales y cupos | sí | sí | sí |
@@ -160,7 +163,7 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 | Usuarios | Crear, editar y desactivar usuarios | sí | no | no |
 | Avisos | Activar los avisos de turnos nuevos en su dispositivo | sí | sí | sí |
 
-Funciones: `puedeCambiarEstado(rol, estado)`, `puedeReprogramar`, `puedeBorrarTurnos`, `puedeGestionarUsuarios`, `puedeEditarCatalogo`, `puedeEditarDisponibilidad`, `puedeVerEstadisticas` (también decide quién ve importes: `puedeVerImportes`), `puedeRegistrarCobro` (monto y elegir trabajador) y `puedeCorregirCobro`. Objetivo 10: `puedeGestionarGastos`, `puedeGestionarMetas`, `puedeArmarPresupuestos`, `puedeEmitirComprobantes`, `puedeEditarTaller`, `puedeVerInventario`, `puedeRegistrarUsoInsumos`, `puedeGestionarInventario` y `puedeVerCostosInventario` (el empleado nunca recibe costos ni valores en pesos del inventario). Los textos de `buddys.roles.descripcion` los actualiza la migración `estadisticas_cobro_trabajador` para que digan lo mismo.
+Funciones: `puedeRegistrarLavados`, `puedeAnotarLavadoDeOtro`, `puedeDeshacerCualquierLavado` y `puedeDeshacerLavado(rol, actorId, lavado, now)` (`'si' | 'no' | 'vencido'`; plazo `PLAZO_DESHACER_LAVADO_MINUTOS` = 5), `puedeCambiarEstado(rol, estado)`, `puedeReprogramar`, `puedeBorrarTurnos`, `puedeGestionarUsuarios`, `puedeEditarCatalogo`, `puedeEditarDisponibilidad`, `puedeVerEstadisticas` (también decide quién ve importes: `puedeVerImportes`), `puedeRegistrarCobro` (monto y elegir trabajador) y `puedeCorregirCobro`. Objetivo 10: `puedeGestionarGastos`, `puedeGestionarMetas`, `puedeArmarPresupuestos`, `puedeEmitirComprobantes`, `puedeEditarTaller`, `puedeVerInventario`, `puedeRegistrarUsoInsumos`, `puedeGestionarInventario` y `puedeVerCostosInventario` (el empleado nunca recibe costos ni valores en pesos del inventario). Los textos de `buddys.roles.descripcion` los actualiza la migración `estadisticas_cobro_trabajador` para que digan lo mismo.
 
 **El empleado nunca recibe importes**: `monto` es siempre `null` en cualquier respuesta con turnos (listado, agenda, PATCH; función `vistaDeTurno`), no puede pedir las estadísticas completas (`403`) y "mis trabajos" no lleva ningún importe (la consulta ni siquiera lee la columna). El seguimiento público tampoco devuelve `monto` ni `trabajador`.
 
@@ -199,6 +202,7 @@ Lo que no está permitido responde `403 FORBIDDEN` con un mensaje en español. R
 erDiagram
     servicios ||--o{ bookings : "servicio_id (FK, RESTRICT)"
     perfiles ||--o{ bookings : "trabajador_id (FK, ON DELETE SET NULL)"
+    perfiles ||--o{ bookings : "registrado_por (FK, ON DELETE SET NULL)"
     auth_users ||--|| perfiles : "id (FK, ON DELETE CASCADE)"
     roles ||--o{ perfiles : "rol_id (FK, RESTRICT)"
     perfiles ||--o{ push_suscripciones : "perfil_id (FK, ON DELETE CASCADE)"
@@ -212,12 +216,15 @@ erDiagram
         jsonb incluye "array de textos"
         jsonb glosario "array de termino + significado"
         text duracion_estimada "duración de auto; null = sin confirmar"
-        text duracion_estimada_camioneta "null = usa la de auto"
+        text duracion_suv "null = usa la de auto"
+        text duracion_pickup "null = usa la de auto"
         text duracion_estimada_moto "null = usa la de auto"
         integer precio_desde "ARS, precio de auto; null = Consultá"
-        integer precio_desde_camioneta "ARS; null = Consultá"
+        integer precio_desde_suv "ARS; null = Consultá"
+        integer precio_desde_pickup "ARS; null = Consultá"
         integer precio_desde_moto "ARS; null = Consultá"
-        text_array vehiculos "auto, camioneta, moto: 1 a 3, sin repetidos"
+        text_array vehiculos "auto, suv, pickup, moto: 1 a 4, sin repetidos"
+        text categoria "nullable, 1 a 40: Lavado, Pulido, Motos..."
         boolean destacado "puede haber varios"
         boolean activo
         smallint orden
@@ -230,9 +237,9 @@ erDiagram
         text nombre
         text telefono
         text email "nullable"
-        text vehiculo_tipo "CHECK auto, camioneta, moto"
+        text vehiculo_tipo "CHECK auto, suv, pickup, moto"
         text vehiculo_modelo "nullable"
-        text servicio_id FK
+        text servicio_id FK "el principal (= orden 0 de lavado_servicios)"
         date fecha_preferida
         text franja "CHECK manana, tarde"
         date fecha_confirmada "nullable; va con franja_confirmada"
@@ -242,8 +249,18 @@ erDiagram
         timestamptz recordatorio_enviado_at "nullable; recordatorio del día anterior"
         integer monto "nullable; pesos cobrados, 0 a 99999999; solo si completado"
         uuid trabajador_id FK "nullable; perfiles(id) ON DELETE SET NULL; solo si completado"
+        text origen "CHECK web, mostrador"
+        text forma_pago "nullable; CHECK efectivo, transferencia, debito, credito, otro"
+        uuid registrado_por FK "nullable; perfiles(id) ON DELETE SET NULL; quién registró el lavado"
+        uuid id_local UK "nullable; único si no es null; id de la cola sin conexión del panel"
         timestamptz created_at
         timestamptz updated_at
+    }
+    lavado_servicios {
+        uuid booking_id PK "FK bookings(id) ON DELETE CASCADE"
+        text servicio_id PK "FK servicios(id)"
+        smallint orden "0 a 9; 0 = el principal; UNIQUE con booking_id"
+        integer precio_lista "nullable; foto del precio de lista al registrar"
     }
     horario_semanal {
         smallint dia PK "0 = domingo ... 6 = sábado"
@@ -299,8 +316,9 @@ erDiagram
 
 | Tabla | Para qué | Restricciones e índices |
 |---|---|---|
-| `servicios` | **Catálogo del taller, fuente de verdad** (editable desde el panel; ver [Catálogo editable](#catálogo-editable)). Sembrado con los 5 servicios y los textos que tenía `frontend/src/data/servicios.ts` (propuesta inicial, sin confirmar). Un servicio que se deja de ofrecer se **desactiva** (`activo = false`), no se borra: lo referencian turnos. | PK `id` (slug validado por CHECK, inmutable: `buddys_app` no tiene `UPDATE` sobre él). CHECK de largos de `nombre`/`resumen`/`descripcion`/`duracion_estimada` (no vacía), `precio_desde`, `precio_desde_camioneta` y `precio_desde_moto` enteros de 0 a 99.999.999, `vehiculos` (`text[]`, función `buddys.servicio_vehiculos_valido`), `incluye` y `glosario` validados ítem por ítem (funciones `buddys.servicio_incluye_valido` / `servicio_glosario_valido`). `duracion_estimada_camioneta` y `duracion_estimada_moto` (1 a 60 caracteres cuando no son null). Puede haber varios destacados (el índice `servicios_un_destacado` se eliminó); el CHECK `servicios_destacado_activo` impide destacar un inactivo. Trigger `updated_at`. |
+| `servicios` | **Catálogo del taller, fuente de verdad** (editable desde el panel; ver [Catálogo editable](#catálogo-editable)). Sembrado con los 5 servicios y los textos que tenía `frontend/src/data/servicios.ts` (propuesta inicial, sin confirmar). Un servicio que se deja de ofrecer se **desactiva** (`activo = false`), no se borra: lo referencian turnos. | PK `id` (slug validado por CHECK, inmutable: `buddys_app` no tiene `UPDATE` sobre él). CHECK de largos de `nombre`/`resumen`/`descripcion`/`duracion_estimada` (no vacía), `precio_desde`, `precio_desde_suv`, `precio_desde_pickup` y `precio_desde_moto` enteros de 0 a 99.999.999, `vehiculos` (`text[]`, función `buddys.servicio_vehiculos_valido`), `incluye` y `glosario` validados ítem por ítem (funciones `buddys.servicio_incluye_valido` / `servicio_glosario_valido`). `duracion_suv`, `duracion_pickup` y `duracion_estimada_moto` (1 a 60 caracteres cuando no son null); `categoria` (1 a 40). Desde `catalogo_buddys`, los 14 servicios de Buddys (los heredados de MgDetailing quedan inactivos; `restauracion-opticas` se reutilizó). Puede haber varios destacados (el índice `servicios_un_destacado` se eliminó); el CHECK `servicios_destacado_activo` impide destacar un inactivo. Trigger `updated_at`. |
 | `bookings` | Solicitudes de turno. | PK `seq` (bigint identity: inserciones ordenadas, índice compacto y orden estable aunque dos turnos tengan el mismo `created_at`); `id` UUID **único**, el único que sale por la API (un id secuencial revelaría cuántos turnos hay). FK `servicio_id -> servicios` (`RESTRICT`). CHECK de `vehiculo_tipo`, `franja`, `franja_confirmada`, `estado` y de los largos de zod; CHECK `bookings_confirmada_juntas`: `fecha_confirmada` y `franja_confirmada` las dos null o las dos con valor. Índices: `(estado, seq DESC)` para el listado filtrado y su `COUNT`; la PK sirve al listado sin filtro; `(servicio_id)` para la FK; `bookings_agenda_idx`, de expresión y parcial, `(coalesce(fecha_confirmada, fecha_preferida), coalesce(franja_confirmada, franja), seq) WHERE estado <> 'cancelado'`, para la agenda; `bookings_telefono_whatsapp_idx`, parcial, `(telefono_whatsapp, seq) WHERE telefono_whatsapp IS NOT NULL`, para `turnosDelCliente` y el historial. CHECK `bookings_notas_internas_largo` (≤ 1000) y `bookings_telefono_whatsapp_formato` (`^[0-9]{8,15}$`). |
+| `lavado_servicios` | Los servicios de cada turno o lavado (1 a 10), en el orden elegido (migración `lavado_varios_servicios`). `orden 0` = el principal, el mismo que `bookings.servicio_id`. `precio_lista` = foto del precio de lista del servicio para el vehículo del turno al registrarlo (`null` = "Consultá" o turno anterior a la tabla). Las estadísticas por servicio cuentan desde acá. | PK `(booking_id, servicio_id)`; UNIQUE `(booking_id, orden)`; CHECK `orden` 0 a 9 y `precio_lista` 0 a 99.999.999; FK `booking_id` ON DELETE CASCADE y `servicio_id` RESTRICT; índice `lavado_servicios_servicio_idx`. Trigger `bookings_servicio_principal` (AFTER INSERT en `bookings`): todo turno nuevo nace con su fila principal y la foto de su precio (`buddys.precio_de_lista(servicio, vehiculo)`, STABLE). `buddys_app`: SELECT, INSERT y DELETE (la lista se reemplaza entera, nunca UPDATE). |
 | `horario_semanal` | La regla de siempre: una fila por día de la semana (`dia` con la convención de Postgres y JavaScript: **0 = domingo**, 1 = lunes ... 6 = sábado), si se atiende y cuántos turnos entran a la mañana y a la tarde. Sembrada: lunes a sábado abierto con 2 por franja, domingo cerrado. Las 7 filas son fijas. | PK `dia` (CHECK 0 a 6); CHECK de cupos 0 a 20; trigger `updated_at`. |
 | `dias_especiales` | La excepción, gana sobre el horario semanal: una fecha cerrada (feriado, vacaciones) o abierta con sus cupos. Sembrada con los feriados inamovibles de lo que queda de 2026 y de 2027 más el 23/11/2026 (Soberanía, trasladable, "a confirmar"), todos cerrados y con motivo que empieza con `Feriado: `. | PK `fecha`; CHECK `dias_especiales_cupos` (abierto con los dos cupos, cerrado con los dos en null), cupos 0 a 20, `motivo` 1 a 80; trigger `updated_at`. |
 | `roles` | Los 3 roles del panel (sembrados por migración). Los permisos de cada rol los aplica el backend (`domain/permisos.ts`). | PK `id` (slug). |
@@ -357,6 +375,10 @@ Decisiones:
 - **`20261101100000_precios_por_vehiculo` (2026-11-01): PENDIENTE de aplicar en Supabase** (contrato `reportes/2026-11-01_19_precios-por-vehiculo.md`). **Estrictamente aditiva y compatible hacia atrás** (el sistema ya está en producción): agrega `servicios.precio_desde_camioneta` y `servicios.precio_desde_moto` (`integer` nullable, sin default, con CHECK de 0 a 99.999.999: no reescribe la tabla ni toca filas) y amplía el `GRANT INSERT`/`UPDATE` por columna de `buddys_app` con las dos columnas. `precio_desde` sigue siendo el precio de auto. El backend viejo sigue andando con las columnas nuevas; el backend nuevo **no arranca** sin ellas ("Faltan columnas en buddys.servicios (precio_desde_camioneta, precio_desde_moto)"). Orden: aplicar la migración **antes** del push (Render despliega solo al subir a `main`); después, los advisors.
 - **`20261101110000_servicios_por_vehiculo` (2026-11-01): PENDIENTE de aplicar en Supabase, DESPUÉS de `precios_por_vehiculo`** (contrato `reportes/2026-11-01_19_precios-por-vehiculo.md`, parte 2). **Estrictamente aditiva y compatible hacia atrás**: agrega `servicios.vehiculos text[] not null default array['auto','camioneta','moto']` con CHECK (`servicios_vehiculos_valido`: de 1 a 3, sin repetidos, solo esos tres tipos; función `servicio_vehiculos_valido` con `EXECUTE` solo para `buddys_app`) y `GRANT INSERT`/`UPDATE (vehiculos)` a `buddys_app`. Los servicios existentes quedan en los tres vehículos (nada desaparece de la web) y un INSERT del backend viejo, que no conoce la columna, también. El backend nuevo **no arranca** sin ella ("Faltan columnas en buddys.servicios (vehiculos)"). **Precios iniciales**: no van en una migración sino en `backend/supabase/seeds/2026-11-01_precios-iniciales.sql`, que se corre a mano **una vez** en el SQL Editor después de las dos migraciones (idempotente; solo toca `lavado-basico` —20.000 / 30.000 / 10.000— y `lavado-premium` —40.000 / 50.000 / 15.000— por auto / camioneta / moto; si el dueño ya cambió esos precios desde el panel, volver a correrlo los pisa). Orden: migración 1, migración 2, push (Render despliega solo), seed, advisors.
 - **`20261102100000_varios_destacados` y `20261102110000_duracion_por_vehiculo` (2026-11-02): PENDIENTES de aplicar en Supabase** (en ese orden, después de las anteriores). Ambas aditivas y compatibles hacia atrás. La primera elimina el índice único parcial `servicios_un_destacado` (se mantiene el CHECK `servicios_destacado_activo`); el backend viejo sigue andando porque igual desmarca al anterior. La segunda agrega `servicios.duracion_estimada_camioneta` y `servicios.duracion_estimada_moto` (`text` nullable, sin default, CHECK de 1 a 60 caracteres sin contar espacios de los bordes) y `GRANT INSERT`/`UPDATE` por columna a `buddys_app`; `duracion_estimada` pasa a ser la de auto. El backend nuevo **no arranca** sin ellas ("Faltan columnas en buddys.servicios (duracion_estimada_camioneta, duracion_estimada_moto)"). Aplicar antes del push; después, los advisors.
+- **`20261113100000_forma_pago_deshacer_lavado` (2026-11-13): aplicada en Supabase.** Aditiva e idempotente: agrega `bookings.forma_pago` (`text` nullable, CHECK `bookings_forma_pago_valida` con los mismos valores que `comprobantes.forma_pago`) `bookings.registrado_por` (`uuid` nullable, FK a `perfiles` `ON DELETE SET NULL`, índice parcial `bookings_registrado_por_idx`) y `bookings.id_local` (`uuid` nullable, índice único parcial `bookings_id_local_key` donde no es null: un reintento de la cola sin conexión del panel no registra dos veces); recrea el trigger de `updated_at` para que tampoco corra al cambiar esas dos columnas; repite el `REVOKE` a los roles de la API y da `GRANT UPDATE (forma_pago)` a `buddys_app` (el INSERT ya es de toda la tabla; `registrado_por` e `id_local` no se actualizan nunca desde la app). Columnas nullable sin default: no reescribe la tabla; los lavados viejos quedan "sin indicar" y sin quién los registró (solo los borra quien puede borrar turnos). Aplicar antes del push; después, los advisors.
+- **`20261113110000_vehiculos_suv_pickup` (2026-11-13): PENDIENTE de aplicar en Supabase.** Decisión del dueño: `camioneta` se reemplaza por `suv` y `pickup` (orden canónico auto, suv, pickup, moto). Agrega `servicios.precio_desde_suv` (copia de `precio_desde_camioneta`), `precio_desde_pickup`, `duracion_suv` (copia de `duracion_estimada_camioneta`), `duracion_pickup` y `categoria` (CHECK de rango/largo como las demás); pasa los datos `camioneta` → `suv` en `bookings.vehiculo_tipo` y `servicios.vehiculos` **sin mover `updated_at`** (apaga los triggers de `updated_at` solo mientras corren esos UPDATE, dentro de la transacción); cambia los CHECK (`bookings_vehiculo_tipo_valido` y la función `servicio_vehiculos_valido`: 1 a 4 de los tipos nuevos) y el default de `vehiculos`; y **borra** las dos columnas de camioneta. `presupuestos.vehiculo` y `comprobantes.vehiculo` son texto libre / foto del momento: no se tocan. GRANT por columna de INSERT/UPDATE a `buddys_app` y REVOKE a los roles de la API. **No es compatible con el backend anterior** (lee las columnas de camioneta): aplicarla y desplegar el backend nuevo juntos. Idempotente.
+- **`20261113120000_lavado_varios_servicios` (2026-11-13): PENDIENTE de aplicar en Supabase, DESPUÉS de `vehiculos_suv_pickup`.** Tabla `buddys.lavado_servicios` (ver el modelo de datos), función `buddys.precio_de_lista(text, text)` (EXECUTE solo para `buddys_app`), trigger `bookings_servicio_principal` (AFTER INSERT en `bookings`: todo turno nuevo, también uno a mano, nace con su fila principal), backfill (cada turno existente con su `servicio_id`, `orden 0`, `precio_lista null`), RLS + REVOKE + GRANT SELECT/INSERT/DELETE con sus policies para `buddys_app`, y `GRANT UPDATE (servicio_id)` sobre `bookings` (corregir los servicios cambia el principal). El backend nuevo **no arranca** sin ella. Idempotente.
+- **`20261113130000_catalogo_buddys` (2026-11-13): PENDIENTE de aplicar en Supabase, DESPUÉS de las dos anteriores.** Solo datos: upsert por `id` de los 14 servicios de Buddys (precios auto / suv / pickup en ARS enteros, motos solo para `moto` con `precio_desde_moto`, categoría, `incluye` en ítems, `descripcion` = el texto completo, destacados Limpieza Nivel I, II y III, `orden` 10 a 140, duraciones en `null`, glosario vacío) y desactiva (y desmarca) todo servicio que no esté en la lista. Idempotente (una segunda corrida deja lo mismo; solo vuelve a mover `updated_at` de los 14). La base de los tests **no** la aplica (`MIGRACIONES_SOLO_DATOS` en `test/pglite.ts`: casi todos los tests usan los servicios heredados); la prueba `test/migracion-catalogo-buddys.test.ts`. Orden en Supabase: las tres seguidas, el push del backend y después los advisors.
 - Los servicios ya **no** se agregan por migración ni en el código: se crean desde el panel.
 
 ### Backups (Supabase)
@@ -581,8 +603,8 @@ Esta sección es la referencia para el frontend. Todo viaja como JSON; las fecha
 
 | Campo | Valores |
 |---|---|
-| `vehiculoTipo` | `"auto"`, `"camioneta"`, `"moto"` |
-| `servicioId` | **Ya no es un enum fijo**: el `id` de un servicio del catálogo (`GET /api/servicios`). Los iniciales: `"lavado-basico"`, `"lavado-premium"`, `"pulido"`, `"encerado"`, `"restauracion-opticas"`. |
+| `vehiculoTipo` | `"auto"`, `"suv"`, `"pickup"`, `"moto"` (orden canónico; nombres visibles Auto, SUV, Pick-up, Moto). `"camioneta"` ya no existe: los datos pasaron a `"suv"` (migración `vehiculos_suv_pickup`). |
+| `servicioId` | **Ya no es un enum fijo**: el `id` de un servicio del catálogo (`GET /api/servicios`). Los de Buddys (migración `catalogo_buddys`): `limpieza-nivel-1`, `limpieza-nivel-2`, `limpieza-nivel-3`, `limpieza-motor`, `higienizacion-profunda`, `pulido-basico`, `pulido-abrillantado`, `pulido-opticas`, `restauracion-opticas`, `tratamiento-acrilico`, `tratamiento-ceramico`, `preparacion-venta`, `motos-basico`, `motos-ceramico`. |
 | `franja` | `"manana"`, `"tarde"` |
 | `estado` | `"pendiente"` (inicial), `"confirmado"`, `"completado"`, `"cancelado"`. Se puede pasar de cualquiera a cualquiera. |
 
@@ -603,6 +625,7 @@ Esta sección es la referencia para el frontend. Todo viaja como JSON; las fecha
 | `INVALID_CREDENTIALS` | 401 | Email o contraseña incorrectos (mensaje genérico: no dice cuál). |
 | `FORBIDDEN_ORIGIN` | 403 | `Origin` no permitido. |
 | `FORBIDDEN` | 403 | El rol no permite la acción (la sesión sigue). Mensaje en español apto para mostrar. |
+| `PLAZO_DESHACER_VENCIDO` | 403 | `DELETE /api/admin/lavados/:id` de quien lo registró, pasados los 5 minutos: lo tiene que borrar un encargado desde la planilla. |
 | `NO_ACCESS` | 403 | La sesión es válida pero el usuario ya no tiene acceso al panel (desactivado o sin perfil): se borran las cookies y hay que volver al ingreso. |
 | `NOT_FOUND` | 404 | Ruta inexistente, o turno / usuario / servicio inexistente (un id con formato inválido también da 404). |
 | `CONFLICT` | 409 | Gestión de usuarios: cambiarte tu propio rol, desactivarte, o dejar el sistema sin ningún superadmin activo. |
@@ -712,30 +735,35 @@ Sin body (pero con `Content-Type: application/json`). Canjea el refresh token: `
 
 El auto que llega sin turno. Se guarda como un turno **ya completado** con su cobro y `origen: "mostrador"`, así entra
 solo en estadísticas (`porTrabajador` = quién lava más), metas, comprobantes e historial del cliente. **No ocupa cupo**
-de la agenda. Se corrige o se borra como cualquier turno: `PATCH` / `DELETE /api/admin/bookings/:id`.
+de la agenda. Se corrige o se borra como cualquier turno: `PATCH` / `DELETE /api/admin/bookings/:id`. Quien lo
+registró lo puede **deshacer** enseguida con `DELETE /api/admin/lavados/:id` (ver abajo).
 
 `POST /api/admin/lavados` (requiere sesión; todos los roles) — body estricto (un campo desconocido = 400):
 
 | Campo | Obligatorio | Qué es |
 |---|---|---|
-| `servicioId` | sí | Servicio activo del catálogo que se ofrezca para ese vehículo. |
-| `vehiculoTipo` | sí | `auto`, `camioneta` o `moto`. |
+| `servicioIds` | sí | De **1 a 10** ids de servicios **distintos**, cada uno activo y ofrecido para ese vehículo, en el orden elegido (el primero es el principal: sale como `servicioId`). Cualquier error (vacío, más de 10, repetidos, mal formado, inexistente, inactivo, no se ofrece para el vehículo) => `400` en `fields.servicioIds` y no se guarda nada. Un auto con varios servicios es **un** lavado: en la planilla y el ranking cuenta 1; en "servicios más pedidos", cada servicio. |
+| `servicioId` | no | **Compatibilidad** con la cola sin conexión del panel: si llega `servicioId` (string) y no `servicioIds`, vale como `[servicioId]`. Los dos juntos = `400` en `fields.servicioIds` (ninguno, también). |
+| `vehiculoTipo` | sí | `auto`, `suv`, `pickup` o `moto`. |
 | `monto` | no | Pesos cobrados (entero 0 a 99.999.999). `null`/omitido = sin cargar (se completa después con PATCH). |
+| `formaPago` | no | `efectivo`, `transferencia`, `debito`, `credito` u `otro`. `null`/omitido = sin indicar. Todos los roles (no es un importe). Otro valor = 400 en `fields.formaPago`. |
 | `trabajadorId` | no | Quién lavó (perfil activo). Omitido = quien registra. El `empleado` solo puede ser él mismo (otro = 403). |
 | `fecha` | no | `YYYY-MM-DD`, de hoy hasta 31 días atrás (hora de La Rioja). Omitida = hoy. Futura = 400. |
 | `franja` | no | `manana` o `tarde`. Omitida = según la hora (desde las 14 h, `tarde`). |
 | `nombre` | no | Cliente (hasta 80). Omitido = "Cliente de mostrador". |
 | `telefono` | no | Como en el pedido de turno (mín. 8 dígitos). Sirve para el historial del cliente. |
 | `vehiculoModelo` | no | Modelo y/o patente, texto libre (hasta 80). |
-| `notasInternas` | no | Nota (hasta 1000), p. ej. forma de pago. |
+| `notasInternas` | no | Nota (hasta 1000). |
+| `idLocal` | no | UUID que genera el panel para cada lavado de su cola sin conexión. Si ya existe un lavado con ese `idLocal` registrado por **la misma persona**, no se crea otro: `200` (no `201`) con el mismo `{ lavado, deshacerHasta }` del original (aunque el servicio se haya desactivado en el medio). Si lo registró **otra persona**: `409 CONFLICT` (*"Ese lavado ya lo registró otra persona."*). No es UUID = 400 en `fields.idLocal`. |
 
-`201 { "lavado": Turno }` (el mismo objeto Turno de `/api/admin/bookings`, con `estado: "completado"` y
-`origen: "mostrador"`). El empleado puede cargar el monto al registrar (es el momento de cobrar), pero nunca lo recibe
+`201 { "lavado": Turno, "deshacerHasta": "2026-11-13T15:05:00.000Z" }` (el mismo objeto Turno de
+`/api/admin/bookings`, con `estado: "completado"`, `origen: "mostrador"` y su `formaPago`). `deshacerHasta` (ISO 8601
+UTC) = la creación + 5 minutos: hasta ese momento quien lo registró lo puede deshacer. El empleado puede cargar el monto al registrar (es el momento de cobrar), pero nunca lo recibe
 en las respuestas (`monto: null`) ni lo puede corregir después.
 
 ```bash
 curl -b cookies.txt -H "Origin: http://localhost:5173" -H "Content-Type: application/json" \
-  -d '{"servicioId":"lavado-basico","vehiculoTipo":"auto","monto":12000,"vehiculoModelo":"Gol AB123CD"}' \
+  -d '{"servicioIds":["limpieza-nivel-2","limpieza-motor"],"vehiculoTipo":"auto","monto":55000,"formaPago":"efectivo","vehiculoModelo":"Gol AB123CD"}' \
   http://localhost:4000/api/admin/lavados
 ```
 
@@ -751,13 +779,40 @@ curl -b cookies.txt -H "Origin: http://localhost:5173" -H "Content-Type: applica
     "sinMonto": 1,
     "porTrabajador": [
       { "trabajador": { "id": "<uuid>", "nombre": "Franco" }, "cantidad": 2, "total": 22000 }
+    ],
+    "porFormaPago": [
+      { "formaPago": "transferencia", "cantidad": 1, "total": 20000 },
+      { "formaPago": "efectivo", "cantidad": 2, "total": 12000 },
+      { "formaPago": null, "cantidad": 1, "total": 0 }
     ]
   }
 }
 ```
 
-`porTrabajador` va de quien lavó más a quien menos (a igual cantidad, más cobrado). Para el `empleado`, `total` es
-`null` (en el resumen y en cada fila) y los `monto` de los lavados también.
+`porTrabajador` va de quien lavó más a quien menos (a igual cantidad, más cobrado). `porFormaPago` es el **cierre de
+caja**: una entrada por forma de pago usada ese día (`null` = sin indicar), agrupada en SQL, de la que más se cobró a la
+que menos (empates: más lavados, después el orden efectivo, transferencia, debito, credito, otro y "sin indicar" al
+final). Para el `empleado`, `total` es `null` (en el resumen y en cada fila de los dos rankings) y los `monto` de los
+lavados también; para que el orden no revele lo cobrado, a él `porFormaPago` le llega ordenado por cantidad (mismos
+desempates). `formaPago` de cada lavado la ven todos los roles.
+
+`DELETE /api/admin/lavados/:id` (requiere sesión; exige `Content-Type: application/json` aunque no lleve body) —
+**deshacer** un lavado de mostrador. `204` sin body.
+
+- Quien **lo registró** (columna `registrado_por`) lo puede deshacer hasta **5 minutos** después de registrarlo
+  (`deshacerHasta`; justo a los 5 minutos todavía puede). Pasado el plazo:
+  `403 { "error": { "code": "PLAZO_DESHACER_VENCIDO", "message": "Pasaron más de 5 minutos: pedile a un encargado que lo borre desde la planilla." } }`.
+- `admin` y `superadmin` (los que pueden borrar turnos) lo borran **siempre**, sea de quien sea.
+- Un `empleado` con un lavado que no registró él (aunque lo haya lavado él): `403 FORBIDDEN` (*"Solo podés deshacer un
+  lavado que registraste vos."*).
+- Con comprobante emitido: `409 TURNO_CON_COMPROBANTE` (*"Este lavado ya tiene un comprobante de pago emitido: no se
+  puede deshacer."*), para todos los roles.
+- No existe, id inválido o es un turno web: `404 NOT_FOUND` (*"No encontramos ese lavado."*).
+
+```bash
+curl -X DELETE -b cookies.txt -H "Origin: http://localhost:5173" -H "Content-Type: application/json" \
+  http://localhost:4000/api/admin/lavados/<id>
+```
 
 ### `GET /api/admin/bookings?estado=&q=&cliente=&limit=&offset=` (requiere sesión; todos los roles)
 
@@ -793,6 +848,8 @@ Los parámetros desconocidos se ignoran; uno inválido da `400` con `fields`. Re
       "turnosDelCliente": 1,
       "monto": null,
       "trabajador": null,
+      "formaPago": null,
+      "servicios": [ { "id": "pulido", "nombre": "Pulido", "precioLista": null } ],
       "createdAt": "2026-10-16T15:00:00.000Z",
       "updatedAt": "2026-10-16T15:00:00.000Z"
     }
@@ -801,9 +858,13 @@ Los parámetros desconocidos se ignoran; uno inválido da `400` con `fields`. Re
 }
 ```
 
+**`servicios`** (`Array<{ id: string; nombre: string; precioLista: number | null }>`): los servicios del turno o lavado, en el orden elegido (1 a 10); el primero es el principal, el mismo que **`servicioId`** (que se mantiene). Un turno web o viejo trae uno solo. `precioLista` = el precio de lista de ese servicio para el vehículo **al momento de registrarlo** (una foto: no cambia si después se edita el catálogo); `null` si era "Consultá" o si el turno es anterior a la tabla, y **siempre `null` para `empleado`** (no recibe importes).
+
 **`monto`** (`integer | null`): pesos cobrados por el trabajo; solo en turnos `completado`. **Solo `admin` y `superadmin` lo reciben con valor: para `empleado` siempre es `null`.** **`trabajador`** (`{ "id", "nombre" } | null`): quién hizo el trabajo (`nombre` = el de la persona o, si no tiene, su email); `null` = sin asignar. Los dos aparecen en el listado, la agenda y la respuesta del PATCH; nunca en el seguimiento público.
 
 `email`, `vehiculoModelo` y `comentario` pueden ser `null`. Los filtros se combinan entre sí; el orden sigue siendo más nuevos primero y `total` cuenta lo filtrado.
+
+**`formaPago`** (`"efectivo" | "transferencia" | "debito" | "credito" | "otro" | null`): cómo pagó el cliente; `null` = sin indicar. **No es un importe: la reciben todos los roles.** Se carga al registrar un lavado y se corrige con el PATCH (`admin` y `superadmin`).
 
 **`notasInternas`** (`string | null`): la nota interna del taller (hasta 1000 caracteres, con saltos de línea). El cliente nunca la ve.
 
@@ -815,7 +876,7 @@ Los parámetros desconocidos se ignoran; uno inválido da `400` con `fields`. Re
 
 ### `PATCH /api/admin/bookings/:id` (requiere sesión)
 
-Body estricto con **al menos uno** de: `estado`, la pareja `fechaConfirmada` + `franjaConfirmada` (**juntas**; `null` las dos = volver a la fecha pedida), `notasInternas`, `monto` o `trabajadorId`.
+Body estricto con **al menos uno** de: `estado`, la pareja `fechaConfirmada` + `franjaConfirmada` (**juntas**; `null` las dos = volver a la fecha pedida), `notasInternas`, `monto`, `trabajadorId`, `formaPago` o `servicioIds`.
 
 ```json
 { "estado": "confirmado", "fechaConfirmada": "2026-10-24", "franjaConfirmada": "tarde", "notasInternas": "Lo trae el hijo." }
@@ -833,6 +894,8 @@ Body estricto con **al menos uno** de: `estado`, la pareja `fechaConfirmada` + `
   - **`empleado`**: al pasar un turno a `completado` queda **él mismo** como trabajador, sin que lo mande. `403` si manda cualquier `monto`, un `trabajadorId` de otra persona, o toca el cobro de un turno que ya estaba completado.
   - Si el `estado` pasa a algo distinto de `completado`, `monto` y `trabajador` se borran.
   - Todo se valida antes de guardar: o se guarda todo o nada. Cargar o corregir solo el cobro no cambia `updatedAt`.
+- **`formaPago`** (una de `efectivo`, `transferencia`, `debito`, `credito`, `otro`, o `null` = sin indicar): solo quien corrige el cobro (`admin` y `superadmin`; `empleado` => `403 FORBIDDEN`, *"Con tu rol no podés cambiar la forma de pago: la corrige un administrador."*). Vale en cualquier estado, sola o junto con el resto (también al reprogramar), y no cambia `updatedAt`. Otro valor => `400` con `fields.formaPago`.
+- **`servicioIds`** (mismas reglas que en `POST /api/admin/lavados`: 1 a 10 distintos, activos y ofrecidos para el `vehiculoTipo` del turno; error en `fields.servicioIds`; `404` si el turno no existe): solo quien corrige el cobro (`cobro.corregir`: `admin` y `superadmin`; `empleado` => `403 FORBIDDEN`, *"Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador."*). Vale en cualquier estado, sola o junto con el resto (también al reprogramar), en la misma transacción. Reemplaza la lista entera y el principal (`servicioId` = el primero); los servicios que ya estaban conservan su foto de `precioLista` y los nuevos toman el precio de lista vigente. Mueve `updatedAt` (el servicio se ve en el seguimiento); la misma lista en el mismo orden no escribe nada.
 - Falta una de las dos, o una es `null` y la otra no => `400` en el campo que falta (o en el que es `null`). Body vacío => `400` con `fields.estado`.
 
 ### `GET /api/admin/agenda?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` (requiere sesión; todos los roles)
@@ -874,7 +937,7 @@ Todo se agrupa por la **fecha de agenda** del turno (la confirmada si existe, si
 
 - `resumen`: tarjetas fijas, **siempre con la fecha de hoy** (no dependen del rango): hoy contra ayer; este mes hasta hoy contra el mes pasado hasta el mismo día (con tope en el último día del mes más corto: el 31/03 se compara con el 28/02); este año hasta hoy contra el año pasado hasta el mismo día (el 29/02 se compara con el 28/02; si el año pasado fue bisiesto, incluye su 29/02). Siempre son números (0 si no hubo nada): el cambio porcentual lo calcula el frontend y no existe si `anterior` es 0.
 - `serie`: **todos** los días (o meses, `YYYY-MM`) del rango, con ceros donde no hubo nada. `granularidad` = `dia` hasta 62 días, `mes` con más.
-- `porServicio`: por `pedidos` descendente; incluye servicios activos sin pedidos (con 0); uno desactivado solo si tuvo pedidos.
+- `porServicio`: por `pedidos` descendente; incluye servicios activos sin pedidos (con 0); uno desactivado solo si tuvo pedidos. Cuenta desde `lavado_servicios`: un lavado con varios servicios suma un pedido (y un completado) en **cada** uno. Sus `ingresos` se reparten entre sus servicios en proporción a la foto de `precioLista` (si todos la tienen y suman más de 0) o, si no, en partes iguales: la suma por servicio da lo cobrado (salvo el redondeo de cada fila), sin contar dos veces un monto. `periodo`, `serie` y `porTrabajador` siguen contando turnos (un lavado = 1).
 - `porTrabajador`: por `completados` descendente; `id: null` y `nombre: "Sin asignar"` agrupa los completados sin trabajador (o cuya persona se borró). `completadosSinTrabajador` es esa misma cuenta.
 - `porDiaSemana`: siempre los 7 días (0 = domingo ... 6 = sábado), con los pedidos de mañana y tarde del rango.
 - `ticketPromedio` y `tasaCancelacion` son `null` si el denominador es 0.
@@ -882,7 +945,7 @@ Todo se agrupa por la **fecha de agenda** del turno (la confirmada si existe, si
 
 ### `GET /api/admin/estadisticas/mias?desde&hasta` (todos los roles)
 
-Mismo rango y errores. `200 { "rango", "completados": N, "porServicio": [{ "servicioId", "nombre", "completados" }], "serie": [{ "clave", "completados" }] }` con los turnos que **esa persona** completó (por `trabajador_id`; la serie va por día hasta 62 días y por mes con más, con ceros). **Nunca lleva importes.**
+Mismo rango y errores. `200 { "rango", "completados": N, "porServicio": [{ "servicioId", "nombre", "completados" }], "serie": [{ "clave", "completados" }] }` con los turnos que **esa persona** completó (`completados` cuenta turnos; `porServicio` cuenta cada servicio de cada turno) (por `trabajador_id`; la serie va por día hasta 62 días y por mes con más, con ceros). **Nunca lleva importes.**
 
 ### `GET /api/admin/permisos` (requiere sesión; todos los roles)
 
@@ -981,12 +1044,15 @@ Body estricto con al menos uno de: `rol` (`"superadmin" | "admin" | "empleado"`)
 | `incluye` | `string[]` | 0 a 15 ítems, cada uno trim 1 a 120 | sí | sí |
 | `glosario` | `{ termino, significado }[]` | 0 a 10; `termino` 1 a 60, `significado` 1 a 300 (objetos estrictos) | sí | sí |
 | `duracion` | `string \| null` | duración de **auto**: trim, hasta 60; `""` => `null` | sí | sí |
-| `duracionCamioneta` | `string \| null` | duración de **camioneta**: misma regla. `null` = "usa la de auto" (a diferencia de los precios, no es "Consultá"; el cliente cae a `duracion`) | sí | sí |
+| `duracionPickup` | `string \| null` | duración de **pick-up**: misma regla que `duracionSuv` | sí | sí |
+| `duracionSuv` | `string \| null` | duración de **SUV**: misma regla. `null` = "usa la de auto" (a diferencia de los precios, no es "Consultá"; el cliente cae a `duracion`) | sí | sí |
 | `duracionMoto` | `string \| null` | duración de **moto**: misma regla. `null` = "usa la de auto" | sí | sí |
 | `precioDesde` | `number \| null` | precio de **auto**: entero en ARS, 0 a 99.999.999; `null` = "Consultá" | sí | sí |
-| `precioDesdeCamioneta` | `number \| null` | precio de **camioneta**: misma regla que `precioDesde`. `null` = "Consultá" (nunca se cae al de auto) | sí | sí |
+| `precioDesdePickup` | `number \| null` | precio de **pick-up**: misma regla que `precioDesdeSuv` | sí | sí |
+| `precioDesdeSuv` | `number \| null` | precio de **SUV**: misma regla que `precioDesde`. `null` = "Consultá" (nunca se cae al de auto) | sí | sí |
 | `precioDesdeMoto` | `number \| null` | precio de **moto**: misma regla que `precioDesde`. `null` = "Consultá" (nunca se cae al de auto) | sí | sí |
-| `vehiculos` | `("auto" \| "camioneta" \| "moto")[]` | para qué vehículos se ofrece: de 1 a 3, sin repetidos, siempre en orden auto, camioneta, moto. En crear, por defecto los tres; en editar, lo que no viene no cambia. Error en `fields.vehiculos` | sí | sí |
+| `categoria` | `string \| null` | grupo para el panel ("Lavado", "Interior", "Pulido", "Protección", "Pre venta", "Motos"): una línea, hasta 40 caracteres, con trim; `""` o `null` = sin categoría. Error en `fields.categoria` | sí | sí |
+| `vehiculos` | `("auto" \| "suv" \| "pickup" \| "moto")[]` | para qué vehículos se ofrece: de 1 a 4, sin repetidos, siempre en orden auto, suv, pickup, moto. En crear, por defecto los cuatro; en editar, lo que no viene no cambia. Error en `fields.vehiculos` | sí | sí |
 | `destacado` | `boolean` | puede haber varios en `true` (solo activos) | sí | sí |
 | `activo` | `boolean` | | no | sí |
 | `orden` | `integer` | menor primero (lo asigna el servidor) | no | sí |
@@ -1004,11 +1070,11 @@ Las respuestas traen **exactamente** estos campos (el público, solo los marcado
 
 ### `POST /api/admin/servicios` (solo `admin` y `superadmin`)
 
-Body estricto: `id`, `nombre`, `resumen`, `descripcion` obligatorios; `incluye` (default `[]`), `glosario` (default `[]`), `duracion`, `duracionCamioneta` y `duracionMoto` (default `null` las tres), `precioDesde`, `precioDesdeCamioneta` y `precioDesdeMoto` (default `null` los tres), `vehiculos` (default los tres), `destacado` (default `false`), `activo` (default `true`). `orden` no se manda (`400`): queda al final. Si viene `destacado: true`, no desmarca a los demás (con `activo: false` a la vez, `400` en `fields.destacado`). `201 { "servicio": Servicio }`. Errores: `400 VALIDATION_ERROR` con `fields` (en las listas la clave lleva la posición: `incluye.1`, `glosario.0.termino`), `409 SERVICIO_EXISTE`, `403 FORBIDDEN` para `empleado` (*"Con tu rol solo podés ver el catálogo de servicios."*).
+Body estricto: `id`, `nombre`, `resumen`, `descripcion` obligatorios; `incluye` (default `[]`), `glosario` (default `[]`), `duracion`, `duracionSuv`, `duracionPickup` y `duracionMoto` (default `null` las cuatro), `precioDesde`, `precioDesdeSuv`, `precioDesdePickup` y `precioDesdeMoto` (default `null` los cuatro), `vehiculos` (default los cuatro), `categoria` (default `null`), `destacado` (default `false`), `activo` (default `true`). `orden` no se manda (`400`): queda al final. Si viene `destacado: true`, no desmarca a los demás (con `activo: false` a la vez, `400` en `fields.destacado`). `201 { "servicio": Servicio }`. Errores: `400 VALIDATION_ERROR` con `fields` (en las listas la clave lleva la posición: `incluye.1`, `glosario.0.termino`), `409 SERVICIO_EXISTE`, `403 FORBIDDEN` para `empleado` (*"Con tu rol solo podés ver el catálogo de servicios."*).
 
 ### `PATCH /api/admin/servicios/:id` (solo `admin` y `superadmin`)
 
-Body estricto con al menos uno de: `nombre`, `resumen`, `descripcion`, `incluye`, `glosario`, `duracion`, `duracionCamioneta`, `duracionMoto`, `precioDesde`, `precioDesdeCamioneta`, `precioDesdeMoto`, `vehiculos`, `destacado`, `activo` (mismas reglas; `null` en cualquiera de las tres duraciones o de los tres precios lo borra; lo que no viene no cambia). `activo: false` también desmarca el destacado; `destacado: true` sobre un servicio que queda inactivo (ya lo estaba o se desactiva en el mismo body) da `400` en `fields.destacado` (*"No se puede destacar un servicio inactivo. Activalo primero."*). El `id` no se puede cambiar: si viene en el body, `400`. `200 { "servicio": Servicio }`. Errores: `404 NOT_FOUND` (no existe, o el id no tiene formato de slug), `400` (campo desconocido, tipo inválido o body vacío), `403 FORBIDDEN` para `empleado`.
+Body estricto con al menos uno de: `nombre`, `resumen`, `descripcion`, `incluye`, `glosario`, `duracion`, `duracionSuv`, `duracionPickup`, `duracionMoto`, `precioDesde`, `precioDesdeSuv`, `precioDesdePickup`, `precioDesdeMoto`, `vehiculos`, `categoria`, `destacado`, `activo` (mismas reglas; `null` en cualquiera de las cuatro duraciones, de los cuatro precios o en la categoría lo borra; lo que no viene no cambia). `activo: false` también desmarca el destacado; `destacado: true` sobre un servicio que queda inactivo (ya lo estaba o se desactiva en el mismo body) da `400` en `fields.destacado` (*"No se puede destacar un servicio inactivo. Activalo primero."*). El `id` no se puede cambiar: si viene en el body, `400`. `200 { "servicio": Servicio }`. Errores: `404 NOT_FOUND` (no existe, o el id no tiene formato de slug), `400` (campo desconocido, tipo inválido o body vacío), `403 FORBIDDEN` para `empleado`.
 
 ### `PUT /api/admin/servicios/orden` (solo `admin` y `superadmin`)
 
@@ -1240,7 +1306,7 @@ Igual que en desarrollo: los usuarios se crean en el panel de Supabase y se acti
 ### Glosario
 
 - **Booking** = turno / solicitud de turno. El dominio y la API están en español como el contrato (`turno`, `servicioId`, `franja`, `estado`...); el código técnico (clases, rutas internas, nombres de archivos de infraestructura) está en inglés.
-- **Nombres en la base** (snake_case): las tablas técnicas en inglés como el código (`bookings`); las del panel en español (`roles`, `perfiles`); las columnas de negocio en español como el contrato (`nombre`, `telefono`, `vehiculo_tipo`, `fecha_preferida`, `franja`, `estado`) y las técnicas en inglés (`id`, `seq`, `created_at`, `updated_at`). `servicios` va en español porque es el catálogo del negocio y coincide con `domain/servicios.ts` y `servicioId`. `duracion_estimada`, `duracion_estimada_camioneta`, `duracion_estimada_moto`, `precio_desde`, `precio_desde_camioneta` y `precio_desde_moto` salen por la API como `duracion`, `duracionCamioneta`, `duracionMoto`, `precioDesde`, `precioDesdeCamioneta` y `precioDesdeMoto`. Los repositorios traducen a camelCase (`servicio_id` -> `servicioId`).
+- **Nombres en la base** (snake_case): las tablas técnicas en inglés como el código (`bookings`); las del panel en español (`roles`, `perfiles`); las columnas de negocio en español como el contrato (`nombre`, `telefono`, `vehiculo_tipo`, `fecha_preferida`, `franja`, `estado`) y las técnicas en inglés (`id`, `seq`, `created_at`, `updated_at`). `servicios` va en español porque es el catálogo del negocio y coincide con `domain/servicios.ts` y `servicioId`. `duracion_estimada`, `duracion_suv`, `duracion_pickup`, `duracion_estimada_moto`, `precio_desde`, `precio_desde_suv`, `precio_desde_pickup` y `precio_desde_moto` salen por la API como `duracion`, `duracionSuv`, `duracionPickup`, `duracionMoto`, `precioDesde`, `precioDesdeSuv`, `precioDesdePickup` y `precioDesdeMoto`. Los repositorios traducen a camelCase (`servicio_id` -> `servicioId`).
 - **`buddys`** = esquema propio de la app en Postgres (no expuesto por la Data API de Supabase).
 - **Honeypot** = campo trampa `website` que solo completan los bots.
 - **Repositorio** = capa de acceso a datos detrás de una interfaz (`src/domain/`); la implementación es Postgres (`src/repositories/postgres/`).
@@ -1352,9 +1418,9 @@ Contrato: `reportes/2026-10-27_17_finanzas-inventario-documentos.md`. Errores, C
 
 #### Comprobantes
 
-`Comprobante` = `{ id, numero, codigo: "R-0001", fechaEmision, formaPago, monto, clienteNombre, servicioNombre, vehiculo, notas }`. Es una **foto** del momento: copia nombre, servicio, vehículo (el modelo; si no hay, el tipo: "Camioneta") y monto del turno, y no cambia si después se edita el turno. Formas de pago: `efectivo`, `transferencia`, `debito`, `credito`, `otro`.
+`Comprobante` = `{ id, numero, codigo: "R-0001", fechaEmision, formaPago, monto, clienteNombre, servicioNombre, vehiculo, notas }`. Es una **foto** del momento: copia nombre, servicio, vehículo (el modelo; si no hay, el tipo: "SUV", "Pick-up") y servicio (con varios, los nombres unidos con " + ": "Limpieza Nivel II + Limpieza de motor") y monto del turno, y no cambia si después se edita el turno. Formas de pago: `efectivo`, `transferencia`, `debito`, `credito`, `otro`.
 
-- `POST /api/admin/bookings/:id/comprobante { formaPago, notas? (<=200) }` -> `201 { comprobante }` la primera vez y **`200` con el existente** si el turno ya tenía (idempotente, con bloqueo por turno: no se emite otro). Turno no completado o sin `monto` -> `400` "Primero cargá el cobro del trabajo."; turno inexistente -> `404`.
+- `POST /api/admin/bookings/:id/comprobante { formaPago?, notas? (<=200) }` -> `201 { comprobante }` la primera vez y **`200` con el existente** si el turno ya tenía (idempotente, con bloqueo por turno: no se emite otro). Turno no completado o sin `monto` -> `400` "Primero cargá el cobro del trabajo."; turno inexistente -> `404`. **`formaPago` es opcional**: si no viene, se usa la del turno (la que se cargó con el lavado o con el PATCH); si viene, manda la que viene. Sin `formaPago` y el turno sin una cargada -> el mismo `400` de siempre en `fields.formaPago`.
 - `GET /api/admin/bookings/:id/comprobante` -> `200 { comprobante }` o `404` si todavía no hay.
 - `GET /api/admin/comprobantes/:id/pdf` (ver "PDF").
 - Un turno con comprobante **no se puede borrar**: `DELETE /api/admin/bookings/:id` -> `409 TURNO_CON_COMPROBANTE` (la FK es `ON DELETE RESTRICT`).

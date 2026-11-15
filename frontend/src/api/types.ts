@@ -1,11 +1,12 @@
 // Tipos de la API de Buddys. Fuente: backend/README.md y backend/test/fixtures/respuestas-api.json.
 
 export type Rol = 'superadmin' | 'admin' | 'empleado';
-export type VehiculoTipo = 'auto' | 'camioneta' | 'moto';
+export type VehiculoTipo = 'auto' | 'suv' | 'pickup' | 'moto';
 export type Franja = 'manana' | 'tarde';
 export type EstadoTurno = 'pendiente' | 'confirmado' | 'completado' | 'cancelado';
 
-export const VEHICULOS: readonly VehiculoTipo[] = ['auto', 'camioneta', 'moto'];
+/** Orden canónico: el de los selectores, las tablas de precios y los textos. */
+export const VEHICULOS: readonly VehiculoTipo[] = ['auto', 'suv', 'pickup', 'moto'];
 
 export interface Usuario {
   id: string;
@@ -29,7 +30,10 @@ export interface Turno {
   vehiculoTipo: VehiculoTipo;
   vehiculoModelo: string | null;
   origen: 'web' | 'mostrador';
+  /** El servicio principal (el primero de `servicios`). */
   servicioId: string;
+  /** Todos los servicios del lavado, en orden. precioLista null para el empleado o si el servicio era "Consultá". */
+  servicios: ServicioDelTurno[];
   fechaPreferida: string;
   franja: Franja;
   fechaConfirmada: string | null;
@@ -37,6 +41,8 @@ export interface Turno {
   comentario: string | null;
   estado: EstadoTurno;
   notasInternas: string | null;
+  /** Cómo se pagó (todos los roles la ven). null = sin indicar. */
+  formaPago: FormaPago | null;
   turnosDelCliente: number | null;
   monto: number | null;
   trabajador: Persona | null;
@@ -44,8 +50,21 @@ export interface Turno {
   updatedAt: string;
 }
 
+export interface ServicioDelTurno {
+  id: string;
+  nombre: string;
+  precioLista: number | null;
+}
+
 export interface ResumenTrabajador {
   trabajador: Persona | null;
+  cantidad: number;
+  total: number | null;
+}
+
+/** Cierre de caja: lavados y total por forma de pago. formaPago null = "Sin indicar"; total null para el empleado. */
+export interface ResumenFormaPago {
+  formaPago: FormaPago | null;
   cantidad: number;
   total: number | null;
 }
@@ -58,11 +77,16 @@ export interface PlanillaDelDia {
     total: number | null;
     sinMonto: number;
     porTrabajador: ResumenTrabajador[];
+    porFormaPago: ResumenFormaPago[];
   };
 }
 
+/** Cuántos servicios puede llevar un lavado (el backend rechaza más). */
+export const MAX_SERVICIOS = 10;
+
 export interface NuevoLavado {
-  servicioId: string;
+  /** De 1 a 10, sin repetidos; el primero es el principal. */
+  servicioIds: string[];
   vehiculoTipo: VehiculoTipo;
   monto?: number | null;
   trabajadorId?: string;
@@ -72,6 +96,24 @@ export interface NuevoLavado {
   telefono?: string;
   vehiculoModelo?: string;
   notasInternas?: string;
+  formaPago?: FormaPago | null;
+  /**
+   * uuid que genera el panel por cada envío (el mismo en los reintentos desde la cola sin conexión). Si el backend ya
+   * tiene un lavado con ese idLocal del mismo usuario responde 200 con ese lavado (no crea otro); de otra persona, 409.
+   */
+  idLocal?: string;
+}
+
+/**
+ * Un lavado como lo guardaba la cola sin conexión antes de los servicios múltiples: un solo `servicioId`. El backend lo
+ * sigue aceptando (nunca junto con `servicioIds`: eso es 400).
+ */
+export type NuevoLavadoLegado = Omit<NuevoLavado, 'servicioIds'> & { servicioId: string };
+
+/** Respuesta de POST /api/admin/lavados: el lavado y hasta cuándo quien lo registró puede deshacerlo (ISO). */
+export interface LavadoRegistrado {
+  lavado: Turno;
+  deshacerHasta: string;
 }
 
 export interface CambioTurno {
@@ -79,6 +121,9 @@ export interface CambioTurno {
   notasInternas?: string | null;
   monto?: number | null;
   trabajadorId?: string | null;
+  formaPago?: FormaPago | null;
+  /** Solo quien tiene cobro.corregir. */
+  servicioIds?: string[];
 }
 
 export interface Trabajador {
@@ -94,11 +139,16 @@ export interface Servicio {
   descripcion: string;
   incluye: string[];
   glosario: { termino: string; significado: string }[];
+  /** "Lavado", "Interior", "Pulido", "Protección", "Pre venta", "Motos"… null = sin categoría. */
+  categoria: string | null;
+  /** duracion y precioDesde son los de auto. null = "Consultá" (nunca se usa el de auto para otro vehículo). */
   duracion: string | null;
-  duracionCamioneta: string | null;
+  duracionSuv: string | null;
+  duracionPickup: string | null;
   duracionMoto: string | null;
   precioDesde: number | null;
-  precioDesdeCamioneta: number | null;
+  precioDesdeSuv: number | null;
+  precioDesdePickup: number | null;
   precioDesdeMoto: number | null;
   vehiculos: VehiculoTipo[];
   destacado: boolean;
@@ -107,15 +157,12 @@ export interface Servicio {
   updatedAt: string;
 }
 
-export type NuevoServicio = Pick<Servicio, 'id' | 'nombre' | 'resumen' | 'descripcion'> &
-  Partial<Pick<Servicio, 'precioDesde' | 'precioDesdeCamioneta' | 'precioDesdeMoto' | 'vehiculos' | 'activo'>>;
+export type PrecioServicio = 'precioDesde' | 'precioDesdeSuv' | 'precioDesdePickup' | 'precioDesdeMoto';
 
-export type CambioServicio = Partial<
-  Pick<
-    Servicio,
-    'nombre' | 'resumen' | 'precioDesde' | 'precioDesdeCamioneta' | 'precioDesdeMoto' | 'vehiculos' | 'activo'
-  >
->;
+export type NuevoServicio = Pick<Servicio, 'id' | 'nombre' | 'resumen' | 'descripcion'> &
+  Partial<Pick<Servicio, PrecioServicio | 'categoria' | 'vehiculos' | 'activo'>>;
+
+export type CambioServicio = Partial<Pick<Servicio, 'nombre' | 'resumen' | PrecioServicio | 'categoria' | 'vehiculos' | 'activo'>>;
 
 export type NivelPermiso = 'si' | 'no' | 'parcial';
 

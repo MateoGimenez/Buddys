@@ -13,11 +13,12 @@ import type { Rol } from './perfil.js';
  * | Capacidad                              | superadmin | admin | empleado                          |
  * |----------------------------------------|------------|-------|-----------------------------------|
  * | Registrar un lavado de mostrador       | sí         | sí    | parcial: a su nombre               |
+ * | Deshacer un lavado recién registrado   | sí         | sí    | parcial: el suyo, hasta 5 minutos  |
  * | Ver turnos, agenda, clientes, notas    | sí         | sí    | sí                                |
  * | Cambiar el estado de un turno          | cualquiera | cualq.| solo a "completado"               |
  * | Reprogramar y borrar turnos            | sí         | sí    | no                                |
  * | Registrar el cobro y quién lo hizo     | sí         | sí    | parcial: queda como trabajador    |
- * | Corregir el cobro de un completado     | sí         | sí    | no                                |
+ * | Corregir el cobro (forma de pago, servicios) | sí   | sí    | no                                |
  * | Catálogo (ver / editar)                | sí / sí    | sí / sí | sí / no                         |
  * | Disponibilidad (ver / editar)          | sí / sí    | sí / sí | sí / no                         |
  * | Estadísticas completas (con importes)  | sí         | sí    | no                                |
@@ -56,10 +57,20 @@ export const CAPACIDADES = [
   {
     id: 'lavados.registrar',
     grupo: 'Lavados',
-    texto: 'Registrar un lavado de mostrador (servicio, vehículo, cobro y quién lavó)',
+    texto: 'Registrar un lavado de mostrador (servicios, vehículo, cobro, forma de pago y quién lavó)',
     roles: { superadmin: 'si', admin: 'si', empleado: 'parcial' },
     matiz: {
-      empleado: 'Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige',
+      empleado:
+        'Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)',
+    },
+  },
+  {
+    id: 'lavados.deshacer',
+    grupo: 'Lavados',
+    texto: 'Deshacer (borrar) un lavado de mostrador',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'parcial' },
+    matiz: {
+      empleado: 'Solo uno que registró él, hasta 5 minutos después de registrarlo y si no tiene comprobante',
     },
   },
   {
@@ -109,7 +120,7 @@ export const CAPACIDADES = [
   {
     id: 'cobro.corregir',
     grupo: 'Cobro',
-    texto: 'Corregir el monto y el trabajador de un turno ya completado',
+    texto: 'Corregir el monto, el trabajador, la forma de pago y los servicios de un turno',
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
@@ -229,6 +240,35 @@ export function puedeAnotarLavadoDeOtro(rol: Rol): boolean {
   return nivelDe(rol, 'lavados.registrar') === 'si';
 }
 
+/** Minutos que tiene quien registró un lavado para deshacerlo él mismo. */
+export const PLAZO_DESHACER_LAVADO_MINUTOS = 5;
+
+/** Hasta cuándo (ISO 8601 UTC) quien registró un lavado lo puede deshacer: la creación + el plazo. */
+export function deshacerLavadoHasta(createdAt: string): string {
+  return new Date(Date.parse(createdAt) + PLAZO_DESHACER_LAVADO_MINUTOS * 60_000).toISOString();
+}
+
+/** Deshacer (borrar) cualquier lavado de mostrador, en cualquier momento: admin y superadmin. */
+export function puedeDeshacerCualquierLavado(rol: Rol): boolean {
+  return nivelDe(rol, 'lavados.deshacer') === 'si' || puedeBorrarTurnos(rol);
+}
+
+/**
+ * ¿Puede `actorId` (con ese rol) deshacer este lavado ahora? 'si'; 'no' (no es suyo o su rol no puede); 'vencido'
+ * (es suyo pero pasaron más de PLAZO_DESHACER_LAVADO_MINUTOS desde que lo registró). Que no tenga comprobante lo
+ * verifica el repositorio al borrar.
+ */
+export function puedeDeshacerLavado(
+  rol: Rol,
+  actorId: string,
+  lavado: { registradoPor: string | null; createdAt: string },
+  now: Date,
+): 'si' | 'no' | 'vencido' {
+  if (puedeDeshacerCualquierLavado(rol)) return 'si';
+  if (nivelDe(rol, 'lavados.deshacer') === 'no' || lavado.registradoPor !== actorId) return 'no';
+  return now.getTime() <= Date.parse(deshacerLavadoHasta(lavado.createdAt)) ? 'si' : 'vencido';
+}
+
 export function puedeCambiarEstado(rol: Rol, estado: Estado): boolean {
   const nivel = nivelDe(rol, 'turnos.estado');
   return nivel === 'parcial' ? estado === 'completado' : nivel === 'si';
@@ -274,7 +314,10 @@ export function puedeRegistrarCobro(rol: Rol): boolean {
   return nivelDe(rol, 'cobro.registrar') === 'si';
 }
 
-/** Corregir el monto y el trabajador de un turno que ya estaba completado. */
+/**
+ * Corregir el monto y el trabajador de un turno que ya estaba completado, y cambiar la forma de pago y los servicios de
+ * cualquier turno (PATCH /api/admin/bookings/:id con formaPago o servicioIds).
+ */
 export function puedeCorregirCobro(rol: Rol): boolean {
   return nivelDe(rol, 'cobro.corregir') === 'si';
 }
@@ -330,9 +373,15 @@ export function puedeVerCostosInventario(rol: Rol): boolean {
 }
 
 /**
- * El turno tal como lo ve ese rol: el empleado nunca recibe el monto (siempre null, aunque el turno lo tenga). Se
- * aplica a TODA respuesta del panel que devuelva turnos (listado, agenda, PATCH).
+ * El turno tal como lo ve ese rol: el empleado nunca recibe importes: ni el monto ni el precio de lista de cada
+ * servicio (siempre null, aunque el turno los tenga). Se aplica a TODA respuesta del panel que devuelva turnos
+ * (listado, agenda, lavados, PATCH).
  */
 export function vistaDeTurno(rol: Rol, booking: Booking): Booking {
-  return puedeVerImportes(rol) || booking.monto === null ? booking : { ...booking, monto: null };
+  if (puedeVerImportes(rol)) return booking;
+  return {
+    ...booking,
+    monto: null,
+    servicios: booking.servicios.map((servicio) => ({ ...servicio, precioLista: null })),
+  };
 }
