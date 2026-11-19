@@ -8,6 +8,7 @@ import { SessionCookies } from './lib/cookies.js';
 import { type Logger, createLogger } from './lib/logger.js';
 import { SupabaseAdminClient } from './lib/supabase-admin.js';
 import { type FetchFn, SupabaseAuthClient } from './lib/supabase-auth.js';
+import { SupabaseStorageClient } from './lib/supabase-storage.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createRateLimiters } from './middleware/rate-limit.js';
 import { requestLogger } from './middleware/request-logger.js';
@@ -27,6 +28,7 @@ import { GastoService } from './services/gastos.js';
 import { InventarioService } from './services/inventario.js';
 import { LavadoService } from './services/lavados.js';
 import { MetaService } from './services/metas.js';
+import { PerfilService } from './services/perfil.js';
 import { PresupuestoService } from './services/presupuestos.js';
 import { PUSH_TIMEOUT_MS, PushService } from './services/push.js';
 import { RecordatorioService } from './services/recordatorios.js';
@@ -47,6 +49,8 @@ export interface AppDeps {
   fetch?: FetchFn;
   /** fetch inyectable para Supabase Auth (los tests usan un Supabase Auth falso). */
   authFetch?: FetchFn;
+  /** fetch inyectable para Supabase Storage (los tests usan un Storage falso en memoria). */
+  storageFetch?: FetchFn;
   /** Claves para verificar los access tokens. Por defecto, el JWKS remoto del proyecto (con caché). */
   jwks?: JWTVerifyGetKey;
   /** Pisa al notificador elegido por la config (tests). */
@@ -93,8 +97,9 @@ export function createApp(deps: AppDeps): Express {
     notifier: deps.notifier ?? createNotifier(config.whatsapp, config.publicUrl, deps.fetch),
     push,
   });
+  const supabaseAuth = new SupabaseAuthClient(config.supabase, deps.authFetch);
   const auth = new AuthService({
-    supabase: new SupabaseAuthClient(config.supabase, deps.authFetch),
+    supabase: supabaseAuth,
     verifyAccessToken: createAccessTokenVerifier({
       getKey: deps.jwks ?? createSupabaseJwks(config.supabase.jwksUrl),
       issuer: config.supabase.authUrl,
@@ -104,15 +109,17 @@ export function createApp(deps: AppDeps): Express {
     logger,
   });
   const { secretKey } = config.supabase;
-  const usuarios = new UsuarioService({
-    perfiles,
-    admin:
-      secretKey === undefined
-        ? undefined
-        : new SupabaseAdminClient({ authUrl: config.supabase.authUrl, secretKey }, deps.authFetch),
-    logger,
-    now,
-  });
+  const supabaseAdmin =
+    secretKey === undefined
+      ? undefined
+      : new SupabaseAdminClient({ authUrl: config.supabase.authUrl, secretKey }, deps.authFetch);
+  // Fotos de perfil: Storage con la misma secret key (sin ella, no hay fotos: 503 y fotosDisponibles = false).
+  const storage =
+    secretKey === undefined
+      ? undefined
+      : new SupabaseStorageClient({ url: config.supabase.url, secretKey }, deps.storageFetch);
+  const usuarios = new UsuarioService({ perfiles, admin: supabaseAdmin, storage, logger, now });
+  const perfil = new PerfilService({ perfiles, auth: supabaseAuth, admin: supabaseAdmin, storage, logger, now });
   const agenda = new AgendaService({ bookings, servicios, perfiles, logger, now });
   const lavados = new LavadoService({ bookings, servicios, perfiles, logger, now });
   const estadisticas = new EstadisticasService({ estadisticas: estadisticasRepo, now });
@@ -169,6 +176,7 @@ export function createApp(deps: AppDeps): Express {
       push,
       auth,
       usuarios,
+      perfil,
       servicios: servicioService,
       gastos,
       metas,

@@ -11,6 +11,8 @@ export interface UsuarioSesion {
   email: string | null;
   nombre: string | null;
   rol: Rol;
+  /** Versión de la foto de perfil (ISO 8601) o null si no tiene. */
+  fotoVersion: string | null;
   /** session_id de Supabase Auth. */
   sessionId: string;
 }
@@ -37,7 +39,14 @@ const AUTH_UNAVAILABLE_MESSAGE =
   'No pudimos conectarnos con el servicio de inicio de sesión. Probá de nuevo en unos minutos.';
 
 function toUsuario(perfil: Perfil, sessionId: string): UsuarioSesion {
-  return { id: perfil.id, email: perfil.email, nombre: perfil.nombre, rol: perfil.rol, sessionId };
+  return {
+    id: perfil.id,
+    email: perfil.email,
+    nombre: perfil.nombre,
+    rol: perfil.rol,
+    fotoVersion: perfil.fotoVersion,
+    sessionId,
+  };
 }
 
 /**

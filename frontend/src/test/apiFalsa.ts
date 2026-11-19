@@ -6,6 +6,8 @@ export interface Pedido {
   path: string;
   headers: Record<string, string>;
   body: unknown;
+  /** El body tal cual, para los que no son JSON (la foto de perfil va como Blob). */
+  crudo: BodyInit | null | undefined;
 }
 
 type Manejador = RespuestaFalsa | ((p: Pedido) => RespuestaFalsa);
@@ -23,7 +25,7 @@ export function apiFalsa(rutas: Record<string, Manejador | Manejador[]>) {
     const method = (init?.method ?? 'GET').toUpperCase();
     const headers = (init?.headers ?? {}) as Record<string, string>;
     const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
-    const pedido: Pedido = { method, path: url.pathname + url.search, headers, body };
+    const pedido: Pedido = { method, path: url.pathname + url.search, headers, body, crudo: init?.body };
     pedidos.push(pedido);
 
     const clave = `${method} ${url.pathname}`;

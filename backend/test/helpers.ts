@@ -9,6 +9,7 @@ import type { Rol } from '../src/domain/perfil.js';
 import type { Logger } from '../src/lib/logger.js';
 import { createPostgresRepositories } from '../src/repositories/index.js';
 import { type PgliteDatabase, createPgliteDatabase } from './pglite.js';
+import { FakeSupabaseStorage } from './storage-fake.js';
 import { FakeSupabaseAuth, PUBLISHABLE_KEY, SECRET_KEY, SUPABASE_ISSUER, SUPABASE_URL, TEST_JWKS } from './supabase-fake.js';
 
 /** Origen del frontend en desarrollo (el que manda el navegador a través del proxy de Vite). */
@@ -48,7 +49,15 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     trustProxy: false,
     // Los tests de siempre usan el alta pública de turnos; test/turnos-online.test.ts prueba el sistema sin ella.
     turnosOnline: true,
-    rateLimits: { api: NO_LIMIT, bookings: NO_LIMIT, loginFailures: NO_LIMIT, seguimiento: NO_LIMIT, pdf: NO_LIMIT },
+    rateLimits: {
+      api: NO_LIMIT,
+      bookings: NO_LIMIT,
+      loginFailures: NO_LIMIT,
+      seguimiento: NO_LIMIT,
+      pdf: NO_LIMIT,
+      perfilPassword: NO_LIMIT,
+      perfilFoto: NO_LIMIT,
+    },
     whatsapp: { provider: 'none' },
     recordatorios: { cronSecret: undefined, email: undefined, whatsapp: undefined },
     push: undefined,
@@ -86,6 +95,8 @@ export interface TestContext {
   config: AppConfig;
   /** Supabase Auth falso (usuarios, sesiones en auth.sessions, llamadas recibidas). */
   supabase: FakeSupabaseAuth;
+  /** Supabase Storage falso en memoria (fotos de perfil). */
+  storage: FakeSupabaseStorage;
   /** Reloj controlable: `clock.current = new Date(...)`. */
   clock: { current: Date };
   close: () => Promise<void>;
@@ -125,6 +136,7 @@ export async function createTestContext(
   const now = () => clock.current;
   const config = testConfig(options.config);
   const supabase = new FakeSupabaseAuth(db, now);
+  const storage = new FakeSupabaseStorage();
   let app: Express;
   try {
     app = createApp({
@@ -135,6 +147,7 @@ export async function createTestContext(
     logger,
     now,
     authFetch: supabase.fetch,
+    storageFetch: storage.fetch,
     jwks: TEST_JWKS,
     ...(options.notifier && { notifier: options.notifier }),
     ...(options.fetch && { fetch: options.fetch }),
@@ -151,6 +164,7 @@ export async function createTestContext(
     logger,
     config,
     supabase,
+    storage,
     clock,
     close: async () => {
       openContexts.delete(context);

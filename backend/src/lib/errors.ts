@@ -154,12 +154,15 @@ export class AppError extends Error {
     return new AppError(429, 'RATE_LIMITED', message);
   }
 
-  static unsupportedMediaType(): AppError {
-    return new AppError(
-      415,
-      'UNSUPPORTED_MEDIA_TYPE',
-      'El formato de la solicitud no es válido. Tiene que enviarse como JSON.',
-    );
+  /** El body supera el tope de esa ruta (ej.: la foto de perfil, 2 MB), con un mensaje propio. */
+  static payloadTooLarge(message: string): AppError {
+    return new AppError(413, 'PAYLOAD_TOO_LARGE', message);
+  }
+
+  static unsupportedMediaType(
+    message = 'El formato de la solicitud no es válido. Tiene que enviarse como JSON.',
+  ): AppError {
+    return new AppError(415, 'UNSUPPORTED_MEDIA_TYPE', message);
   }
 }
 

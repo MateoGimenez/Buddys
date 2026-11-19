@@ -131,6 +131,10 @@ export interface AppConfig {
     seguimiento: RateLimitRule;
     /** Descarga de PDF (presupuestos y comprobantes), por IP: generarlos cuesta CPU. */
     pdf: RateLimitRule;
+    /** Intentos de cambiar la propia contraseña (PATCH /api/admin/perfil), por USUARIO: el mismo tope que el login. */
+    perfilPassword: RateLimitRule;
+    /** Subidas de la propia foto (PUT /api/admin/perfil/foto), por USUARIO: re-codificarla cuesta CPU y memoria. */
+    perfilFoto: RateLimitRule;
   };
   whatsapp: WhatsappConfig;
   recordatorios: RecordatoriosConfig;
@@ -154,6 +158,10 @@ export const DEFAULT_RATE_LIMITS: AppConfig['rateLimits'] = {
   seguimiento: { windowMs: 15 * 60 * 1000, limit: 60 },
   // Generar un PDF cuesta CPU: 30 por minuto por IP alcanzan de sobra para un panel con 2 o 3 personas.
   pdf: { windowMs: 60 * 1000, limit: 30 },
+  // Verificar la contraseña actual es un login contra Supabase: mismo tope que el login, pero contado por usuario.
+  perfilPassword: { windowMs: 15 * 60 * 1000, limit: 5 },
+  // Cambiar la foto es algo de una vez cada tanto: 10 subidas en 15 minutos alcanzan para probar varias.
+  perfilFoto: { windowMs: 15 * 60 * 1000, limit: 10 },
 };
 
 /** Largo mínimo de CRON_SECRET: suficiente entropía para que no se pueda adivinar por fuerza bruta. */

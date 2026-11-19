@@ -1,6 +1,8 @@
 import { ChevronRight, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import type { Usuario } from '../api/types';
+import { Avatar } from '../components/Avatar';
 import { nombreDe, useSecciones } from '../components/Layout';
 import { Boton, Encabezado } from '../components/ui';
 import { NOMBRE_ROL } from '../lib/format';
@@ -8,20 +10,24 @@ import { useSesion, useUsuario } from '../session/SessionContext';
 
 export function Mas() {
   const usuario = useUsuario();
-  const { salir } = useSesion();
+  const { salir, puede } = useSesion();
   const secciones = useSecciones().filter((s) => !s.principal);
   const [saliendo, setSaliendo] = useState(false);
 
   return (
     <>
       <Encabezado titulo="Más" />
-      <section className="hoja quien">
-        <p className="quien-nombre">{nombreDe(usuario)}</p>
-        <p className="quien-detalle">
-          {NOMBRE_ROL[usuario.rol]}
-          {usuario.email && usuario.nombre ? ` · ${usuario.email}` : ''}
-        </p>
-      </section>
+      {/* Quién está adentro y, si puede editarlo, el paso a Mi perfil (el mismo destino que el menú de la barra). */}
+      {puede('perfil.editar') ? (
+        <Link to="/perfil" className="hoja quien" viewTransition>
+          <Quien usuario={usuario} accion="Mi perfil: nombre, foto y contraseña" />
+          <ChevronRight aria-hidden size={20} />
+        </Link>
+      ) : (
+        <section className="hoja quien">
+          <Quien usuario={usuario} />
+        </section>
+      )}
       {secciones.length ? (
         <nav aria-label="Otras secciones">
           <ul className="menu">
@@ -54,6 +60,22 @@ export function Mas() {
       >
         Cerrar sesión
       </Boton>
+    </>
+  );
+}
+
+function Quien({ usuario, accion }: { usuario: Usuario; accion?: string }) {
+  return (
+    <>
+      <Avatar persona={usuario} tamano={48} />
+      <span className="quien-texto">
+        <span className="quien-nombre">{nombreDe(usuario)}</span>
+        <span className="quien-detalle">
+          {NOMBRE_ROL[usuario.rol]}
+          {usuario.email && usuario.nombre ? ` · ${usuario.email}` : ''}
+        </span>
+        {accion ? <span className="quien-accion">{accion}</span> : null}
+      </span>
     </>
   );
 }

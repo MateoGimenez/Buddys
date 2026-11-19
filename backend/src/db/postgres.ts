@@ -50,6 +50,8 @@ const AGENDA_COLUMNS = ['fecha_confirmada', 'franja_confirmada'] as const;
 const COBRO_COLUMNS = ['monto', 'trabajador_id'] as const;
 /** Columnas que agrega la migración notas_telefono_cliente (las que lee el repositorio de turnos). */
 const NOTAS_COLUMNS = ['notas_internas', 'telefono_whatsapp'] as const;
+/** Columna que agrega la migración perfil_foto (la versión de la foto de perfil; la lee el repositorio de perfiles). */
+const PERFIL_FOTO_COLUMNS = ['foto_actualizada_at'] as const;
 
 /**
  * Pool chico y con timeouts: un taller con un servidor Node de larga vida no necesita más, y el pooler de
@@ -392,6 +394,21 @@ export async function verifyPostgresSchema(client: SqlClient): Promise<void> {
     throw new Error(
       `Faltan objetos de la migración de avisos push en buddys (push_suscripciones: ${missingPush.join(', ')}). ` +
         'Aplicá la migración push_suscripciones de backend/supabase/migrations/ (ver README, "Migraciones").',
+    );
+  }
+
+  // La foto de perfil (migración perfil_foto): cada lectura de un perfil (también la de la sesión) usa la columna.
+  const fotoColumns = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'perfiles' AND column_name = ANY($2::text[])`,
+    [PG_SCHEMA, PERFIL_FOTO_COLUMNS],
+  );
+  const presentFoto = new Set(fotoColumns.rows.map((row) => row.column_name));
+  const missingFoto = PERFIL_FOTO_COLUMNS.filter((column) => !presentFoto.has(column));
+  if (missingFoto.length > 0) {
+    throw new Error(
+      `Faltan columnas en buddys.perfiles (${missingFoto.join(', ')}). ` +
+        'Aplicá la migración perfil_foto de backend/supabase/migrations/ (ver README, "Migraciones").',
     );
   }
 

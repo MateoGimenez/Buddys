@@ -7,6 +7,7 @@ import { Insumos } from './pages/Insumos';
 import { Login } from './pages/Login';
 import { Mas } from './pages/Mas';
 import { Numeros } from './pages/Numeros';
+import { Perfil } from './pages/Perfil';
 import { Planilla } from './pages/Planilla';
 import { Presupuestos } from './pages/Presupuestos';
 import { Registrar } from './pages/Registrar';
@@ -47,6 +48,8 @@ export function App() {
           <Route key={s.ruta} path={s.ruta} element={PAGINAS[s.ruta]} />
         ))}
         <Route path="/mas" element={<Mas />} />
+        {/* Mi perfil: todos los roles (perfil.editar es "sí" para los tres). */}
+        {puede('perfil.editar') ? <Route path="/perfil" element={<Perfil />} /> : null}
         <Route path="*" element={<Navigate to="/registrar" replace />} />
       </Route>
     </Routes>

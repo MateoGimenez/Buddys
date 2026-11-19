@@ -14,9 +14,18 @@ export interface AuthRouterDeps {
   requireSession: RequestHandler;
 }
 
-/** Lo que el frontend ve del usuario: nunca tokens ni el session_id. */
-function publicUsuario(usuario: UsuarioSesion) {
-  return { id: usuario.id, email: usuario.email, nombre: usuario.nombre, rol: usuario.rol };
+/**
+ * Lo que el frontend ve del usuario: nunca tokens ni el session_id. Misma forma que el perfil de GET /api/admin/perfil.
+ * fotoVersion: la versión de la foto (ISO 8601, va como ?v= en su URL) o null si no tiene.
+ */
+export function publicUsuario(usuario: Pick<UsuarioSesion, 'id' | 'email' | 'nombre' | 'rol' | 'fotoVersion'>) {
+  return {
+    id: usuario.id,
+    email: usuario.email,
+    nombre: usuario.nombre,
+    rol: usuario.rol,
+    fotoVersion: usuario.fotoVersion,
+  };
 }
 
 function sendUsuario(res: Response, usuario: UsuarioSesion): void {
@@ -72,7 +81,7 @@ export function authRouter({ auth, cookies, loginLimiter, requireSession }: Auth
     res.status(204).end();
   });
 
-  // GET /api/auth/me => 200 { usuario: { id, email, nombre, rol } } | 401 | 403. Si el access token venció,
+  // GET /api/auth/me => 200 { usuario: { id, email, nombre, rol, fotoVersion } } | 401 | 403. Si el access token venció,
   // acá sí viaja el refresh token: se refresca solo.
   router.get('/me', requireSession, (_req, res) => {
     sendUsuario(res, getUsuario(res));

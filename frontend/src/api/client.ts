@@ -1,5 +1,7 @@
 // Cliente HTTP del panel. Reglas del backend (backend/README.md, "Reglas generales"):
 //  - Todo pedido que cambia algo (POST, PATCH, PUT, DELETE) lleva Content-Type: application/json, aunque no tenga body.
+//    Única excepción: PUT /api/admin/perfil/foto manda la imagen tal cual (`archivo`), con su Content-Type
+//    (image/jpeg, image/png o image/webp). Nada de multipart ni base64.
 //  - Las cookies de sesión son HttpOnly: el JS nunca ve tokens; solo se mandan con credentials.
 //  - Ante 401 SESSION_EXPIRED en /api/admin/*: POST /api/auth/refresh una vez y se reintenta el pedido.
 //  - 401 UNAUTHORIZED / 403 NO_ACCESS: la sesión terminó (al login). 403 FORBIDDEN: solo "tu rol no puede", sigue.
@@ -28,6 +30,8 @@ type Metodo = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 interface Opciones {
   method?: Metodo;
   body?: unknown;
+  /** Cuerpo binario (la foto de perfil): va tal cual y con su propio Content-Type, no JSON. */
+  archivo?: Blob;
   signal?: AbortSignal;
 }
 
@@ -54,7 +58,11 @@ function armarPedido(opciones: Opciones): RequestInit {
   const method = opciones.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
   const init: RequestInit = { method, headers, credentials: 'same-origin' };
-  if (method !== 'GET') {
+  if (method !== 'GET' && opciones.archivo) {
+    // Un Blob se puede volver a leer: si el pedido se reintenta después de refrescar la sesión, va el mismo archivo.
+    headers['Content-Type'] = opciones.archivo.type;
+    init.body = opciones.archivo;
+  } else if (method !== 'GET') {
     headers['Content-Type'] = 'application/json';
     if (opciones.body !== undefined) init.body = JSON.stringify(opciones.body);
   }

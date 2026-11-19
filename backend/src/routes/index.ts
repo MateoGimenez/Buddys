@@ -25,6 +25,7 @@ import type { PushService } from '../services/push.js';
 import type { RecordatorioService } from '../services/recordatorios.js';
 import type { ServicioService } from '../services/servicios.js';
 import type { UsuarioService } from '../services/usuarios.js';
+import type { PerfilService } from '../services/perfil.js';
 import { adminAgendaRouter } from './admin-agenda.js';
 import { adminBookingsRouter } from './admin-bookings.js';
 import { adminDisponibilidadRouter } from './admin-disponibilidad.js';
@@ -41,6 +42,7 @@ import { adminGastosRouter } from './admin-gastos.js';
 import { adminMetasRouter } from './admin-metas.js';
 import { adminTallerRouter } from './admin-taller.js';
 import { adminUsuariosRouter } from './admin-usuarios.js';
+import { adminFotoUsuarioRouter, adminPerfilRouter } from './admin-perfil.js';
 import { authRouter } from './auth.js';
 import { publicBookingsRouter } from './bookings.js';
 import { publicDisponibilidadRouter } from './disponibilidad.js';
@@ -66,6 +68,7 @@ export interface ApiDeps {
   push: PushService;
   auth: AuthService;
   usuarios: UsuarioService;
+  perfil: PerfilService;
   servicios: ServicioService;
   gastos: GastoService;
   metas: MetaService;
@@ -95,6 +98,7 @@ export function createApiRouter(deps: ApiDeps): Router {
     push,
     auth,
     usuarios,
+    perfil,
     servicios,
     gastos,
     metas,
@@ -111,6 +115,8 @@ export function createApiRouter(deps: ApiDeps): Router {
   api.use(noStore);
   api.use(limiters.api); // tope general por IP, antes de parsear nada
   api.use(requestGuard(config.frontendOrigins)); // CSRF: Origin + Content-Type, antes de leer el body
+  // La foto de perfil (PUT /admin/perfil/foto) no es JSON: la lee express.raw en su ruta (2 MB, solo ahí). Acá
+  // express.json no la toca porque su Content-Type es image/*.
   // 10 kb alcanzan de sobra; un presupuesto de 30 ítems con tildes y emojis necesita más (24 kb, solo ahí).
   // inflate:false rechaza bodies comprimidos (evita "zip bombs"). Cada body se lee una sola vez.
   const jsonCorto = express.json({ limit: '10kb', inflate: false, strict: true });
@@ -141,6 +147,13 @@ export function createApiRouter(deps: ApiDeps): Router {
   api.use('/admin/bookings', adminBookingsRouter({ bookings, agenda }));
   api.use('/admin/agenda', adminAgendaRouter({ agenda, disponibilidad }));
   api.use('/admin/disponibilidad', adminDisponibilidadRouter({ disponibilidad }));
+  api.use('/admin/perfil', adminPerfilRouter({
+    perfil,
+    passwordLimiter: limiters.perfilPassword,
+    fotoLimiter: limiters.perfilFoto,
+  }));
+  // La foto de un usuario va ANTES del router de usuarios: la propia la puede ver cualquier rol.
+  api.use('/admin/usuarios', adminFotoUsuarioRouter({ perfil }));
   api.use('/admin/usuarios', adminUsuariosRouter({ usuarios }));
   api.use('/admin/servicios', adminServiciosRouter({ servicios }));
   api.use('/admin/trabajadores', adminTrabajadoresRouter({ perfiles }));
