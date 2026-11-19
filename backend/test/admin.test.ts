@@ -89,6 +89,7 @@ describe('GET /api/admin/bookings', () => {
       turnosDelCliente: 1,
       monto: null,
       trabajador: null,
+      registradoPor: null,
       formaPago: null,
       // Un turno web tiene un solo servicio; el precio de lista es la foto al pedirlo (pulido: "Consultá").
       servicios: [{ id: 'pulido', nombre: 'Pulido', precioLista: null }],

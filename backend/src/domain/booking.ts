@@ -53,7 +53,10 @@ export interface NewBooking {
 /** Tope del monto cobrado, en pesos (el mismo que el precio "desde" del catálogo). */
 export const MONTO_MAX = 99_999_999;
 
-/** Persona que hizo un trabajo: `nombre` es su nombre o, si no tiene, su email. */
+/**
+ * Persona que hizo o registró un trabajo: `nombre` es su nombre o, si no tiene, la parte de su email antes de la @ (el
+ * email entero no sale: estos nombres los ve también el empleado).
+ */
 export interface Trabajador {
   id: string;
   nombre: string;
@@ -94,6 +97,12 @@ export interface Booking extends Omit<NewBooking, 'telefono'> {
   monto: number | null;
   /** Quién hizo el trabajo; solo en completados. null = sin asignar (o la persona se borró). */
   trabajador: Trabajador | null;
+  /**
+   * Quién lo registró en el panel (columna registrado_por), con el mismo criterio de nombre que `trabajador`; a alguien
+   * dado de baja se lo sigue mostrando por su nombre. null = sin dato (turnos de la web, o una persona que se borró
+   * antes de que las claves pasaran a ON DELETE RESTRICT). Es un nombre, no un importe: lo reciben todos los roles.
+   */
+  registradoPor: Trabajador | null;
   /**
    * Cómo pagó el cliente (efectivo, transferencia, debito, credito, otro). null = sin indicar. No es un importe: la
    * ven todos los roles. La usa el cierre de caja de la planilla de lavados.
@@ -186,7 +195,7 @@ export interface ActualizacionTurno {
 
 /**
  * Un lavado de mostrador ya validado (POST /api/admin/lavados). Se guarda como turno completado con su cobro y
- * `origen = 'mostrador'`: así cuenta en estadísticas, metas y el ranking del equipo sin lógica aparte.
+ * `origen = 'mostrador'`: así cuenta en estadísticas, metas y "mis trabajos" sin lógica aparte.
  */
 export interface NuevoLavado {
   /** Si no se indica, "Cliente de mostrador". */
@@ -279,8 +288,8 @@ export interface BookingRepository {
    * existe un lavado con ese idLocal (no guarda nada: ON CONFLICT DO NOTHING; se busca con lavadoPorIdLocal).
    */
   registrarLavado(input: NuevoLavado, now: Date): Promise<Booking | undefined>;
-  /** El lavado con ese id del panel (idLocal) y quién lo registró. undefined si no hay. */
-  lavadoPorIdLocal(idLocal: string): Promise<{ lavado: Booking; registradoPor: string | null } | undefined>;
+  /** El lavado con ese id del panel (idLocal); quién lo registró va en `registradoPor`. undefined si no hay. */
+  lavadoPorIdLocal(idLocal: string): Promise<Booking | undefined>;
   /** Los lavados de mostrador con fecha `fecha`, en el orden en que se registraron. */
   lavadosDelDia(fecha: string): Promise<Booking[]>;
   /**

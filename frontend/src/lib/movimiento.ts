@@ -1,10 +1,7 @@
-// Movimiento del panel: solo para explicar un cambio (un número que cambió, una fila que subió en el ranking).
+// Movimiento del panel: solo para explicar un cambio (un número que cambió mientras se miraba).
 // Nada se anima al cargar la pantalla: lo primero que se ve ya es el valor final. Con "reducir movimiento" (o donde
-// no hay matchMedia / requestAnimationFrame / Element.animate, como en los tests) todo queda quieto.
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-
-/** La curva de todo el panel: arranca rápido y frena suave (sin rebotes de más). */
-export const CURVA_SALIDA = 'cubic-bezier(0.16, 1, 0.3, 1)';
+// no hay matchMedia / requestAnimationFrame, como en los tests) todo queda quieto.
+import { useEffect, useState } from 'react';
 
 export function prefiereMenosMovimiento(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true;
@@ -55,36 +52,4 @@ export function useContador(valor: number, duracion = 420): number {
   }, [desde, hacia, duracion]);
 
   return anim?.hacia === valor ? anim.v : valor;
-}
-
-/**
- * FLIP para listas que se reordenan (el ranking): cada hijo con `data-flip="<clave>"` que cambió de lugar se desliza
- * desde donde estaba. Usa Element.animate (sin dependencias); si no existe o se prefiere menos movimiento, salta.
- */
-export function useFlip(contenedor: RefObject<HTMLElement | null>, firma: string) {
-  const posiciones = useRef(new Map<string, number>());
-
-  useLayoutEffect(() => {
-    const raiz = contenedor.current;
-    if (!raiz) return;
-    const hijos = Array.from(raiz.querySelectorAll<HTMLElement>('[data-flip]'));
-    const nuevas = new Map<string, number>();
-    for (const el of hijos) nuevas.set(el.dataset.flip ?? '', el.getBoundingClientRect().top);
-
-    const antes = posiciones.current;
-    posiciones.current = nuevas;
-    if (!antes.size || prefiereMenosMovimiento()) return;
-    for (const el of hijos) {
-      if (typeof el.animate !== 'function') return;
-      const previa = antes.get(el.dataset.flip ?? '');
-      const actual = nuevas.get(el.dataset.flip ?? '');
-      if (previa === undefined || actual === undefined) continue;
-      const delta = previa - actual;
-      if (Math.abs(delta) < 1) continue;
-      el.animate([{ transform: `translateY(${String(delta)}px)` }, { transform: 'none' }], {
-        duration: 320,
-        easing: CURVA_SALIDA,
-      });
-    }
-  }, [contenedor, firma]);
 }

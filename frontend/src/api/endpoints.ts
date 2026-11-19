@@ -19,13 +19,15 @@ import type {
   NuevoPresupuesto,
   NuevoServicio,
   NuevoUsuario,
+  CambioPerfil,
+  Perfil,
   Permisos,
+  ResultadoEliminar,
   PlanillaDelDia,
   Presupuesto,
   EstadoPresupuesto,
   Rol,
   Servicio,
-  Trabajador,
   Turno,
   Usuario,
   UsuarioEquipo,
@@ -37,6 +39,17 @@ export const login = (email: string, password: string) =>
 export const quienSoy = () => api<{ usuario: Usuario }>('/api/auth/me');
 export const cerrarSesion = () => api<undefined>('/api/auth/logout', { method: 'POST' });
 export const permisos = () => api<Permisos>('/api/admin/permisos');
+
+// Mi perfil
+export const perfil = () => api<{ perfil: Perfil; fotosDisponibles: boolean }>('/api/admin/perfil');
+export const editarPerfil = (cambio: CambioPerfil) =>
+  api<{ perfil: Perfil }>('/api/admin/perfil', { method: 'PATCH', body: cambio });
+/** La foto va como body binario, con el Content-Type del archivo (JPG, PNG o WebP; hasta 2 MB). */
+export const subirFoto = (foto: Blob) => api<{ perfil: Perfil }>('/api/admin/perfil/foto', { method: 'PUT', archivo: foto });
+export const quitarFoto = () => api<{ perfil: Perfil }>('/api/admin/perfil/foto', { method: 'DELETE' });
+/** URL de la foto de alguien. `?v=` es la versión: cambia cuando cambia la foto (y deja que el navegador la guarde). */
+export const urlFoto = (usuarioId: string, version: string) =>
+  `/api/admin/usuarios/${encodeURIComponent(usuarioId)}/foto${query({ v: version })}`;
 
 // Lavados
 /** `NuevoLavadoLegado` solo para lo que había quedado en la cola sin conexión con un único servicioId. */
@@ -50,7 +63,6 @@ export const corregirTurno = (id: string, cambio: CambioTurno) =>
   api<{ booking: Turno }>(`/api/admin/bookings/${encodeURIComponent(id)}`, { method: 'PATCH', body: cambio });
 export const borrarTurno = (id: string) =>
   api<undefined>(`/api/admin/bookings/${encodeURIComponent(id)}`, { method: 'DELETE' });
-export const trabajadores = () => api<{ trabajadores: Trabajador[] }>('/api/admin/trabajadores');
 
 // Comprobantes
 export const emitirComprobante = (turnoId: string, formaPago: FormaPago, notas?: string) =>
@@ -84,6 +96,8 @@ export const editarUsuario = (
   id: string,
   cambio: Partial<{ rol: Rol; activo: boolean; nombre: string | null; password: string }>,
 ) => api<{ usuario: UsuarioEquipo }>(`/api/admin/usuarios/${encodeURIComponent(id)}`, { method: 'PATCH', body: cambio });
+export const eliminarUsuario = (id: string) =>
+  api<ResultadoEliminar>(`/api/admin/usuarios/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
 // Gastos
 export const gastos = (desde: string, hasta: string) =>

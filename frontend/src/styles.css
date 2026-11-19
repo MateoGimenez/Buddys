@@ -24,6 +24,15 @@
   --alerta-claro: #fff0d6;
   --peligro: #b3192a;
   --peligro-claro: #fde7e9;
+  /* Avatares sin foto: 8 tintas de talonario, todas con blanco encima en AA (6:1 o más). Se elige por hash del id. */
+  --avatar-1: #2742b8;
+  --avatar-2: #a3236b;
+  --avatar-3: #146c35;
+  --avatar-4: #8a4f00;
+  --avatar-5: #5b2a9e;
+  --avatar-6: #0f6a73;
+  --avatar-7: #17204d;
+  --avatar-8: #9c3a12;
 
   --radio: 10px;
   --radio-chico: 7px;
@@ -152,28 +161,6 @@ a {
   display: block;
   inline-size: 132px;
   block-size: auto;
-}
-
-.barra-usuario {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.barra-nombre {
-  font-weight: 650;
-  font-size: 0.9375rem;
-  max-inline-size: 45vw;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.barra-rol {
-  font-size: 0.8125rem;
-  color: var(--tinta-3);
 }
 
 .contenido {
@@ -674,6 +661,8 @@ a {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .dato-fijo > span:last-child {
@@ -1345,85 +1334,6 @@ a {
   color: var(--alerta);
 }
 
-.ranking-titulo {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.ranking-lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.ranking-fila {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  grid-template-areas: 'puesto nombre cantidad' 'puesto barra total';
-  align-items: center;
-  gap: 2px 10px;
-  padding: 6px 0;
-}
-
-.ranking-puesto {
-  grid-area: puesto;
-  font-weight: 800;
-  font-stretch: 75%;
-  font-size: 1.25rem;
-  color: var(--serie);
-  text-align: center;
-}
-
-.ranking-nombre {
-  grid-area: nombre;
-  font-weight: 650;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ranking-fila[data-primero] .ranking-nombre {
-  font-weight: 800;
-}
-
-.ranking-barra {
-  grid-area: barra;
-  block-size: 8px;
-  background: #e5e7f0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.ranking-barra span {
-  display: block;
-  block-size: 100%;
-  background: var(--tinta-2);
-  border-radius: 4px;
-  transform-origin: left center;
-  transition: transform 320ms var(--curva);
-}
-
-.ranking-fila[data-primero] .ranking-barra span {
-  background: var(--rosa);
-}
-
-.ranking-cantidad {
-  grid-area: cantidad;
-  text-align: end;
-  font-weight: 600;
-}
-
-.ranking-total {
-  grid-area: total;
-  text-align: end;
-  font-size: 0.875rem;
-  color: var(--tinta-2);
-}
-
 /* Caja del día: el cierre, como la cinta de una registradora. Importes grandes alineados a la derecha. */
 .caja {
   display: flex;
@@ -1603,11 +1513,12 @@ a {
 }
 
 .copia-detalle,
-.copia-trabajador {
+.copia-registro {
+  overflow-wrap: anywhere;
   color: var(--tinta-2);
 }
 
-.copia-trabajador strong {
+.copia-registro strong {
   color: var(--tinta);
 }
 
@@ -1658,11 +1569,63 @@ a {
   background: var(--alerta-claro);
 }
 
+/* Dado de baja: la hoja queda como copia anulada. Sin sombra ni papel, con el troquel punteado; el texto se apaga
+   pero sigue pasando AA (tinta-2 sobre el fondo). */
+.fila-hoja[data-baja] {
+  background: transparent;
+  box-shadow: none;
+  border: 2px dashed var(--linea-fuerte);
+}
+
+.fila-hoja[data-baja] .fila-hoja-titulo {
+  color: var(--tinta-2);
+  font-weight: 600;
+}
+
+.fila-botones-inicio {
+  justify-content: flex-start;
+}
+
+/* ------------------------------------------------------------------ Equipo: buscador y filtros */
+
+.equipo-filtros {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A 360 px "Activos e inactivos" no entra en media fila: los dos selectores van uno abajo del otro. */
+.equipo-filtros-selects {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 480px) {
+  .equipo-filtros-selects {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.entrada input[type='search']::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.equipo-conteo {
+  margin-block: -4px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+
 .fila-hoja-cabeza {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px 10px;
+}
+
+.fila-hoja-cabeza-avatar {
+  align-items: center;
 }
 
 .fila-hoja-titulo {
@@ -2016,12 +1979,326 @@ a {
   border-right: 2px solid var(--tinta);
 }
 
+/* ------------------------------------------------------------------ Avatar */
+
+/* Tamaño fijo (--avatar-tam) para que no salte nada cuando llega la foto. Sin foto: iniciales en blanco sobre su tinta. */
+.avatar {
+  --avatar-tam: 40px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--avatar-tam);
+  block-size: var(--avatar-tam);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--avatar-fondo, var(--avatar-7));
+  color: #fff;
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: calc(var(--avatar-tam) * 0.4);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.avatar[data-tono='1'] { --avatar-fondo: var(--avatar-1); }
+.avatar[data-tono='2'] { --avatar-fondo: var(--avatar-2); }
+.avatar[data-tono='3'] { --avatar-fondo: var(--avatar-3); }
+.avatar[data-tono='4'] { --avatar-fondo: var(--avatar-4); }
+.avatar[data-tono='5'] { --avatar-fondo: var(--avatar-5); }
+.avatar[data-tono='6'] { --avatar-fondo: var(--avatar-6); }
+.avatar[data-tono='7'] { --avatar-fondo: var(--avatar-7); }
+.avatar[data-tono='8'] { --avatar-fondo: var(--avatar-8); }
+
+/* Con foto, detrás va el papel azulado (si la foto tiene transparencia no asoma la tinta). */
+.avatar[data-foto] {
+  background: var(--carbon-claro);
+}
+
+.avatar img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  object-fit: cover;
+}
+
+/* ------------------------------------------------------------------ Cuenta (menú de la barra) */
+
+.cuenta {
+  position: relative;
+  min-width: 0;
+}
+
+.cuenta-boton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  text-align: end;
+  cursor: pointer;
+  transition: background-color var(--t-toque) var(--curva);
+}
+
+/* Hover solo con mouse: en el celular el gris del toque no queda pegado después de cerrar. */
+@media (hover: hover) {
+  .cuenta-boton:hover {
+    background: var(--carbon-claro);
+  }
+
+  .cuenta-item:hover {
+    background: var(--carbon-claro);
+  }
+
+  a.quien:hover {
+    background: var(--carbon-claro);
+  }
+}
+
+.cuenta-boton[aria-expanded='true'] {
+  background: var(--carbon-claro);
+}
+
+.cuenta-boton[aria-expanded='true'] {
+  border-color: var(--carbon);
+}
+
+/* En el celular el botón es solo el avatar: el nombre y el rol quedan para el lector de pantalla y arriba del menú. */
+.cuenta-texto {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cuenta-flecha {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .cuenta-boton {
+    padding: 4px 10px 4px 4px;
+    border-radius: var(--radio);
+  }
+
+  .cuenta-texto {
+    position: static;
+    inline-size: auto;
+    block-size: auto;
+    clip: auto;
+    order: -1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  .cuenta-flecha {
+    display: block;
+    flex: none;
+    color: var(--tinta-2);
+    transition: rotate var(--t-estado) var(--curva);
+  }
+
+  .cuenta-boton[aria-expanded='true'] .cuenta-flecha {
+    rotate: 180deg;
+  }
+}
+
+.cuenta-nombre {
+  font-weight: 650;
+  font-size: 0.9375rem;
+  max-inline-size: 30vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cuenta-rol {
+  font-size: 0.8125rem;
+  color: var(--tinta-2);
+  white-space: nowrap;
+}
+
+/* El menú sale de la esquina de la barra hacia abajo, alineado al final: nunca se sale de la pantalla. */
+.cuenta-panel {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 30;
+  inline-size: max-content;
+  min-inline-size: 240px;
+  max-inline-size: min(320px, calc(100vw - 32px));
+  padding: 6px;
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  box-shadow: 0 2px 4px rgb(23 32 77 / 10%), 0 12px 32px rgb(23 32 77 / 16%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cuenta-panel {
+    transition:
+      opacity 120ms var(--curva),
+      translate 120ms var(--curva);
+
+    @starting-style {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+}
+
+.cuenta-quien {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 10px;
+  margin-block-end: 4px;
+  border-block-end: 1px dashed var(--linea-fuerte);
+  line-height: 1.3;
+}
+
+.cuenta-quien-nombre {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.cuenta-quien-detalle {
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+  overflow-wrap: anywhere;
+}
+
+.cuenta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radio-chico);
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cuenta-item:focus-visible {
+  background: var(--carbon-claro);
+}
+
+.cuenta-item:focus-visible {
+  outline-offset: -3px;
+}
+
+.cuenta-item[aria-disabled='true'] {
+  cursor: progress;
+  color: var(--tinta-2);
+}
+
+/* ------------------------------------------------------------------ Mi perfil */
+
+.perfil-foto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 20px;
+}
+
+/* La foto "pegada" en la hoja, con el mismo troquel punteado de la barra. */
+.perfil-foto-vista {
+  flex: none;
+  margin: 6px;
+  border-radius: 50%;
+  outline: 2px dashed var(--linea-fuerte);
+  outline-offset: 4px;
+}
+
+.perfil-foto-vista[data-ocupado] {
+  outline-color: var(--carbon);
+}
+
+.perfil-foto-vista[data-ocupado] .avatar {
+  opacity: 0.5;
+}
+
+.perfil-foto-cuerpo {
+  /* 160 px: a 360 de ancho la foto y el texto entran lado a lado. */
+  flex: 1 1 160px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perfil-nombre {
+  font-size: 1.25rem;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.perfil-detalle {
+  margin-block-start: -6px;
+  color: var(--tinta-2);
+  overflow-wrap: anywhere;
+}
+
+.perfil-foto-acciones {
+  margin-block-start: 4px;
+}
+
+/* El botón de archivo es un <label> con el input adentro: el anillo de foco va en el botón que se ve. */
+.btn-archivo {
+  cursor: pointer;
+}
+
+.btn-archivo:has(input:focus-visible) {
+  outline: 3px solid var(--carbon);
+  outline-offset: 2px;
+}
+
+.btn-archivo:has(input:disabled) {
+  cursor: progress;
+  opacity: 0.7;
+}
+
 /* ------------------------------------------------------------------ Más */
 
 .quien {
   display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--tinta);
+  text-decoration: none;
+}
+
+.quien-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.quien-accion {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--carbon);
 }
 
 .quien-nombre {
@@ -2090,6 +2367,13 @@ a {
 
 .dialogo::backdrop {
   background: rgb(23 32 77 / 45%);
+  /* Que el scroll sobre el fondo no mueva la página de atrás. */
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.dialogo:modal {
+  overscroll-behavior: contain;
 }
 
 .dialogo-titulo {

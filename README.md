@@ -1,17 +1,19 @@
 # Buddys Wash Detail — sistema interno
 
 Sistema interno de **Buddys Wash Detail** ([@buddyswashdetail](https://www.instagram.com/buddyswashdetail/)) para
-registrar los lavados y tener el control de los ingresos y de quién lava más. Es el backend del sistema de
+registrar los lavados y llevar el seguimiento del taller: cuántos autos se lavan, quién registró cada uno, los
+ingresos y qué hay que reponer. Es el backend del sistema de
 MgDetailing adaptado a Buddys. **No tiene frontend**: por ahora es solo la API; la pantalla se va a hacer más
 adelante con otro diseño.
 
 ## Qué hace
 
-- **Registrar lavado** (`POST /api/admin/lavados`): servicio, vehículo, cuánto se cobró y quién lo lavó. Si no se
-  indica, la fecha es hoy, quien lavó es quien registra y el cliente queda como "Cliente de mostrador".
-- **Planilla del día** (`GET /api/admin/lavados`): los lavados del día, el total cobrado y quién lavó más.
-- **Estadísticas** (`GET /api/admin/estadisticas`): ingresos, gastos, ganancia, servicios más pedidos y el ranking
-  del equipo (`porTrabajador`) por día, mes o año.
+- **Registrar lavado** (`POST /api/admin/lavados`): servicios, vehículo, cuánto se cobró y cómo pagó. Queda registrado
+  a nombre de quien lo carga; si no se indica, la fecha es hoy y el cliente queda como "Cliente de mostrador".
+- **Planilla del día** (`GET /api/admin/lavados`): los lavados del día, quién registró cada uno, el total cobrado y la
+  caja por forma de pago. Sin ranking: el sistema no compara a las personas.
+- **Estadísticas** (`GET /api/admin/estadisticas`): ingresos, gastos, ganancia y servicios más pedidos por día, mes o
+  año; cada uno ve además sus propios trabajos (`/estadisticas/mias`, sin importes).
 - **Finanzas**: gastos y metas del mes. **Inventario** de insumos. **Presupuestos y comprobantes** en PDF.
 - **Usuarios y roles** (`superadmin`, `admin`, `empleado`) con Supabase Auth. El empleado registra lavados a su
   nombre y no ve importes.

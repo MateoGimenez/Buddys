@@ -3,7 +3,6 @@ import {
   Boxes,
   ClipboardList,
   FileText,
-  LogOut,
   Menu,
   PlusCircle,
   Receipt,
@@ -11,10 +10,9 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
-import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { NOMBRE_ROL } from '../lib/format';
 import { useSesion, useUsuario } from '../session/SessionContext';
+import { MenuCuenta } from './MenuCuenta';
 import { Senal } from './Senal';
 
 export interface Seccion {
@@ -31,12 +29,12 @@ export interface Seccion {
 export const SECCIONES: Seccion[] = [
   { ruta: '/registrar', nombre: 'Registrar', icono: PlusCircle, capacidad: 'lavados.registrar', principal: true, descripcion: 'Anotar un lavado' },
   { ruta: '/planilla', nombre: 'Planilla', icono: ClipboardList, capacidad: 'turnos.ver', principal: true, descripcion: 'Los lavados del día' },
-  { ruta: '/numeros', nombre: 'Números', icono: BarChart3, capacidad: 'estadisticas.propias', principal: true, descripcion: 'Ingresos, metas y ranking' },
+  { ruta: '/numeros', nombre: 'Números', icono: BarChart3, capacidad: 'estadisticas.propias', principal: true, descripcion: 'Ingresos, metas y seguimiento' },
   { ruta: '/servicios', nombre: 'Servicios', icono: Tags, capacidad: 'catalogo.ver', descripcion: 'Precios y vehículos' },
   { ruta: '/insumos', nombre: 'Insumos', icono: Boxes, capacidad: 'inventario.ver', descripcion: 'Stock y uso de productos' },
   { ruta: '/gastos', nombre: 'Gastos', icono: Receipt, capacidad: 'finanzas.gastos', descripcion: 'Lo que se gasta en el mes' },
   { ruta: '/presupuestos', nombre: 'Presupuestos', icono: FileText, capacidad: 'documentos.presupuestos', descripcion: 'Armar y bajar en PDF' },
-  { ruta: '/equipo', nombre: 'Equipo', icono: Users, capacidad: 'usuarios.gestionar', descripcion: 'Usuarios, roles y acceso' },
+  { ruta: '/equipo', nombre: 'Equipo', icono: Users, capacidad: 'usuarios.gestionar', descripcion: 'Usuarios, roles y bajas' },
 ];
 
 export function useSecciones(): Seccion[] {
@@ -50,17 +48,8 @@ function nombreVisible(u: { nombre: string | null; email: string | null }): stri
 
 export function Layout() {
   const usuario = useUsuario();
-  const { salir } = useSesion();
   const secciones = useSecciones();
   const principales = secciones.filter((s) => s.principal);
-  const [saliendo, setSaliendo] = useState(false);
-
-  const cerrar = () => {
-    setSaliendo(true);
-    void salir().finally(() => {
-      setSaliendo(false);
-    });
-  };
 
   return (
     <div className="app">
@@ -69,10 +58,7 @@ export function Layout() {
       </a>
       <header className="barra">
         <img className="barra-logo" src="/logo.png" alt="Buddys Wash Detail" width={150} height={36} />
-        <p className="barra-usuario">
-          <span className="barra-nombre">{nombreVisible(usuario)}</span>
-          <span className="barra-rol">{NOMBRE_ROL[usuario.rol]}</span>
-        </p>
+        <MenuCuenta />
       </header>
 
       <nav className="riel" aria-label="Secciones">
@@ -86,10 +72,6 @@ export function Layout() {
             </li>
           ))}
         </ul>
-        <button type="button" className="riel-link riel-salir" onClick={cerrar} disabled={saliendo}>
-          <LogOut aria-hidden size={20} />
-          {saliendo ? 'Cerrando…' : 'Cerrar sesión'}
-        </button>
       </nav>
 
       <main id="contenido" className="contenido" tabIndex={-1}>

@@ -18,21 +18,20 @@ la API de `backend/` (Express + Postgres en Supabase) por el proxy `/api`.
 
 - **Empleados del lavadero** (rol `empleado`): con el celular en la mano, en el lavadero, a veces con las manos mojadas o
   con guantes, al sol o bajo techo. Su trabajo: anotar cada auto que lavan en segundos. Nunca ven montos.
-- **Dueño y encargados** (`admin`, `superadmin`): revisan la planilla del día, corrigen montos y quién lavó, miran
-  ingresos y el ranking del equipo, ajustan precios y gestionan al equipo. Celular durante el día, escritorio a la noche
-  **[inferido]**.
+- **Dueño y encargados** (`admin`, `superadmin`): revisan la planilla del día, corrigen montos, miran ingresos y metas,
+  ajustan precios y gestionan al equipo. Celular durante el día, escritorio a la noche **[inferido]**.
 
 ## Product Purpose
 
 Panel interno de Buddys Wash Detail (lavadero y detailing de autos, Instagram @buddyswashdetail) para registrar cada
-lavado con servicio, vehículo, monto y quién lo hizo, y que eso alimente la planilla del día, las estadísticas, las metas
-y el ranking "quién lavó más". Éxito: que registrar un lavado lleve menos de 10 segundos y que al cierre del día los
-números cierren.
+lavado con servicio, vehículo y monto, y hacer el seguimiento del taller: cuántos lavados hubo, quién registró cada uno,
+qué productos se gastan y qué falta comprar. Eso alimenta la planilla del día, las estadísticas y las metas. Éxito: que
+registrar un lavado lleve menos de 10 segundos y que al cierre del día los números cierren.
 
 ## Positioning
 
-No es un sistema de turnos ni una web pública: es la libreta del lavadero, llevada al celular, con el equipo compitiendo
-sanamente por quién lava más.
+No es un sistema de turnos ni una web pública: es la libreta del lavadero, llevada al celular, para seguir cuántos autos
+se lavan, quién registró cada uno y qué hay que reponer. No compara a las personas: en el lavadero todos hacen todo.
 
 ## Operating Context
 

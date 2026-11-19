@@ -28,10 +28,14 @@ import { telefonoWhatsapp } from '../../domain/telefono.js';
 import { cuposEntre } from './disponibilidad.js';
 import { isUuid } from './uuid.js';
 
-/** Quién hizo el trabajo: el nombre de la persona o, si no tiene, su email (calculado en la consulta). */
-function toTrabajador(row: Row): Trabajador | null {
-  const id = strOrNull(row, 'trabajador_id');
-  return id === null ? null : { id, nombre: str(row, 'trabajador_nombre') };
+/**
+ * Quién hizo (`trabajador`) o registró (`registrado_por`) el trabajo: el nombre de la persona o, si no tiene, la parte
+ * de su email antes de la @ (nunca el email entero: lo reciben también los empleados). Se calcula en la consulta, con la
+ * misma expresión para las dos. Un dado de baja conserva su perfil y su nombre.
+ */
+function toPersona(row: Row, columna: 'trabajador' | 'registrado_por'): Trabajador | null {
+  const id = strOrNull(row, `${columna}_id`);
+  return id === null ? null : { id, nombre: str(row, `${columna}_nombre`) };
 }
 
 /**
@@ -79,7 +83,8 @@ function toBooking(row: Row): Booking {
     notasInternas: strOrNull(row, 'notas_internas'),
     turnosDelCliente: intOrNull(row, 'turnos_del_cliente'),
     monto: intOrNull(row, 'monto'),
-    trabajador: toTrabajador(row),
+    trabajador: toPersona(row, 'trabajador'),
+    registradoPor: toPersona(row, 'registrado_por'),
     formaPago: oneOfOrNull(FORMAS_DE_PAGO, row, 'forma_pago'),
     servicios: toServicios(row),
     createdAt: isoTimestamp(row, 'created_at'),
@@ -115,6 +120,10 @@ function patronesBusqueda(q: string | undefined): { texto: string | null; digito
  * fila principal (la agrega el trigger bookings_servicio_principal); si igual faltara, sale el servicio de
  * bookings.servicio_id sin precio, para no romper la respuesta.
  *
+ * trabajador (t) y registrado_por (r): dos LEFT JOIN a perfiles por su PK, con la misma expresión de nombre (nombre o la
+ * parte del email antes de la @: el email entero no sale, ver toPersona). Una
+ * persona dada de baja sigue teniendo su perfil (y su nombre); null si la columna está en null.
+ *
  * Las escrituras devuelven el turno con una lectura aparte (buscarTurno) DESPUÉS de escribir: un INSERT o UPDATE ...
  * RETURNING no ve las filas de lavado_servicios que se escriben en la misma sentencia (ni las del trigger).
  */
@@ -126,7 +135,8 @@ async function buscarTurno(sql: SqlClient, id: string): Promise<Booking | undefi
             to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
             to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
             b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
-            t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+            t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), nullif(split_part(t.email, '@', 1), ''), 'Sin nombre') AS trabajador_nombre,
+            r.id::text AS registrado_por_id, coalesce(nullif(btrim(r.nombre), ''), nullif(split_part(r.email, '@', 1), ''), 'Sin nombre') AS registrado_por_nombre,
             CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                  ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
             END AS turnos_del_cliente,
@@ -139,6 +149,7 @@ async function buscarTurno(sql: SqlClient, id: string): Promise<Booking | undefi
             ) AS servicios
      FROM buddys.bookings b
      LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+     LEFT JOIN buddys.perfiles r ON r.id = b.registrado_por
      WHERE b.id = $1::uuid`,
     [id],
   );
@@ -273,7 +284,7 @@ export class PostgresBookingRepository implements BookingRepository {
     });
   }
 
-  async lavadoPorIdLocal(idLocal: string): Promise<{ lavado: Booking; registradoPor: string | null } | undefined> {
+  async lavadoPorIdLocal(idLocal: string): Promise<Booking | undefined> {
     if (!isUuid(idLocal)) return undefined;
     // Mismo predicado que el índice único parcial bookings_id_local_key.
     const { rows } = await this.sql.query(
@@ -281,7 +292,8 @@ export class PostgresBookingRepository implements BookingRepository {
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
               b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
-              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), nullif(split_part(t.email, '@', 1), ''), 'Sin nombre') AS trabajador_nombre,
+              r.id::text AS registrado_por_id, coalesce(nullif(btrim(r.nombre), ''), nullif(split_part(r.email, '@', 1), ''), 'Sin nombre') AS registrado_por_nombre,
               CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                    ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
               END AS turnos_del_cliente,
@@ -291,15 +303,15 @@ export class PostgresBookingRepository implements BookingRepository {
                  WHERE ls.booking_id = b.id),
                 (SELECT json_build_array(json_build_object('id', sp.id, 'nombre', sp.nombre, 'precioLista', NULL))
                  FROM buddys.servicios sp WHERE sp.id = b.servicio_id)
-              ) AS servicios,
-              b.registrado_por::text AS registrado_por
+              ) AS servicios
        FROM buddys.bookings b
        LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+       LEFT JOIN buddys.perfiles r ON r.id = b.registrado_por
        WHERE b.id_local = $1::uuid AND b.id_local IS NOT NULL`,
       [idLocal],
     );
     const row = rows[0];
-    return row ? { lavado: toBooking(row), registradoPor: strOrNull(row, 'registrado_por') } : undefined;
+    return row ? toBooking(row) : undefined;
   }
 
   async formasDePagoDelDia(fecha: string): Promise<TotalFormaDePago[]> {
@@ -339,7 +351,8 @@ export class PostgresBookingRepository implements BookingRepository {
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
               b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
-              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), nullif(split_part(t.email, '@', 1), ''), 'Sin nombre') AS trabajador_nombre,
+              r.id::text AS registrado_por_id, coalesce(nullif(btrim(r.nombre), ''), nullif(split_part(r.email, '@', 1), ''), 'Sin nombre') AS registrado_por_nombre,
               CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                    ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
               END AS turnos_del_cliente,
@@ -352,6 +365,7 @@ export class PostgresBookingRepository implements BookingRepository {
               ) AS servicios
        FROM buddys.bookings b
        LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+       LEFT JOIN buddys.perfiles r ON r.id = b.registrado_por
        WHERE b.origen = 'mostrador'
          AND coalesce(b.fecha_confirmada, b.fecha_preferida) = $1::date
        ORDER BY b.seq`,
@@ -467,7 +481,8 @@ export class PostgresBookingRepository implements BookingRepository {
                 to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
                 to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
                 b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
-                t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+                t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), nullif(split_part(t.email, '@', 1), ''), 'Sin nombre') AS trabajador_nombre,
+                r.id::text AS registrado_por_id, coalesce(nullif(btrim(r.nombre), ''), nullif(split_part(r.email, '@', 1), ''), 'Sin nombre') AS registrado_por_nombre,
                 CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                      ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
                 END AS turnos_del_cliente,
@@ -480,6 +495,7 @@ export class PostgresBookingRepository implements BookingRepository {
                 ) AS servicios
          FROM buddys.bookings b
          LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+         LEFT JOIN buddys.perfiles r ON r.id = b.registrado_por
          WHERE ($1::text IS NULL OR b.estado = $1::text)
            AND ($2::text IS NULL OR b.telefono_whatsapp = $2::text)
            AND ($3::text IS NULL
@@ -633,7 +649,8 @@ export class PostgresBookingRepository implements BookingRepository {
               to_char(b.fecha_preferida, 'YYYY-MM-DD') AS fecha_preferida, b.franja,
               to_char(b.fecha_confirmada, 'YYYY-MM-DD') AS fecha_confirmada, b.franja_confirmada,
               b.comentario, b.estado, b.notas_internas, b.monto, b.forma_pago, b.created_at, b.updated_at,
-              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') AS trabajador_nombre,
+              t.id::text AS trabajador_id, coalesce(nullif(btrim(t.nombre), ''), nullif(split_part(t.email, '@', 1), ''), 'Sin nombre') AS trabajador_nombre,
+              r.id::text AS registrado_por_id, coalesce(nullif(btrim(r.nombre), ''), nullif(split_part(r.email, '@', 1), ''), 'Sin nombre') AS registrado_por_nombre,
               CASE WHEN b.telefono_whatsapp IS NULL THEN NULL
                    ELSE (SELECT count(*)::int FROM buddys.bookings c WHERE c.telefono_whatsapp = b.telefono_whatsapp)
               END AS turnos_del_cliente,
@@ -646,6 +663,7 @@ export class PostgresBookingRepository implements BookingRepository {
               ) AS servicios
        FROM buddys.bookings b
        LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
+       LEFT JOIN buddys.perfiles r ON r.id = b.registrado_por
        WHERE b.estado <> 'cancelado'
          AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
        ORDER BY coalesce(b.fecha_confirmada, b.fecha_preferida), coalesce(b.franja_confirmada, b.franja), b.seq`,

@@ -89,10 +89,10 @@ function Propias({ desde, hasta }: { desde: string; hasta: string }) {
           {d.completados} {d.completados === 1 ? 'lavado' : 'lavados'} entre el {diaMes(d.rango.desde)} y el {diaMes(d.rango.hasta)}
         </h2>
         {d.completados === 0 ? (
-          <Vacio titulo="Todavía no hay lavados a tu nombre en este período">Cuando registres uno, va a aparecer acá.</Vacio>
+          <Vacio titulo="Todavía no registraste lavados en este período">Cada lavado que registres va a aparecer acá.</Vacio>
         ) : (
           <Barras
-            titulo="Lavados por día"
+            titulo={d.serie[0]?.clave.length === 7 ? 'Lavados por mes' : 'Lavados por día'}
             puntos={d.serie.map((p) => ({ clave: p.clave, valor: p.completados }))}
             formato={(v) => `${v}`}
           />
@@ -165,7 +165,6 @@ function Completas({ desde, hasta, metas }: { desde: string; hasta: string; meta
 
 function Tablero({ e }: { e: Estadisticas }) {
   const p = e.periodo;
-  const lider = e.porTrabajador[0];
   return (
     <>
       <section className="hoja bloque" aria-labelledby="t-resumen">
@@ -217,26 +216,6 @@ function Tablero({ e }: { e: Estadisticas }) {
         )}
       </section>
 
-      <section className="hoja bloque" aria-labelledby="t-equipo">
-        <h2 id="t-equipo" className="bloque-titulo">Ranking del equipo</h2>
-        {e.porTrabajador.length === 0 ? (
-          <Vacio titulo="Nadie completó lavados en este período" />
-        ) : (
-          <ol className="ranking-lista">
-            {e.porTrabajador.map((t, i) => (
-              <li key={t.id ?? 'sin-asignar'} className="ranking-fila" data-primero={i === 0 ? '' : undefined}>
-                <span className="ranking-puesto">{i + 1}</span>
-                <span className="ranking-nombre">{t.nombre}</span>
-                <span className="ranking-barra" aria-hidden>
-                  <span style={{ inlineSize: `${lider?.completados ? Math.max(6, Math.round((t.completados / lider.completados) * 100)) : 0}%` }} />
-                </span>
-                <span className="ranking-cantidad">{t.completados} {t.completados === 1 ? 'lavado' : 'lavados'}</span>
-                <span className="ranking-total">{pesos(t.ingresos)}</span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
 
       <section className="hoja bloque" aria-labelledby="t-servicios">
         <h2 id="t-servicios" className="bloque-titulo">Por servicio</h2>

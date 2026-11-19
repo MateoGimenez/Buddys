@@ -1,12 +1,11 @@
 import type { SqlClient } from '../../db/postgres.js';
-import { int, str, strOrNull } from '../../db/rows.js';
+import { int, str } from '../../db/rows.js';
 import type {
   ConteoPeriodo,
   EstadisticasRepository,
   FilaDiaSemana,
   FilaGastoCategoria,
   FilaServicio,
-  FilaTrabajador,
   GastosDeUnPunto,
   Granularidad,
   MisTrabajos,
@@ -16,9 +15,6 @@ import type {
   Totales,
 } from '../../domain/estadisticas.js';
 
-/** Nombre de quien hizo un trabajo cuando no hay persona (nunca se asignó o se borró su usuario). */
-export const SIN_ASIGNAR = 'Sin asignar';
-
 /*
  * Estadísticas sobre Postgres. Todo se agrega en la base (GROUP BY / FILTER): no se traen las filas de los turnos.
  * "Fecha de agenda" = coalesce(fecha_confirmada, fecha_preferida), la misma expresión de los índices
@@ -27,7 +23,10 @@ export const SIN_ASIGNAR = 'Sin asignar';
  * no el reloj del servidor. Las sumas de monto se castean a float8 (node-postgres devuelve bigint como texto); un
  * entero de hasta 366 turnos de 99.999.999 cabe sobrado en los 53 bits de un double.
  *
- * Las consultas de "mis trabajos" (mis*) no leen la columna monto.
+ * Las consultas de "mis trabajos" (mis*) no leen la columna monto. Cuentan lo que registró la persona
+ * (registrado_por = yo) y, de lo que no tiene quién lo registró (los turnos de la web), lo que completó
+ * (trabajador_id = yo). Cada rama del OR implica su columna no nula, así que el planner puede combinar los índices
+ * parciales bookings_registrado_por_idx y bookings_trabajador_id_idx (BitmapOr); ver test/estadisticas.test.ts.
  */
 export class PostgresEstadisticasRepository implements EstadisticasRepository {
   constructor(private readonly sql: SqlClient) {}
@@ -193,29 +192,6 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
     }));
   }
 
-  async porTrabajador({ desde, hasta }: Rango): Promise<FilaTrabajador[]> {
-    // LEFT JOIN a perfiles: sin trabajador (o con la persona ya borrada: ON DELETE SET NULL) => "Sin asignar".
-    const { rows } = await this.sql.query(
-      `SELECT t.id::text AS id,
-              CASE WHEN t.id IS NULL THEN $3::text
-                   ELSE coalesce(nullif(btrim(t.nombre), ''), t.email, 'Sin nombre') END AS nombre,
-              count(*)::int AS completados, coalesce(sum(b.monto), 0)::float8 AS ingresos
-       FROM buddys.bookings b
-       LEFT JOIN buddys.perfiles t ON t.id = b.trabajador_id
-       WHERE b.estado = 'completado'
-         AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
-       GROUP BY t.id, t.nombre, t.email
-       ORDER BY completados DESC, (t.id IS NULL), nombre, t.id`,
-      [desde, hasta, SIN_ASIGNAR],
-    );
-    return rows.map((row) => ({
-      id: strOrNull(row, 'id'),
-      nombre: str(row, 'nombre'),
-      completados: int(row, 'completados'),
-      ingresos: int(row, 'ingresos'),
-    }));
-  }
-
   async porDiaSemana({ desde, hasta }: Rango): Promise<FilaDiaSemana[]> {
     // extract(dow) de una columna date: 0 = domingo ... 6 = sábado, sin zona horaria de por medio.
     const { rows } = await this.sql.query(
@@ -238,7 +214,8 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
        FROM buddys.bookings b
        JOIN buddys.lavado_servicios ls ON ls.booking_id = b.id
        JOIN buddys.servicios s ON s.id = ls.servicio_id
-       WHERE b.estado = 'completado' AND b.trabajador_id = $3::uuid
+       WHERE b.estado = 'completado'
+         AND (b.registrado_por = $3::uuid OR (b.registrado_por IS NULL AND b.trabajador_id = $3::uuid))
          AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
        GROUP BY s.id, s.nombre
        ORDER BY completados DESC, s.nombre, s.id`,
@@ -257,7 +234,8 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
         ? await this.sql.query(
             `SELECT to_char(coalesce(b.fecha_confirmada, b.fecha_preferida), 'YYYY-MM-DD') AS clave, count(*)::int AS completados
              FROM buddys.bookings b
-             WHERE b.estado = 'completado' AND b.trabajador_id = $3::uuid
+             WHERE b.estado = 'completado'
+               AND (b.registrado_por = $3::uuid OR (b.registrado_por IS NULL AND b.trabajador_id = $3::uuid))
                AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
              GROUP BY 1 ORDER BY 1`,
             [desde, hasta, perfilId],
@@ -265,7 +243,8 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
         : await this.sql.query(
             `SELECT to_char(coalesce(b.fecha_confirmada, b.fecha_preferida), 'YYYY-MM') AS clave, count(*)::int AS completados
              FROM buddys.bookings b
-             WHERE b.estado = 'completado' AND b.trabajador_id = $3::uuid
+             WHERE b.estado = 'completado'
+               AND (b.registrado_por = $3::uuid OR (b.registrado_por IS NULL AND b.trabajador_id = $3::uuid))
                AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
              GROUP BY 1 ORDER BY 1`,
             [desde, hasta, perfilId],

@@ -1,4 +1,4 @@
-import { act, screen, within } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EVENTO_ENVIADOS } from '../lib/cola';
 import { hoy } from '../lib/format';
@@ -24,7 +24,7 @@ function preferencia(reducir: boolean) {
   );
 }
 
-/** La planilla de hoy y, al recargar, la misma con un lavado más de Ana por $ 30.000 (Ana pasa a empatar arriba). */
+/** La planilla de hoy y, al recargar, la misma con un lavado más por $ 30.000. */
 function dosVersiones() {
   const antes = planillaAdmin(hoy());
   const despues = planillaAdmin(hoy());
@@ -32,7 +32,6 @@ function dosVersiones() {
     ...despues.resumen,
     cantidad: 4,
     total: 102000,
-    porTrabajador: [...despues.resumen.porTrabajador].reverse(),
   };
   return [
     { status: 200, body: antes },
@@ -59,8 +58,6 @@ describe('con "reducir movimiento"', () => {
     });
     expect(await screen.findAllByText('$ 102.000')).toHaveLength(2);
     expect(cuadros.mock.calls.length).toBe(pedidosAntes);
-    const ranking = screen.getByRole('heading', { name: 'Quién lavó más' }).parentElement as HTMLElement;
-    expect(within(ranking).getAllByRole('listitem')[0]).toHaveTextContent('Ana');
   });
 
   it('registrar sigue funcionando igual: el talón aparece con su tilde y el resumen al pie', async () => {

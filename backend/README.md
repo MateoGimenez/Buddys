@@ -7,13 +7,15 @@ cada respuesta está guardado en `test/fixtures/respuestas-api.json` (un test ve
 Hace esto:
 
 0. **Registra lavados** (`POST /api/admin/lavados`): el auto que llega sin turno, con servicio, vehículo, cuánto se
-   cobró, cómo pagó (forma de pago, para el cierre de caja) y quién lo lavó. Quien lo registró lo puede **deshacer**
-   en los 5 minutos siguientes (`DELETE /api/admin/lavados/:id`). Cuenta en ingresos, metas y el ranking del equipo (quién lava más). Ver
+   cobró y cómo pagó (forma de pago, para el cierre de caja); queda **registrado a nombre** de quien lo carga. Quien lo
+   registró lo puede **deshacer** en los 5 minutos siguientes (`DELETE /api/admin/lavados/:id`). Cuenta en ingresos,
+   metas y "mis trabajos". No hay ranking: el sistema no compara a las personas (contrato
+   `reportes/2026-11-17_05_seguimiento-sin-ranking.md`). Ver
    [Registrar lavado](#registrar-lavado-post-y-get-apiadminlavados).
 1. Las rutas **públicas** de turnos (catálogo, disponibilidad, pedir turno, seguimiento) vienen de MgDetailing y
    están **apagadas por defecto** (`TURNOS_ONLINE=false`, responden 404). Con `TURNOS_ONLINE=true` vuelven.
 2. **Autentica** a los usuarios del panel con **Supabase Auth**, en modo BFF: el backend habla con Supabase y guarda los tokens en cookies httpOnly; el navegador nunca ve un token ni una clave.
-3. Les permite **gestionar** esas solicitudes desde el panel `/admin` según su **rol** (`superadmin`, `admin`, `empleado`), y al `superadmin` gestionar los usuarios.
+3. Les permite **gestionar** esas solicitudes desde el panel `/admin` según su **rol** (`superadmin`, `admin`, `empleado`), al `superadmin` gestionar a todos los usuarios y al `admin`, a los empleados (alta, edición y baja sin perder el historial).
 4. Sirve el **catálogo de servicios** (textos, precios, duraciones, destacado, orden) desde la base: la landing lo lee de `GET /api/servicios` y `admin`/`superadmin` lo editan desde el panel sin volver a publicar la web.
 5. Arma la **agenda** del panel: qué turnos hay cada día y franja (`GET /api/admin/agenda`), con la **fecha y franja confirmadas** por el taller cuando difieren de las que pidió el cliente.
 6. Guarda **notas internas** por turno (el cliente nunca las ve), **busca** turnos por nombre, email, vehículo o teléfono y arma el **historial del cliente** (sus turnos, por teléfono normalizado).
@@ -73,7 +75,7 @@ Copiá `.env.example` a `.env` (está ignorado por git; nunca subas uno con secr
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Origen(es) permitidos por CORS y por el chequeo de Origin (CSRF). Esquema + host + puerto, sin barra final. **Admite una lista separada por comas**, por ejemplo para probar desde el celular: `http://localhost:5173,http://192.168.0.10:5173`. Sin comodines. Obligatoria en producción. |
 | `SUPABASE_URL` | (obligatoria) | URL del proyecto, sin barra final: `https://TU-PROYECTO.supabase.co`. De ahí se derivan `/auth/v1` (endpoints de Auth y `iss` exacto de los tokens) y el JWKS (`/auth/v1/.well-known/jwks.json`). |
 | `SUPABASE_PUBLISHABLE_KEY` | (obligatoria) | Clave **publishable** (`sb_publishable_...`), del panel: *Project Settings > API Keys*. La usa solo el backend (cabecera `apikey`). **Una secret key (`sb_secret_...`) en esta variable se rechaza.** |
-| `SUPABASE_SECRET_KEY` | (opcional) | Clave **secret** (`sb_secret_...`), de *Project Settings > API Keys > Secret keys*. **Secreto: salta RLS en todo el proyecto.** La usa solo el backend, solo para la API admin de Auth: que el superadmin cree y elimine usuarios y les cambie email o contraseña desde el panel. Va únicamente en la cabecera `apikey`, nunca se loguea ni llega al navegador. Sin ella el panel funciona, pero esas acciones responden `503` (y se avisa al arrancar). Las claves viejas `service_role` no se aceptan. |
+| `SUPABASE_SECRET_KEY` | (opcional) | Clave **secret** (`sb_secret_...`), de *Project Settings > API Keys > Secret keys*. **Secreto: salta RLS en todo el proyecto.** La usa solo el backend, solo para la API admin de Auth: que el superadmin y el admin (este, solo con empleados) creen, eliminen o den de baja usuarios y les cambien email o contraseña desde el panel. Va únicamente en la cabecera `apikey`, nunca se loguea ni llega al navegador. Sin ella el panel funciona, pero esas acciones responden `503` (y se avisa al arrancar). Las claves viejas `service_role` no se aceptan. |
 | `DATABASE_URL` | (obligatoria) | Cadena de conexión de Supabase (Session pooler) con el rol `buddys_app`: `postgresql://usuario:contraseña@host:5432/postgres`. **Secreto.** Se valida al arrancar y nunca se muestra en logs ni errores. Ver [Conectar Supabase](#conectar-supabase). |
 | `DATABASE_SSL_CA_FILE` | (obligatoria con Postgres remoto) | Certificado raíz de Supabase para verificar al servidor (TLS verify-full). Ruta relativa a `backend/` o absoluta. Solo un Postgres local (`localhost`/`127.x`) se tolera sin ella fuera de producción, con un aviso. |
 | `DB_DRIVER`, `DB_PATH`, `JWT_SECRET` | | **Ya no se usan.** `DB_DRIVER=postgres` se sigue aceptando (cualquier otro valor se rechaza); `DB_PATH` y `JWT_SECRET` solo generan un aviso al arrancar: borralos del `.env`. |
@@ -119,7 +121,7 @@ navegador --/api (cookies httpOnly)--> backend --POST /auth/v1/token, /auth/v1/l
 | Rol | Ver turnos y agenda | Cambiar estado | Reprogramar | Borrar turnos | Gestionar usuarios | Ver catálogo | Editar catálogo | Ver disponibilidad | Editar disponibilidad |
 |---|---|---|---|---|---|---|---|---|---|
 | `superadmin` | sí | a cualquier estado | sí | sí | sí (crear, listar, cambiar rol, activar/desactivar, nombre, email y contraseña, eliminar) | sí | sí | sí | sí |
-| `admin` | sí | a cualquier estado | sí | sí | no | sí | sí | sí | sí |
+| `admin` | sí | a cualquier estado | sí | sí | **solo empleados** (crearlos, editarlos, desactivarlos y darlos de baja) | sí | sí | sí | sí |
 | `empleado` | sí | **solo a `completado`** | **no** | no | no | sí | **no** (solo lectura) | sí | **no** (solo lectura) |
 
 "Editar disponibilidad" = cambiar el horario semanal y crear, cambiar o quitar días especiales (`puedeEditarDisponibilidad` en `src/domain/permisos.ts`). Reprogramar un turno a una franja llena o a un día cerrado **sí** se permite (el panel manda; la UI avisa).
@@ -136,7 +138,7 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 
 | Grupo | Capacidad | superadmin | admin | empleado |
 |---|---|---|---|---|
-| Lavados | Registrar un lavado de mostrador (servicio, vehículo, cobro, forma de pago y quién lavó) | sí | sí | parcial: solo a su nombre; carga el monto al registrarlo, pero después no lo ve ni lo corrige |
+| Lavados | Registrar un lavado de mostrador (servicios, vehículo, cobro y forma de pago) | sí | sí | parcial: queda registrado a su nombre; carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista) |
 | Lavados | Deshacer (borrar) un lavado de mostrador | sí | sí | parcial: solo uno que registró él, hasta 5 minutos después de registrarlo y si no tiene comprobante |
 | Turnos | Ver los turnos y la agenda | sí | sí | sí |
 | Turnos | Cambiar el estado de un turno | sí | sí | parcial: solo a Completado |
@@ -145,13 +147,13 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 | Turnos | Escribir notas internas | sí | sí | sí |
 | Turnos | Buscar turnos y ver el historial de un cliente | sí | sí | sí |
 | Cobro | Registrar cuánto se cobró por un trabajo y quién lo hizo | sí | sí | parcial: al completar queda como quien lo hizo, sin cargar el monto |
-| Cobro | Corregir el monto, el trabajador, la forma de pago y los servicios de un turno | sí | sí | no |
+| Cobro | Corregir el monto, la forma de pago y los servicios de un turno | sí | sí | no |
 | Catálogo | Ver los servicios | sí | sí | sí |
 | Catálogo | Crear, editar y ordenar servicios | sí | sí | no |
 | Disponibilidad | Ver horario, días especiales y cupos | sí | sí | sí |
 | Disponibilidad | Cambiar horario semanal y días especiales | sí | sí | no |
-| Estadísticas | Estadísticas del taller, con importes y de todo el equipo | sí | sí | no |
-| Estadísticas | Ver los trabajos que uno mismo completó (sin importes) | sí | sí | sí |
+| Estadísticas | Ver las estadísticas del taller, con importes | sí | sí | no |
+| Estadísticas | Ver los trabajos que uno mismo registró, sin importes | sí | sí | sí |
 | Finanzas | Ver y cargar los gastos del taller | sí | sí | no |
 | Finanzas | Fijar y seguir las metas mensuales | sí | sí | no |
 | Documentos | Armar presupuestos y descargarlos en PDF | sí | sí | no |
@@ -160,14 +162,21 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 | Inventario | Ver el inventario | sí | sí | sí |
 | Inventario | Registrar el uso de insumos | sí | sí | sí |
 | Inventario | Crear insumos, cargar compras y ajustar el stock | sí | sí | no |
-| Usuarios | Crear, editar y desactivar usuarios | sí | no | no |
+| Usuarios | Crear, editar, desactivar y eliminar usuarios del panel | sí | parcial: solo empleados (crearlos, editarlos, desactivarlos y darlos de baja) | no |
+| Perfil | Cambiar su propio nombre, foto y contraseña | sí | sí | sí |
 | Avisos | Activar los avisos de turnos nuevos en su dispositivo | sí | sí | sí |
 
-Funciones: `puedeRegistrarLavados`, `puedeAnotarLavadoDeOtro`, `puedeDeshacerCualquierLavado` y `puedeDeshacerLavado(rol, actorId, lavado, now)` (`'si' | 'no' | 'vencido'`; plazo `PLAZO_DESHACER_LAVADO_MINUTOS` = 5), `puedeCambiarEstado(rol, estado)`, `puedeReprogramar`, `puedeBorrarTurnos`, `puedeGestionarUsuarios`, `puedeEditarCatalogo`, `puedeEditarDisponibilidad`, `puedeVerEstadisticas` (también decide quién ve importes: `puedeVerImportes`), `puedeRegistrarCobro` (monto y elegir trabajador) y `puedeCorregirCobro`. Objetivo 10: `puedeGestionarGastos`, `puedeGestionarMetas`, `puedeArmarPresupuestos`, `puedeEmitirComprobantes`, `puedeEditarTaller`, `puedeVerInventario`, `puedeRegistrarUsoInsumos`, `puedeGestionarInventario` y `puedeVerCostosInventario` (el empleado nunca recibe costos ni valores en pesos del inventario). Los textos de `buddys.roles.descripcion` los actualiza la migración `estadisticas_cobro_trabajador` para que digan lo mismo.
+Funciones: `puedeRegistrarLavados`, `puedeAnotarLavadoDeOtro`, `puedeDeshacerCualquierLavado` y `puedeDeshacerLavado(rol, actorId, lavado, now)` (`'si' | 'no' | 'vencido'`; plazo `PLAZO_DESHACER_LAVADO_MINUTOS` = 5), `puedeCambiarEstado(rol, estado)`, `puedeReprogramar`, `puedeBorrarTurnos`, `puedeGestionarUsuarios` (entrar a `/api/admin/usuarios`: nivel distinto de `no`), `puedeGestionarA(rolActor, rolObjetivo)` (superadmin, a cualquiera; admin, solo a empleados), `puedeAsignarRol(rolActor, rolNuevo)` (superadmin, cualquier rol; admin, solo `empleado`), `puedeEditarCatalogo`, `puedeEditarDisponibilidad`, `puedeVerEstadisticas` (también decide quién ve importes: `puedeVerImportes`), `puedeRegistrarCobro` (monto y elegir trabajador) y `puedeCorregirCobro`. Objetivo 10: `puedeGestionarGastos`, `puedeGestionarMetas`, `puedeArmarPresupuestos`, `puedeEmitirComprobantes`, `puedeEditarTaller`, `puedeVerInventario`, `puedeRegistrarUsoInsumos`, `puedeGestionarInventario` y `puedeVerCostosInventario` (el empleado nunca recibe costos ni valores en pesos del inventario). Contrato 04: `puedeEditarPerfil` (Mi perfil, todos los roles; ver la foto de otro usuario usa `puedeGestionarUsuarios`). Los textos de `buddys.roles.descripcion` los mantienen al día las migraciones (`estadisticas_cobro_trabajador`, `finanzas_gastos_metas_taller` y `roles_admin_gestiona_empleados`) para que digan lo mismo.
 
 **El empleado nunca recibe importes**: `monto` es siempre `null` en cualquier respuesta con turnos (listado, agenda, PATCH; función `vistaDeTurno`), no puede pedir las estadísticas completas (`403`) y "mis trabajos" no lleva ningún importe (la consulta ni siquiera lee la columna). El seguimiento público tampoco devuelve `monto` ni `trabajador`.
 
-Lo que no está permitido responde `403 FORBIDDEN` con un mensaje en español. Reglas de usuarios: nadie puede cambiarse su propio rol, ni desactivarse ni eliminarse a sí mismo (`409 CONFLICT`), y **nunca puede quedar el sistema sin un superadmin activo** (lo garantiza un trigger en la base, también ante dos cambios simultáneos; `409 CONFLICT`).
+Lo que no está permitido responde `403 FORBIDDEN` con un mensaje en español. Reglas de usuarios (`UsuarioService`, en este orden; contrato `reportes/2026-11-17_03_gestion-usuarios.md`):
+
+1. Sobre uno mismo: nadie se cambia su propio rol, ni se desactiva ni se elimina (`409 CONFLICT`).
+2. Un admin no edita ni elimina a un admin o superadmin (tampoco a sí mismo: lo suyo se edita desde *Mi perfil*): `403` *"Con tu rol solo podés gestionar empleados."*
+3. Un admin no crea ni pasa a nadie a un rol que no sea `empleado`: `403` *"Con tu rol solo podés crear y editar empleados."*
+4. **Nunca puede quedar el sistema sin un superadmin activo** (lo garantiza un trigger en la base, también ante dos cambios simultáneos; la baja pone `activo = false`, así que también la cubre): `409 CONFLICT`.
+5. Un usuario dado de baja no se edita ni se vuelve a dar de baja: `409` *"Ese usuario está dado de baja."* (reactivarlo no existe: se le crea una cuenta nueva con su email).
 
 ### Alta de usuarios (pasos del dueño)
 
@@ -181,7 +190,8 @@ Lo que no está permitido responde `403 FORBIDDEN` con un mensaje en español. R
 
    El email va en minúsculas. Tiene que decir `UPDATE 1`.
 4. **Configurá `SUPABASE_SECRET_KEY`** en el `.env` del backend (y en el entorno del servidor en producción) y reiniciá.
-5. **Los demás usuarios los crea el superadmin desde el panel web** (*Usuarios > Nuevo usuario*: email, contraseña, nombre, rol y si entra desde ya). El backend los crea en Supabase Auth con el email ya confirmado (no se manda ningún email) y el trigger crea su perfil. Pasale la contraseña a la persona por un canal privado. Desde el mismo panel se les cambia el rol, el nombre, el email o la contraseña, se los desactiva (efecto inmediato) o se los elimina (borra el usuario de Supabase Auth; su perfil y sus sesiones se van en cascada).
+5. **Los demás usuarios se crean desde el panel web** (*Equipo > Nuevo usuario*: email, contraseña, nombre, rol y si entra desde ya). El superadmin crea cualquier rol; un admin, solo empleados. El backend los crea en Supabase Auth con el email ya confirmado (no se manda ningún email) y el trigger crea su perfil. Pasale la contraseña a la persona por un canal privado. Desde el mismo panel se les cambia el rol, el nombre, el email o la contraseña y se los desactiva (efecto inmediato).
+   **Eliminar** a alguien: si no tiene historial (ningún lavado, turno, gasto, movimiento de stock, presupuesto ni comprobante a su nombre) se borra de Supabase Auth y su perfil y sus sesiones se van en cascada. Si tiene historial **se da de baja**: queda inactivo y marcado como dado de baja (`eliminado_at`), se lo banea en Supabase Auth y su email pasa a `baja+<id>@buddys.invalid` (el email real queda libre para una cuenta nueva). Su perfil sigue existiendo, así que **sus lavados viejos siguen mostrando su nombre** (si no tenía nombre, queda con la parte de su email antes de la @, nunca el email entero). La baja también le cierra las sesiones abiertas. No se puede deshacer desde el panel. Ojo: desde *Authentication > Users* de Supabase, borrar a alguien con historial **falla** (las FK son `ON DELETE RESTRICT`): hay que darlo de baja desde el panel.
 6. **Contraseña olvidada:** no hay recuperación por email (no hay SMTP configurado). El superadmin le asigna una nueva desde *Usuarios > Cambiar contraseña*. Si el que la olvidó es el único superadmin, se cambia en Supabase (*Authentication > Users > (usuario)*).
 
 ## Base de datos
@@ -201,8 +211,8 @@ Lo que no está permitido responde `403 FORBIDDEN` con un mensaje en español. R
 ```mermaid
 erDiagram
     servicios ||--o{ bookings : "servicio_id (FK, RESTRICT)"
-    perfiles ||--o{ bookings : "trabajador_id (FK, ON DELETE SET NULL)"
-    perfiles ||--o{ bookings : "registrado_por (FK, ON DELETE SET NULL)"
+    perfiles ||--o{ bookings : "trabajador_id (FK, ON DELETE RESTRICT)"
+    perfiles ||--o{ bookings : "registrado_por (FK, ON DELETE RESTRICT)"
     auth_users ||--|| perfiles : "id (FK, ON DELETE CASCADE)"
     roles ||--o{ perfiles : "rol_id (FK, RESTRICT)"
     perfiles ||--o{ push_suscripciones : "perfil_id (FK, ON DELETE CASCADE)"
@@ -248,10 +258,10 @@ erDiagram
         text estado "CHECK pendiente, confirmado, completado, cancelado"
         timestamptz recordatorio_enviado_at "nullable; recordatorio del día anterior"
         integer monto "nullable; pesos cobrados, 0 a 99999999; solo si completado"
-        uuid trabajador_id FK "nullable; perfiles(id) ON DELETE SET NULL; solo si completado"
+        uuid trabajador_id FK "nullable; perfiles(id) ON DELETE RESTRICT; solo si completado"
         text origen "CHECK web, mostrador"
         text forma_pago "nullable; CHECK efectivo, transferencia, debito, credito, otro"
-        uuid registrado_por FK "nullable; perfiles(id) ON DELETE SET NULL; quién registró el lavado"
+        uuid registrado_por FK "nullable; perfiles(id) ON DELETE RESTRICT; quién registró el lavado"
         uuid id_local UK "nullable; único si no es null; id de la cola sin conexión del panel"
         timestamptz created_at
         timestamptz updated_at
@@ -290,6 +300,7 @@ erDiagram
         text nombre "nullable"
         text rol_id FK "default empleado"
         boolean activo "default false"
+        timestamptz eliminado_at "nullable; dado de baja (CHECK: entonces no activo)"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -324,7 +335,7 @@ erDiagram
 | `roles` | Los 3 roles del panel (sembrados por migración). Los permisos de cada rol los aplica el backend (`domain/permisos.ts`). | PK `id` (slug). |
 | `perfiles` | Un perfil por usuario de Supabase Auth: rol y si puede entrar. Lo crea el trigger de `auth.users`; se borra en cascada con el usuario. | PK/FK `id -> auth.users ON DELETE CASCADE`; FK `rol_id -> roles` con índice; CHECK de email en minúsculas y largo de nombre; trigger `updated_at`; trigger `perfiles_al_menos_un_superadmin`. |
 | `push_suscripciones` | Dispositivos de las personas del panel que activaron los avisos push (ver [Avisos push](#avisos-push)). `endpoint`, `p256dh` y `auth` son secretos de capacidad: quien los tiene puede mandarle avisos a ese aparato. | PK `id`; FK `perfil_id -> perfiles ON DELETE CASCADE`; `endpoint` único (CHECK: `https`, de 12 a 2048); CHECK de formato base64url en `p256dh` y `auth` y de largo en `agente` (≤ 120); índice `(perfil_id, created_at)` para la FK y el tope de 10 por persona. RLS con policies solo para `buddys_app`; GRANT `SELECT`, `DELETE`, `INSERT` por columna y `UPDATE (ultimo_aviso_at)`. |
-| `gastos` | Gastos del taller (objetivo 10, migración `finanzas_gastos_metas_taller`). Ganancia neta = ingresos de los turnos completados - gastos, por fecha. | PK `id` uuid; `fecha` date; `categoria` CHECK (9 valores); `descripcion` 1 a 120; `monto` entero 1 a 99.999.999; `proveedor` <= 80 o null; `origen` CHECK `manual`/`inventario` (el de inventario no se edita desde Gastos); `creado_por` FK `perfiles ON DELETE SET NULL`; índices `gastos_fecha_idx` y parcial de la FK; trigger `updated_at`. RLS; `buddys_app`: SELECT, DELETE, INSERT y UPDATE por columna (nunca `id` ni `origen`). |
+| `gastos` | Gastos del taller (objetivo 10, migración `finanzas_gastos_metas_taller`). Ganancia neta = ingresos de los turnos completados - gastos, por fecha. | PK `id` uuid; `fecha` date; `categoria` CHECK (9 valores); `descripcion` 1 a 120; `monto` entero 1 a 99.999.999; `proveedor` <= 80 o null; `origen` CHECK `manual`/`inventario` (el de inventario no se edita desde Gastos); `creado_por` FK `perfiles ON DELETE RESTRICT` (migración `usuarios_baja`); índices `gastos_fecha_idx` y parcial de la FK; trigger `updated_at`. RLS; `buddys_app`: SELECT, DELETE, INSERT y UPDATE por columna (nunca `id` ni `origen`). |
 | `metas_mensuales` | Meta de cada mes: ingresos y/o trabajos completados. | PK `mes` date (CHECK: siempre el día 1); `ingresos_objetivo` 1 a 999.999.999; `trabajos_objetivo` 1 a 9.999; CHECK: al menos uno no nulo. RLS; SELECT, INSERT, DELETE y UPDATE de los objetivos. |
 | `taller` | Datos del taller que salen en los PDF. **Una sola fila** (`id = 1`, CHECK), sembrada con nombre, teléfono y dirección. | CHECK de `telefono` (8 a 15 dígitos), `cuit` (11 dígitos o `NN-NNNNNNNN-N`), `instagram` (sin `@`, <= 30) y largos. RLS; la app solo tiene SELECT y UPDATE por columna (no inserta ni borra). |
 
@@ -348,7 +359,7 @@ Decisiones:
 ### Seguridad en la base (Supabase)
 
 - Todo vive en los esquemas **`buddys`** y **`buddys_private`**, que **no** están entre los expuestos por la Data API (PostgREST/GraphQL publican `public` y `graphql_public`; un pedido con `Accept-Profile: buddys` responde `PGRST106`). La web **nunca** habla con Supabase: ni `supabase-js`, ni claves en el frontend. El único cliente de la base y de Supabase Auth es este backend.
-- **Rol dedicado `buddys_app`** (migración `rol_app_minimo_privilegio`): el backend se conecta con él, **no** con `postgres`. Puede solo lo que el backend hace: `SELECT` en `roles`; `SELECT` en `servicios`, `INSERT` por columna (todas salvo `created_at`) y `UPDATE` por columna (los campos editables, `orden` y `updated_at`; nunca `id` ni `created_at`), sin `DELETE`, y `EXECUTE` de las dos funciones de validación del catálogo; `SELECT/INSERT/DELETE` en `bookings` y `UPDATE` solo de `estado`, `updated_at`, `fecha_confirmada`, `franja_confirmada`, `notas_internas` y `telefono_whatsapp` (nunca los datos del cliente ni el pedido original), y `EXECUTE` de `buddys.texto_busqueda`; `SELECT` en `perfiles` y `UPDATE` solo de `rol_id`, `activo`, `nombre` y `updated_at` (sin `INSERT` ni `DELETE`: los hace el trigger / la cascada); `EXECUTE` solo de `buddys_private.sesion_vigente`. Sin DDL, sin `TRUNCATE`, sin `BYPASSRLS`, sin acceso a `auth`, `storage` ni `public`. Topes de sesión: `statement_timeout` 10 s, `lock_timeout` 5 s, `idle_in_transaction_session_timeout` 30 s. Se crea **NOLOGIN y sin contraseña** (no hay secretos en el repo): el dueño le pone la contraseña (ver [Conectar Supabase](#conectar-supabase)). Si el backend arranca conectado con un rol privilegiado (`postgres`), lo avisa en el log.
+- **Rol dedicado `buddys_app`** (migración `rol_app_minimo_privilegio`): el backend se conecta con él, **no** con `postgres`. Puede solo lo que el backend hace: `SELECT` en `roles`; `SELECT` en `servicios`, `INSERT` por columna (todas salvo `created_at`) y `UPDATE` por columna (los campos editables, `orden` y `updated_at`; nunca `id` ni `created_at`), sin `DELETE`, y `EXECUTE` de las dos funciones de validación del catálogo; `SELECT/INSERT/DELETE` en `bookings` y `UPDATE` solo de `estado`, `updated_at`, `fecha_confirmada`, `franja_confirmada`, `notas_internas` y `telefono_whatsapp` (nunca los datos del cliente ni el pedido original), y `EXECUTE` de `buddys.texto_busqueda`; `SELECT` en `perfiles` y `UPDATE` solo de `rol_id`, `activo`, `nombre`, `eliminado_at` (desde `usuarios_baja`) y `updated_at` (sin `INSERT` ni `DELETE`: los hace el trigger / la cascada); `EXECUTE` solo de `buddys_private.sesion_vigente`, `buddys_private.cerrar_sesiones` (desde `cerrar_sesiones_usuario`: borra las sesiones de un usuario sin darle acceso a `auth`) y `buddys_private.cerrar_otras_sesiones` (desde `cerrar_otras_sesiones_bucket`: las de un usuario menos la actual). Sin DDL, sin `TRUNCATE`, sin `BYPASSRLS`, sin acceso a `auth`, `storage` ni `public`. Topes de sesión: `statement_timeout` 10 s, `lock_timeout` 5 s, `idle_in_transaction_session_timeout` 30 s. Se crea **NOLOGIN y sin contraseña** (no hay secretos en el repo): el dueño le pone la contraseña (ver [Conectar Supabase](#conectar-supabase)). Si el backend arranca conectado con un rol privilegiado (`postgres`), lo avisa en el log.
 - Desde la migración `disponibilidad_seguimiento`, además: `SELECT` en `horario_semanal` y `dias_especiales`, `UPDATE (abierto, cupo_manana, cupo_tarde)` del horario (sin `INSERT` ni `DELETE`: las 7 filas son fijas), `INSERT`/`UPDATE (abierto, cupos, motivo)`/`DELETE` de días especiales y `UPDATE (recordatorio_enviado_at)` en `bookings`.
 - Desde la migración `push_suscripciones`, además: `SELECT`/`DELETE` en `push_suscripciones`, `INSERT (perfil_id, endpoint, p256dh, auth, agente)` y `UPDATE (ultimo_aviso_at)`. Reasignar un dispositivo a otra persona es borrar y crear la fila (no hay `UPDATE` de `perfil_id`).
 - **RLS habilitado en las 6 tablas** (`horario_semanal` y `dias_especiales` incluidas), con policies **solo para `buddys_app`** (`USING (true)`: el backend es un único cliente de confianza que ve todas las filas; la autorización por usuario y por rol la hace la API con la sesión del panel). `anon`, `authenticated` y `service_role` no tienen ni privilegios ni policies: aunque alguien expusiera el esquema por error, no verían una fila. `postgres` (dueño de las tablas, con `BYPASSRLS`) queda para migraciones y backups.
@@ -379,6 +390,12 @@ Decisiones:
 - **`20261113110000_vehiculos_suv_pickup` (2026-11-13): PENDIENTE de aplicar en Supabase.** Decisión del dueño: `camioneta` se reemplaza por `suv` y `pickup` (orden canónico auto, suv, pickup, moto). Agrega `servicios.precio_desde_suv` (copia de `precio_desde_camioneta`), `precio_desde_pickup`, `duracion_suv` (copia de `duracion_estimada_camioneta`), `duracion_pickup` y `categoria` (CHECK de rango/largo como las demás); pasa los datos `camioneta` → `suv` en `bookings.vehiculo_tipo` y `servicios.vehiculos` **sin mover `updated_at`** (apaga los triggers de `updated_at` solo mientras corren esos UPDATE, dentro de la transacción); cambia los CHECK (`bookings_vehiculo_tipo_valido` y la función `servicio_vehiculos_valido`: 1 a 4 de los tipos nuevos) y el default de `vehiculos`; y **borra** las dos columnas de camioneta. `presupuestos.vehiculo` y `comprobantes.vehiculo` son texto libre / foto del momento: no se tocan. GRANT por columna de INSERT/UPDATE a `buddys_app` y REVOKE a los roles de la API. **No es compatible con el backend anterior** (lee las columnas de camioneta): aplicarla y desplegar el backend nuevo juntos. Idempotente.
 - **`20261113120000_lavado_varios_servicios` (2026-11-13): PENDIENTE de aplicar en Supabase, DESPUÉS de `vehiculos_suv_pickup`.** Tabla `buddys.lavado_servicios` (ver el modelo de datos), función `buddys.precio_de_lista(text, text)` (EXECUTE solo para `buddys_app`), trigger `bookings_servicio_principal` (AFTER INSERT en `bookings`: todo turno nuevo, también uno a mano, nace con su fila principal), backfill (cada turno existente con su `servicio_id`, `orden 0`, `precio_lista null`), RLS + REVOKE + GRANT SELECT/INSERT/DELETE con sus policies para `buddys_app`, y `GRANT UPDATE (servicio_id)` sobre `bookings` (corregir los servicios cambia el principal). El backend nuevo **no arranca** sin ella. Idempotente.
 - **`20261113130000_catalogo_buddys` (2026-11-13): PENDIENTE de aplicar en Supabase, DESPUÉS de las dos anteriores.** Solo datos: upsert por `id` de los 14 servicios de Buddys (precios auto / suv / pickup en ARS enteros, motos solo para `moto` con `precio_desde_moto`, categoría, `incluye` en ítems, `descripcion` = el texto completo, destacados Limpieza Nivel I, II y III, `orden` 10 a 140, duraciones en `null`, glosario vacío) y desactiva (y desmarca) todo servicio que no esté en la lista. Idempotente (una segunda corrida deja lo mismo; solo vuelve a mover `updated_at` de los 14). La base de los tests **no** la aplica (`MIGRACIONES_SOLO_DATOS` en `test/pglite.ts`: casi todos los tests usan los servicios heredados); la prueba `test/migracion-catalogo-buddys.test.ts`. Orden en Supabase: las tres seguidas, el push del backend y después los advisors.
+- **`20261117100000_usuarios_baja` (2026-11-17): PENDIENTE de aplicar en Supabase** (contrato `reportes/2026-11-17_03_gestion-usuarios.md`). Agrega `perfiles.eliminado_at` (`timestamptz` nullable, sin default: no reescribe la tabla) con el CHECK `perfiles_baja_inactivo` (dado de baja => inactivo) y `GRANT UPDATE (eliminado_at)` a `buddys_app`; pasa las FK hacia `perfiles` de `bookings.trabajador_id`, `bookings.registrado_por`, `gastos.creado_por`, `movimientos_stock.perfil_id`, `presupuestos.creado_por` y `comprobantes.creado_por` de `ON DELETE SET NULL` a **`ON DELETE RESTRICT`** (`NOT VALID` + `VALIDATE`). Efecto: borrar desde el dashboard de Supabase a alguien con historial falla (hay que darlo de baja desde el panel). El backend nuevo **no arranca** sin ella (lee `eliminado_at`). Idempotente.
+- **`20261117100500_roles_admin_gestiona_empleados` (2026-11-17): PENDIENTE de aplicar en Supabase, DESPUÉS de `usuarios_baja`.** Solo datos: actualiza `roles.descripcion` de `admin` (*"Gestiona solo a los empleados."*, antes decía *"No gestiona usuarios."*) y de `superadmin`, que salen en `GET /api/admin/permisos`. Idempotente. Orden: las dos, el push del backend y después los advisors.
+- **`20261117110000_perfil_foto` (2026-11-17): PENDIENTE de aplicar en Supabase (la aplica el dueño)** (contrato `reportes/2026-11-17_04_perfil-y-foto.md`). `buddys.perfiles.foto_actualizada_at timestamptz null` (versión de la foto; `null` = sin foto), `GRANT UPDATE (foto_actualizada_at)` a `buddys_app` y el bucket privado `avatares` (256 KiB, solo `image/webp`, sin policies: solo entra la secret key), dentro de un bloque que solo corre si existe `storage.buckets`. El backend nuevo **no arranca** sin ella (`verifyPostgresSchema`). Idempotente.
+- **`20261117130000_cerrar_sesiones_usuario` (2026-11-17): PENDIENTE de aplicar en Supabase, ANTES del push del backend** (auditoría del objetivo A, B3). Crea `buddys_private.cerrar_sesiones(uuid)`: `SECURITY DEFINER` con `search_path` vacío, borra las filas de `auth.sessions` de ese usuario (los refresh tokens se van en cascada) y devuelve cuántas borró; `REVOKE` a `public`, `anon`, `authenticated` y `service_role`, `EXECUTE` solo para `buddys_app`. La llama el backend al cambiarle contraseña o email a otra persona y en la baja: sin ella, esos pedidos fallan. Idempotente (`create or replace`).
+- **`20261117140000_cerrar_otras_sesiones_bucket` (2026-11-18): PENDIENTE de aplicar en Supabase, DESPUÉS de `perfil_foto` y `cerrar_sesiones_usuario` y ANTES del push del backend** (auditoría de seguridad del objetivo B, M1 y B2). (1) Crea `buddys_private.cerrar_otras_sesiones(uuid, uuid)`: `SECURITY DEFINER` con `search_path` vacío, borra las filas de `auth.sessions` del usuario **menos** la sesión indicada y devuelve cuántas borró; `REVOKE` a `public`, `anon`, `authenticated` y `service_role`, `EXECUTE` solo para `buddys_app`. La llama el backend cuando alguien cambia su propia contraseña; sin ella el cambio igual responde `200`, pero las otras sesiones siguen vivas (queda un error en el log). (2) Si existe `storage.buckets`, fuerza el bucket `avatares` a `public = false`, 256 KiB y solo `image/webp` aunque ya existiera (la migración `perfil_foto` no lo tocaba con `ON CONFLICT DO NOTHING`); si no existe, no lo crea. **Antes de aplicarla, revisá que `storage.objects` no tenga policies genéricas para `authenticated` (o `anon`/`public`) sin filtro por `bucket_id`** (`select policyname, roles, cmd, qual from pg_policies where schemaname = 'storage' and tablename = 'objects';`): con una así, el bucket privado se podría leer o listar con la publishable key y una sesión. La migración no crea ni borra policies. Idempotente.
+- **Orden de las pendientes del 2026-11-17 y 2026-11-18**: `20261117100000_usuarios_baja`, `20261117100500_roles_admin_gestiona_empleados`, `20261117110000_perfil_foto`, `20261117120000_recetas_stock`, `20261117130000_cerrar_sesiones_usuario`, `20261117140000_cerrar_otras_sesiones_bucket`; después, el push del backend y los advisors.
 - Los servicios ya **no** se agregan por migración ni en el código: se crean desde el panel.
 
 ### Backups (Supabase)
@@ -520,7 +537,17 @@ curl -b cookies.txt -c cookies.txt http://localhost:4000/api/auth/me
 # Renovar la sesión cuando /api/admin responde 401 SESSION_EXPIRED
 curl -b cookies.txt -c cookies.txt -X POST http://localhost:4000/api/auth/refresh -H "Content-Type: application/json"
 
-# Usuarios (solo superadmin)
+# Mi perfil: ver, cambiar el nombre o la contraseña
+curl -b cookies.txt http://localhost:4000/api/admin/perfil
+curl -b cookies.txt -X PATCH http://localhost:4000/api/admin/perfil \
+  -H 'Content-Type: application/json' -d '{"passwordActual":"la-de-ahora","passwordNueva":"una-nueva-larga"}'
+
+# Foto de perfil: el body es la imagen (JPG, PNG o WebP; hasta 2 MB)
+curl -b cookies.txt -X PUT http://localhost:4000/api/admin/perfil/foto \
+  -H 'Content-Type: image/jpeg' --data-binary @foto.jpg
+curl -b cookies.txt -o foto.webp 'http://localhost:4000/api/admin/usuarios/<id>/foto?v=<fotoVersion>'
+
+# Usuarios (superadmin: todos; admin: solo empleados)
 curl -b cookies.txt http://localhost:4000/api/admin/usuarios
 curl -b cookies.txt -X PATCH http://localhost:4000/api/admin/usuarios/<id> \
   -H "Content-Type: application/json" -d '{"rol":"empleado","activo":true,"nombre":"Lucía"}'
@@ -594,8 +621,9 @@ Esta sección es la referencia para el frontend. Todo viaja como JSON; las fecha
 - **`POST`, `PATCH` y `DELETE` (y `PUT`) exigen `Content-Type: application/json` aunque no lleven body** (por ejemplo `logout` y `delete`); si no, responden `415`. Un body vacío se acepta en esos casos. El body se interpreta como UTF-8.
 - **Si el pedido trae cabecera `Origin`, tiene que coincidir exactamente con uno de los `FRONTEND_ORIGIN`**; si no, `403 FORBIDDEN_ORIGIN`. Los navegadores la mandan solos. Los clientes sin `Origin` (curl, scripts) se aceptan.
 - Con `fetch` hay que enviar las cookies: `credentials: "include"`. El JS nunca ve los tokens: son cookies httpOnly.
-- Body máximo: **10 kb**. Los objetos de entrada son estrictos: **un campo desconocido se rechaza** con `400`.
-- Las respuestas de `/api` llevan `Cache-Control: no-store`.
+- **Única excepción al JSON:** `PUT /api/admin/perfil/foto` (solo esa ruta y ese método) manda la imagen tal cual, con `Content-Type: image/jpeg`, `image/png` o `image/webp` (`middleware/request-guard.ts`). El control de `Origin` es el mismo: un formulario de otro sitio no puede mandar esos tipos sin un preflight CORS, y la cookie es `SameSite=Strict`.
+- Body máximo: **10 kb** (la foto de perfil: 2 MB, solo en su ruta). Los objetos de entrada son estrictos: **un campo desconocido se rechaza** con `400`.
+- Las respuestas de `/api` llevan `Cache-Control: no-store` (salvo la foto de perfil, `GET /api/admin/usuarios/:id/foto`, que se cachea con `?v=` y `ETag`).
 - Una ruta `/api/...` que no existe responde `404 NOT_FOUND` en JSON. Todo lo que cuelga de `/api/admin` pide sesión primero (`401`), exista o no la ruta.
 - **Sesión del panel**: ante un `401 SESSION_EXPIRED` en `/api/admin/*`, llamá **una vez** a `POST /api/auth/refresh` y, si responde `200`, reintentá el pedido original; si responde `401` o `403 NO_ACCESS`, mandá al login. Un `403 FORBIDDEN` es solo "tu rol no puede hacer esto": la sesión sigue. Ante `401 UNAUTHORIZED` o `403 FORBIDDEN` con `message` de "no tiene acceso al panel", la sesión terminó: al login. Un `403 FORBIDDEN` de permisos (rol insuficiente) **no** cierra la sesión: mostrá el mensaje.
 
@@ -628,7 +656,7 @@ Esta sección es la referencia para el frontend. Todo viaja como JSON; las fecha
 | `PLAZO_DESHACER_VENCIDO` | 403 | `DELETE /api/admin/lavados/:id` de quien lo registró, pasados los 5 minutos: lo tiene que borrar un encargado desde la planilla. |
 | `NO_ACCESS` | 403 | La sesión es válida pero el usuario ya no tiene acceso al panel (desactivado o sin perfil): se borran las cookies y hay que volver al ingreso. |
 | `NOT_FOUND` | 404 | Ruta inexistente, o turno / usuario / servicio inexistente (un id con formato inválido también da 404). |
-| `CONFLICT` | 409 | Gestión de usuarios: cambiarte tu propio rol, desactivarte, o dejar el sistema sin ningún superadmin activo. |
+| `CONFLICT` | 409 | Gestión de usuarios: cambiarte tu propio rol, desactivarte o eliminarte, dejar el sistema sin ningún superadmin activo, o editar a alguien dado de baja. |
 | `SERVICIO_EXISTE` | 409 | `POST /api/admin/servicios` con un `id` que ya existe (activo o no). Trae `fields.id`. |
 | `FRANJA_LLENA` | 409 | `POST /api/bookings` a una franja sin lugar (llena o con cupo 0). Trae `fields.franja`: *"Esa franja se llenó. Elegí otra."* |
 | `PAYLOAD_TOO_LARGE` | 413 | Body de más de 10 kb. |
@@ -698,7 +726,7 @@ Error de validación `400` (ejemplo):
 **Cambio de contrato:** antes `/api/auth/login` y `/api/auth/me` devolvían `{ "admin": { "email": "..." } }`. Ahora devuelven:
 
 ```json
-{ "usuario": { "id": "5f0c2a3e-9b1d-4c7e-8a55-2d3f1e6b7a90", "email": "dueno@ejemplo.com", "nombre": "Mateo", "rol": "superadmin" } }
+{ "usuario": { "id": "5f0c2a3e-9b1d-4c7e-8a55-2d3f1e6b7a90", "email": "dueno@ejemplo.com", "nombre": "Mateo", "rol": "superadmin", "fotoVersion": null } }
 ```
 
 | Campo | Tipo | Notas |
@@ -707,10 +735,11 @@ Error de validación `400` (ejemplo):
 | `email` | `string \| null` | En minúsculas. |
 | `nombre` | `string \| null` | Lo pone un superadmin; `null` si no tiene. |
 | `rol` | `"superadmin" \| "admin" \| "empleado"` | Para mostrar u ocultar botones; la API igual valida cada acción. |
+| `fotoVersion` | `string \| null` | ISO 8601 de cuándo se subió la foto de perfil (`perfiles.foto_actualizada_at`), o `null` si no tiene. La URL de la foto es `/api/admin/usuarios/<id>/foto?v=<fotoVersion>`. |
 
 ### `POST /api/auth/login`
 
-Body `{ "email": string, "password": string }` (estricto; `password` hasta 128 caracteres). `200 { "usuario": { id, email, nombre, rol } }` y las cookies de sesión. Errores: `401 INVALID_CREDENTIALS` con un único mensaje genérico (*"El email o la contraseña no son correctos, o tu usuario todavía no está habilitado para el panel."*) para contraseña incorrecta, email inexistente o sin confirmar **y también para un usuario sin perfil o inactivo**: así el login no confirma que la contraseña de un usuario inactivo es correcta (la sesión que Supabase abrió se cierra en segundo plano), `400 VALIDATION_ERROR`, `429 RATE_LIMITED`, `503 SERVICE_UNAVAILABLE` (Supabase Auth no responde). Límite: **5 intentos fallidos por IP cada 15 minutos** (`429`; los logins correctos no cuentan).
+Body `{ "email": string, "password": string }` (estricto; `password` hasta 128 caracteres). `200 { "usuario": { id, email, nombre, rol } }` y las cookies de sesión. Errores: `401 INVALID_CREDENTIALS` con un único mensaje genérico (*"El email o la contraseña no son correctos, o tu usuario todavía no está habilitado para el panel."*) para contraseña incorrecta, email inexistente o sin confirmar **y también para un usuario sin perfil o inactivo**: así el login no confirma que la contraseña de un usuario inactivo es correcta (la sesión que Supabase abrió se cierra en segundo plano), `400 VALIDATION_ERROR`, `429 RATE_LIMITED`, `503 SERVICE_UNAVAILABLE` (Supabase Auth no responde). Límite: **5 intentos fallidos por IP cada 15 minutos** (`429`; los logins correctos no cuentan). `usuario` lleva también `fotoVersion`.
 
 Cookies (el JS de la página no puede leerlas: para saber si hay sesión, llamar a `GET /api/auth/me`):
 
@@ -729,12 +758,12 @@ Sin body (pero con `Content-Type: application/json`). Canjea el refresh token: `
 
 ### `GET /api/auth/me`
 
-`200 { "usuario": { id, email, nombre, rol } }`, `401 UNAUTHORIZED` o `403 NO_ACCESS`. Si el access token venció, refresca solo (acá sí viaja el refresh token) y reescribe las cookies.
+`200 { "usuario": { id, email, nombre, rol, fotoVersion } }`, `401 UNAUTHORIZED` o `403 NO_ACCESS`. Si el access token venció, refresca solo (acá sí viaja el refresh token) y reescribe las cookies.
 
 ### Registrar lavado (`POST` y `GET /api/admin/lavados`)
 
 El auto que llega sin turno. Se guarda como un turno **ya completado** con su cobro y `origen: "mostrador"`, así entra
-solo en estadísticas (`porTrabajador` = quién lava más), metas, comprobantes e historial del cliente. **No ocupa cupo**
+solo en estadísticas, metas, "mis trabajos" (de quien lo registró), comprobantes e historial del cliente. **No ocupa cupo**
 de la agenda. Se corrige o se borra como cualquier turno: `PATCH` / `DELETE /api/admin/bookings/:id`. Quien lo
 registró lo puede **deshacer** enseguida con `DELETE /api/admin/lavados/:id` (ver abajo).
 
@@ -742,12 +771,12 @@ registró lo puede **deshacer** enseguida con `DELETE /api/admin/lavados/:id` (v
 
 | Campo | Obligatorio | Qué es |
 |---|---|---|
-| `servicioIds` | sí | De **1 a 10** ids de servicios **distintos**, cada uno activo y ofrecido para ese vehículo, en el orden elegido (el primero es el principal: sale como `servicioId`). Cualquier error (vacío, más de 10, repetidos, mal formado, inexistente, inactivo, no se ofrece para el vehículo) => `400` en `fields.servicioIds` y no se guarda nada. Un auto con varios servicios es **un** lavado: en la planilla y el ranking cuenta 1; en "servicios más pedidos", cada servicio. |
+| `servicioIds` | sí | De **1 a 10** ids de servicios **distintos**, cada uno activo y ofrecido para ese vehículo, en el orden elegido (el primero es el principal: sale como `servicioId`). Cualquier error (vacío, más de 10, repetidos, mal formado, inexistente, inactivo, no se ofrece para el vehículo) => `400` en `fields.servicioIds` y no se guarda nada. Un auto con varios servicios es **un** lavado: en la planilla y en "mis trabajos" cuenta 1; en "servicios más pedidos", cada servicio. |
 | `servicioId` | no | **Compatibilidad** con la cola sin conexión del panel: si llega `servicioId` (string) y no `servicioIds`, vale como `[servicioId]`. Los dos juntos = `400` en `fields.servicioIds` (ninguno, también). |
 | `vehiculoTipo` | sí | `auto`, `suv`, `pickup` o `moto`. |
 | `monto` | no | Pesos cobrados (entero 0 a 99.999.999). `null`/omitido = sin cargar (se completa después con PATCH). |
 | `formaPago` | no | `efectivo`, `transferencia`, `debito`, `credito` u `otro`. `null`/omitido = sin indicar. Todos los roles (no es un importe). Otro valor = 400 en `fields.formaPago`. |
-| `trabajadorId` | no | Quién lavó (perfil activo). Omitido = quien registra. El `empleado` solo puede ser él mismo (otro = 403). |
+| `trabajadorId` | no | **Compatibilidad** (el panel ya no lo manda): quién lo hizo (perfil activo). Omitido = quien registra. El `empleado` solo puede ser él mismo (otro = 403). No cambia `registradoPor`, que siempre es la sesión. |
 | `fecha` | no | `YYYY-MM-DD`, de hoy hasta 31 días atrás (hora de La Rioja). Omitida = hoy. Futura = 400. |
 | `franja` | no | `manana` o `tarde`. Omitida = según la hora (desde las 14 h, `tarde`). |
 | `nombre` | no | Cliente (hasta 80). Omitido = "Cliente de mostrador". |
@@ -777,9 +806,6 @@ curl -b cookies.txt -H "Origin: http://localhost:5173" -H "Content-Type: applica
     "cantidad": 4,
     "total": 32000,
     "sinMonto": 1,
-    "porTrabajador": [
-      { "trabajador": { "id": "<uuid>", "nombre": "Franco" }, "cantidad": 2, "total": 22000 }
-    ],
     "porFormaPago": [
       { "formaPago": "transferencia", "cantidad": 1, "total": 20000 },
       { "formaPago": "efectivo", "cantidad": 2, "total": 12000 },
@@ -789,10 +815,10 @@ curl -b cookies.txt -H "Origin: http://localhost:5173" -H "Content-Type: applica
 }
 ```
 
-`porTrabajador` va de quien lavó más a quien menos (a igual cantidad, más cobrado). `porFormaPago` es el **cierre de
+Ya no hay `resumen.porTrabajador` (contrato 2026-11-17_05: sin ranking; cada lavado trae `registradoPor`). `porFormaPago` es el **cierre de
 caja**: una entrada por forma de pago usada ese día (`null` = sin indicar), agrupada en SQL, de la que más se cobró a la
 que menos (empates: más lavados, después el orden efectivo, transferencia, debito, credito, otro y "sin indicar" al
-final). Para el `empleado`, `total` es `null` (en el resumen y en cada fila de los dos rankings) y los `monto` de los
+final). Para el `empleado`, `total` es `null` (en el resumen y en cada fila de `porFormaPago`) y los `monto` de los
 lavados también; para que el orden no revele lo cobrado, a él `porFormaPago` le llega ordenado por cantidad (mismos
 desempates). `formaPago` de cada lavado la ven todos los roles.
 
@@ -848,6 +874,7 @@ Los parámetros desconocidos se ignoran; uno inválido da `400` con `fields`. Re
       "turnosDelCliente": 1,
       "monto": null,
       "trabajador": null,
+      "registradoPor": null,
       "formaPago": null,
       "servicios": [ { "id": "pulido", "nombre": "Pulido", "precioLista": null } ],
       "createdAt": "2026-10-16T15:00:00.000Z",
@@ -860,7 +887,7 @@ Los parámetros desconocidos se ignoran; uno inválido da `400` con `fields`. Re
 
 **`servicios`** (`Array<{ id: string; nombre: string; precioLista: number | null }>`): los servicios del turno o lavado, en el orden elegido (1 a 10); el primero es el principal, el mismo que **`servicioId`** (que se mantiene). Un turno web o viejo trae uno solo. `precioLista` = el precio de lista de ese servicio para el vehículo **al momento de registrarlo** (una foto: no cambia si después se edita el catálogo); `null` si era "Consultá" o si el turno es anterior a la tabla, y **siempre `null` para `empleado`** (no recibe importes).
 
-**`monto`** (`integer | null`): pesos cobrados por el trabajo; solo en turnos `completado`. **Solo `admin` y `superadmin` lo reciben con valor: para `empleado` siempre es `null`.** **`trabajador`** (`{ "id", "nombre" } | null`): quién hizo el trabajo (`nombre` = el de la persona o, si no tiene, su email); `null` = sin asignar. Los dos aparecen en el listado, la agenda y la respuesta del PATCH; nunca en el seguimiento público.
+**`monto`** (`integer | null`): pesos cobrados por el trabajo; solo en turnos `completado`. **Solo `admin` y `superadmin` lo reciben con valor: para `empleado` siempre es `null`.** **`trabajador`** (`{ "id", "nombre" } | null`): quién hizo el trabajo; `null` = sin asignar. Sigue en el JSON, pero el panel ya no lo muestra. **`registradoPor`** (`{ "id", "nombre" } | null`): quién lo registró en el panel (columna `registrado_por`): en un lavado de mostrador, la sesión que lo cargó. `null` en los turnos de la web (o de alguien borrado antes de la migración `usuarios_baja`). Lo reciben **todos los roles**, también el `empleado` (es un nombre, no un importe). En los dos, `nombre` = el de la persona o, si no tiene, **la parte de su email antes de la @** (nunca el email entero, que también vería el empleado); a alguien dado de baja se lo sigue mostrando por su nombre. Aparecen en el listado, la agenda, la planilla, `POST /api/admin/lavados` y la respuesta del PATCH; nunca en el seguimiento público.
 
 `email`, `vehiculoModelo` y `comentario` pueden ser `null`. Los filtros se combinan entre sí; el orden sigue siendo más nuevos primero y `total` cuenta lo filtrado.
 
@@ -909,7 +936,7 @@ Body estricto con **al menos uno** de: `estado`, la pareja `fechaConfirmada` + `
 
 ### `GET /api/admin/trabajadores` (solo `admin` y `superadmin`)
 
-`200 { "trabajadores": [{ "id", "nombre", "rol" }] }`: las personas **activas** de cualquier rol, ordenadas por nombre (sin distinguir mayúsculas; `nombre` = el nombre o, si no tiene, el email). Para el selector "¿Quién lo hizo?". `empleado` => `403`.
+`200 { "trabajadores": [{ "id", "nombre", "rol" }] }`: las personas **activas** de cualquier rol, ordenadas por nombre (sin distinguir mayúsculas; `nombre` = el nombre o, si no tiene, la parte del email antes de la @, nunca el email entero; sin nombre ni email, *"Sin nombre"*). Para el selector "¿Quién lo hizo?". `empleado` => `403`.
 
 ### `GET /api/admin/estadisticas?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` (solo `admin` y `superadmin`)
 
@@ -928,24 +955,22 @@ Todo se agrupa por la **fecha de agenda** del turno (la confirmada si existe, si
                "ingresos": 1240000, "gastos": 310000, "gananciaNeta": 930000, "margen": 0.75, "ticketPromedio": 59048, "completadosSinMonto": 3, "tasaCancelacion": 0.1 },
   "serie": [ { "clave": "2026-10-01", "completados": 2, "ingresos": 80000, "gastos": 12500 } ],
   "porServicio": [ { "servicioId": "lavado-premium", "nombre": "Lavado Premium", "pedidos": 14, "completados": 10, "ingresos": 600000 } ],
-  "porTrabajador": [ { "id": "<uuid>", "nombre": "Lucas", "completados": 12, "ingresos": 560000 } ],
   "porDiaSemana": [ { "dia": 1, "manana": 5, "tarde": 3 } ],
-  "completadosSinTrabajador": 2,
   "gastosPorCategoria": [ { "categoria": "alquiler", "monto": 90000 } ]
 }
 ```
 
 - `resumen`: tarjetas fijas, **siempre con la fecha de hoy** (no dependen del rango): hoy contra ayer; este mes hasta hoy contra el mes pasado hasta el mismo día (con tope en el último día del mes más corto: el 31/03 se compara con el 28/02); este año hasta hoy contra el año pasado hasta el mismo día (el 29/02 se compara con el 28/02; si el año pasado fue bisiesto, incluye su 29/02). Siempre son números (0 si no hubo nada): el cambio porcentual lo calcula el frontend y no existe si `anterior` es 0.
 - `serie`: **todos** los días (o meses, `YYYY-MM`) del rango, con ceros donde no hubo nada. `granularidad` = `dia` hasta 62 días, `mes` con más.
-- `porServicio`: por `pedidos` descendente; incluye servicios activos sin pedidos (con 0); uno desactivado solo si tuvo pedidos. Cuenta desde `lavado_servicios`: un lavado con varios servicios suma un pedido (y un completado) en **cada** uno. Sus `ingresos` se reparten entre sus servicios en proporción a la foto de `precioLista` (si todos la tienen y suman más de 0) o, si no, en partes iguales: la suma por servicio da lo cobrado (salvo el redondeo de cada fila), sin contar dos veces un monto. `periodo`, `serie` y `porTrabajador` siguen contando turnos (un lavado = 1).
-- `porTrabajador`: por `completados` descendente; `id: null` y `nombre: "Sin asignar"` agrupa los completados sin trabajador (o cuya persona se borró). `completadosSinTrabajador` es esa misma cuenta.
+- `porServicio`: por `pedidos` descendente; incluye servicios activos sin pedidos (con 0); uno desactivado solo si tuvo pedidos. Cuenta desde `lavado_servicios`: un lavado con varios servicios suma un pedido (y un completado) en **cada** uno. Sus `ingresos` se reparten entre sus servicios en proporción a la foto de `precioLista` (si todos la tienen y suman más de 0) o, si no, en partes iguales: la suma por servicio da lo cobrado (salvo el redondeo de cada fila), sin contar dos veces un monto. `periodo` y `serie` siguen contando turnos (un lavado = 1).
+- **Sin ranking** (contrato 2026-11-17_05): ya no salen `porTrabajador` ni `completadosSinTrabajador`; la consulta se borró. Nada de esta respuesta compara personas.
 - `porDiaSemana`: siempre los 7 días (0 = domingo ... 6 = sábado), con los pedidos de mañana y tarde del rango.
 - `ticketPromedio` y `tasaCancelacion` son `null` si el denominador es 0.
 - **Gastos (objetivo 10):** `resumen.*.{actual,anterior}` suman `gastos` y `ganancia` (ingresos - gastos; puede ser negativa); `periodo` suma `gastos`, `gananciaNeta` y `margen` (gananciaNeta / ingresos, 4 decimales, `null` si los ingresos son 0); cada punto de `serie` suma `gastos`; `gastosPorCategoria` va por monto descendente y solo con categorías con gasto. Los gastos se agrupan por la **fecha del gasto** (criterio de caja) con agregaciones en SQL. `/estadisticas/mias` no cambia.
 
 ### `GET /api/admin/estadisticas/mias?desde&hasta` (todos los roles)
 
-Mismo rango y errores. `200 { "rango", "completados": N, "porServicio": [{ "servicioId", "nombre", "completados" }], "serie": [{ "clave", "completados" }] }` con los turnos que **esa persona** completó (`completados` cuenta turnos; `porServicio` cuenta cada servicio de cada turno) (por `trabajador_id`; la serie va por día hasta 62 días y por mes con más, con ceros). **Nunca lleva importes.**
+Mismo rango y errores. `200 { "rango", "completados": N, "porServicio": [{ "servicioId", "nombre", "completados" }], "serie": [{ "clave", "completados" }] }` con los turnos completados que **esa persona registró** (`registrado_por = yo`) y, de los que no tienen quién los registró (los turnos de la web), los que completó (`registrado_por IS NULL AND trabajador_id = yo`). `completados` cuenta turnos; `porServicio`, cada servicio de cada turno; la serie va por día hasta 62 días y por mes con más, con ceros. La consulta combina los índices parciales `bookings_registrado_por_idx` y `bookings_trabajador_id_idx` (BitmapOr; lo comprueba un EXPLAIN en `test/estadisticas.test.ts`), sin índice nuevo. **Nunca lleva importes.**
 
 ### `GET /api/admin/permisos` (requiere sesión; todos los roles)
 
@@ -999,39 +1024,104 @@ Body `{ "endpoint" }` => `204`, también si no existía (y también con los avis
 
 `204` sin body. `404 NOT_FOUND` si no existe. `403 FORBIDDEN` para `empleado` (*"Con tu rol no podés borrar turnos."*). Exige `Content-Type: application/json` aunque no lleve body.
 
-### `GET /api/admin/usuarios` (solo `superadmin`)
+### Gestión de usuarios (`/api/admin/usuarios`, `admin` y `superadmin`)
 
-`200`, los más viejos primero. `403 FORBIDDEN` (*"Solo un superadmin puede gestionar usuarios."*) para los otros roles.
+Contrato `reportes/2026-11-17_03_gestion-usuarios.md`. El superadmin gestiona a todos; el admin, solo a empleados (reglas 1 a 5 de [Roles y permisos](#roles-y-permisos-la-regla-vive-en-el-backend-la-ui-solo-esconde-botones)). El empleado recibe `403 FORBIDDEN` (*"Con tu rol no podés gestionar usuarios."*) en todas.
+
+#### Objeto `Usuario` (listado, alta, edición y baja)
 
 ```json
 {
-  "usuarios": [
-    {
-      "id": "5f0c2a3e-9b1d-4c7e-8a55-2d3f1e6b7a90",
-      "email": "lucia@ejemplo.com",
-      "nombre": "Lucía",
-      "rol": "empleado",
-      "activo": true,
-      "createdAt": "2026-10-18T15:00:00.000Z",
-      "updatedAt": "2026-10-18T15:00:00.000Z"
-    }
-  ]
+  "id": "5f0c2a3e-9b1d-4c7e-8a55-2d3f1e6b7a90",
+  "email": "lucia@ejemplo.com",
+  "nombre": "Lucía",
+  "rol": "empleado",
+  "activo": true,
+  "eliminadoAt": null,
+  "tieneHistorial": true,
+  "gestionable": true,
+  "fotoVersion": "2026-11-17T15:30:00.000Z",
+  "createdAt": "2026-10-18T15:00:00.000Z",
+  "updatedAt": "2026-10-18T15:00:00.000Z"
 }
 ```
 
-`email` y `nombre` pueden ser `null`. La respuesta trae además `"gestionCuentas": true | false`: `false` significa que falta `SUPABASE_SECRET_KEY` y no están disponibles el alta, la baja ni el cambio de email o contraseña. Los usuarios creados directamente en Supabase aparecen como `empleado` con `activo: false` hasta que un superadmin los active.
+- `eliminadoAt`: ISO 8601 si está dado de baja; si no, `null`.
+- `tieneHistorial`: aparece en algún turno o lavado (`trabajador_id` o `registrado_por`), gasto, movimiento de stock, presupuesto o comprobante. Se calcula en **una sola** consulta para todo el listado. Con historial, eliminar lo da de baja.
+- `gestionable`: si **quien pide** lo puede editar y eliminar (`puedeGestionarA`, y que no sea uno mismo ni esté dado de baja). Uno mismo aparece siempre con `false`.
+- `fotoVersion`: como en el usuario de la sesión (contrato 04). Los admins ven la foto de cada usuario del equipo en `GET /api/admin/usuarios/:id/foto?v=<fotoVersion>`.
+- `email`: el superadmin ve todos; el admin, el de los empleados y **el suyo propio** (cada uno ve siempre su email); de otros admins y superadmins le llega `null`. De un dado de baja, siempre `null` (el de Auth es `baja+<id>@buddys.invalid`). `nombre` puede ser `null`.
 
-### `POST /api/admin/usuarios` (solo `superadmin`)
+#### `GET /api/admin/usuarios`
 
-Body estricto: `email` (hasta 120 caracteres; se guarda en minúsculas), `password` (8 a 72 caracteres, máx. 72 bytes), `nombre` (opcional, como en el PATCH), `rol` y `activo`. Crea el usuario en Supabase Auth con el email confirmado y devuelve `201 { "usuario": { ... } }`. Errores: `400 VALIDATION_ERROR` (con `fields`; también si Supabase rechaza la contraseña por débil), `409 CONFLICT` (*"Ya existe un usuario con ese email."*), `503 SERVICE_UNAVAILABLE` (falta `SUPABASE_SECRET_KEY` o Supabase no responde), `429 RATE_LIMITED` (Supabase limitó los pedidos).
+`200 { "usuarios": Usuario[], "gestionCuentas": boolean }`, con **todos** los usuarios, incluidos los dados de baja, los más viejos primero (el buscador y los filtros son de la UI). `gestionCuentas: false` significa que falta `SUPABASE_SECRET_KEY` y no están disponibles el alta, la baja ni el cambio de email o contraseña. Los usuarios creados directamente en Supabase aparecen como `empleado` con `activo: false` hasta que alguien los active.
 
-### `PATCH /api/admin/usuarios/:id` (solo `superadmin`)
+#### `POST /api/admin/usuarios`
 
-Body estricto con al menos uno de: `rol` (`"superadmin" | "admin" | "empleado"`), `activo` (`boolean`), `nombre` (`string` de hasta 80 caracteres, una línea; `null` o `""` lo borran), `email` y `password` (mismas reglas que en el alta; se cambian en Supabase Auth y necesitan `SUPABASE_SECRET_KEY`). `200 { "usuario": { ...mismo objeto que el listado... } }`. Errores: `400 VALIDATION_ERROR` (campo desconocido, tipo inválido o body vacío), `404 NOT_FOUND` (usuario inexistente o id que no es UUID), `409 CONFLICT` (cambiar tu propio rol, desactivarte, dejar el sistema sin ningún superadmin activo o un email que ya usa otro), `403 FORBIDDEN` si no sos superadmin, `503` como en el alta. El cambio tiene efecto inmediato: el usuario afectado lo nota en su próximo pedido. Cambiar la contraseña no cierra las sesiones abiertas de esa persona: para cortarle el acceso, desactivala.
+Body estricto: `email` (hasta 120 caracteres; se guarda en minúsculas), `password` (8 a 72 caracteres, máx. 72 bytes), `nombre` (opcional, como en el PATCH), `rol` y `activo`. Crea el usuario en Supabase Auth con el email confirmado y devuelve `201 { "usuario": Usuario }`. Errores: `400 VALIDATION_ERROR` (con `fields`; también si Supabase rechaza la contraseña por débil), `403 FORBIDDEN` (un admin con un `rol` que no es `empleado`: *"Con tu rol solo podés crear y editar empleados."*), `409 CONFLICT` (*"Ya existe un usuario con ese email."*), `503 SERVICE_UNAVAILABLE` (falta `SUPABASE_SECRET_KEY` o Supabase no responde), `429 RATE_LIMITED` (Supabase limitó los pedidos). Riesgo aceptado: por el `409` un admin puede saber si un email ya tiene cuenta. Es inherente al alta (el email tiene que ser único y hay que avisarlo) y el pedido queda logueado con el id de quien lo hizo (sin el email).
 
-### `DELETE /api/admin/usuarios/:id` (solo `superadmin`)
+#### `PATCH /api/admin/usuarios/:id`
 
-`204` sin body. Borra el usuario de Supabase Auth; su perfil y sus sesiones se borran en cascada (si tenía una sesión abierta, su siguiente pedido recibe `403 NO_ACCESS`). Errores: `404 NOT_FOUND`, `409 CONFLICT` (*"No podés eliminar tu propio usuario."*), `403 FORBIDDEN` si no sos superadmin, `503` como en el alta. No se puede deshacer: si solo querés sacarle el acceso, desactivalo.
+Body estricto con al menos uno de: `rol` (`"superadmin" | "admin" | "empleado"`), `activo` (`boolean`), `nombre` (`string` de hasta 80 caracteres, una línea; `null` o `""` lo borran), `email` y `password` (mismas reglas que en el alta; se cambian en Supabase Auth y necesitan `SUPABASE_SECRET_KEY`). `200 { "usuario": Usuario }`. Errores: `400 VALIDATION_ERROR` (campo desconocido, tipo inválido o body vacío), `404 NOT_FOUND` (usuario inexistente o id que no es UUID), `403 FORBIDDEN` (reglas 2 y 3), `409 CONFLICT` (cambiar tu propio rol, desactivarte, dejar el sistema sin ningún superadmin activo, un email que ya usa otro, o un usuario dado de baja: *"Ese usuario está dado de baja."*), `503` como en el alta. El cambio tiene efecto inmediato: el usuario afectado lo nota en su próximo pedido. **Cambiarle la contraseña o el email a otra persona le cierra todas sus sesiones** (`buddys_private.cerrar_sesiones`, migración `cerrar_sesiones_usuario`): en su pedido siguiente recibe `401` y tiene que entrar con los datos nuevos. Si cambiás tu propia contraseña por acá, tu sesión actual sigue abierta. Si cerrar las sesiones falla en la base, el cambio igual responde `200` y queda un error en el log (sigue valiendo el tope de 12 h por sesión). La regla 2 se vuelve a comprobar al escribir: el `UPDATE` solo toca el perfil si su rol sigue siendo uno que podés gestionar; si en el medio lo ascendieron, `403` (si lo dieron de baja, `409`; si lo borraron, `404`), y email y contraseña solo se cambian en Auth si el perfil escrito sigue siendo gestionable.
+
+#### `DELETE /api/admin/usuarios/:id`
+
+`200` con body:
+
+- Sin historial: se borra de Supabase Auth (perfil y sesiones en cascada; si tenía una sesión abierta, su siguiente pedido recibe `401`): `{ "resultado": "eliminado" }`. Justo antes de borrarlo en Auth se relee el perfil: si en el medio lo ascendieron a un rol que no gestionás, `403` y no se borra (la fila no se puede bloquear mientras GoTrue la borra desde otra conexión: queda una ventana mínima entre la relectura y el borrado).
+- Con historial (o si la base frena el borrado porque en el medio le registraron algo: FK `ON DELETE RESTRICT`; GoTrue responde 500 sin el SQLSTATE y el backend vuelve a mirar el historial): **baja**, `{ "resultado": "baja", "usuario": Usuario }`.
+
+Pasos de la baja, en un orden pensado para que un fallo deje las cosas seguras: (1) en una transacción, solo si su rol sigue siendo uno que podés gestionar (`FOR UPDATE`; si no, `403`): `activo = false`, `eliminado_at = now()`, si `nombre` es `null` **la parte de su email antes de la @** (recortada a 80; si queda vacía, *"Usuario dado de baja"*; nunca el email entero) y se le borran las sesiones (`buddys_private.cerrar_sesiones`); desde acá ya no entra (su sesión abierta recibe `401`). (2) En Supabase Auth (`PUT /admin/users/:id`): email `baja+<id>@buddys.invalid` confirmado y `ban_duration: "876000h"`. (3) Si el paso 2 falla, se deshacen `eliminado_at` y el nombre (queda **inactivo**, sin acceso) y se responde `503` *"No pudimos terminar la baja en el servicio de usuarios. Quedó desactivado; probá eliminarlo de nuevo en unos minutos."*
+
+**La foto de perfil se borra** (contrato 04): eliminado, se borra el objeto de Storage (el perfil se va en cascada); dado de baja, **primero** su `fotoVersion` queda en `null` (aunque Storage esté caído: la foto deja de servirse) y después se borra el objeto. Si Storage falla, la baja sigue y el objeto huérfano queda solo en el log, con el id (*"... el objeto avatares/<id>.webp queda huérfano"*); el bucket es privado y la API no sirve fotos sin `fotoVersion`.
+
+Errores: `404 NOT_FOUND`, `403 FORBIDDEN` (regla 2), `409 CONFLICT` (eliminarte a vos mismo, dejar el sistema sin superadmin activo, o ya dado de baja), `503` (falta `SUPABASE_SECRET_KEY` o falla Supabase). Logs: solo ids y `resultado` (nada de emails). Un dado de baja no aparece en `GET /api/admin/trabajadores` (solo activos), pero sus lavados, turnos, gastos, movimientos y documentos siguen mostrando su nombre.
+
+### Mi perfil y foto de perfil (`/api/admin/perfil`, todos los roles)
+
+Contrato `reportes/2026-11-17_04_perfil-y-foto.md`. Capacidad `perfil.editar` (`puedeEditarPerfil`). El perfil tiene la misma forma que el usuario de la sesión: `{ id, email, nombre, rol, fotoVersion }`. Servicio: `services/perfil.ts`; rutas: `routes/admin-perfil.ts`.
+
+#### `GET /api/admin/perfil`
+
+`200 { "perfil": {...}, "fotosDisponibles": boolean }`. `fotosDisponibles: false` = falta `SUPABASE_SECRET_KEY`: la UI esconde subir y quitar la foto.
+
+#### `PATCH /api/admin/perfil`
+
+Body estricto con al menos uno de: `nombre` (como en usuarios: 1 a 80, una línea; `null` o `""` lo borran) y `passwordActual` + `passwordNueva` (van juntas; `passwordNueva` con las reglas del alta: 8 a 72 caracteres, máx. 72 bytes). `200 { "perfil": {...} }`. El nombre nuevo sale en el siguiente `/api/auth/me`.
+
+Contraseña: se verifica la actual con un `grant_type=password` contra Supabase Auth con el email de la sesión; si sale bien, **la sesión que abrió esa verificación se cierra enseguida** (`logout?scope=local` con su token) y después se cambia con la API admin (`PUT /admin/users/:id`). La sesión actual sigue abierta y **las otras sesiones de esa persona se cierran** (`buddys_private.cerrar_otras_sesiones` con el `session_id` del JWT, migración `cerrar_otras_sesiones_bucket`): en su pedido siguiente reciben `401`. Si cerrarlas falla en la base, el cambio igual responde `200` y queda un error en el log solo con ids (sigue valiendo el tope de 12 h por sesión). Errores:
+
+- `400 VALIDATION_ERROR`: falta una de las dos (`fields.passwordActual` o `fields.passwordNueva`); la actual no es correcta (`fields.passwordActual`: *"La contraseña actual no es correcta."*); Supabase rechaza la nueva por débil (`fields.passwordNueva`); campo desconocido o body vacío.
+- `429 RATE_LIMITED`: más de **5 intentos de contraseña cada 15 minutos por usuario** (correctos o no; `rateLimits.perfilPassword`, contado por id de usuario, no por IP). Cambiar solo el nombre no cuenta.
+- `503 SERVICE_UNAVAILABLE`: Supabase no responde o falta `SUPABASE_SECRET_KEY` (solo para la contraseña).
+
+#### `PUT /api/admin/perfil/foto`
+
+El body es **la imagen tal cual** (nada de multipart ni base64), con `Content-Type: image/jpeg`, `image/png` o `image/webp` (otro tipo: `415`). `express.raw` de **2 MB** solo en esta ruta: más grande, `413 PAYLOAD_TOO_LARGE` *"La foto pesa más de 2 MB. Elegí una más liviana."*. Validación (`procesarFoto`):
+
+1. Los primeros bytes tienen que coincidir con el `Content-Type` (`FF D8 FF` JPG; `89 50 4E 47 0D 0A 1A 0A` PNG; `RIFF....WEBP` WebP).
+2. `sharp` la tiene que decodificar con `limitInputPixels` de 40 MP y `failOn: 'error'`, en el formato declarado y **sin animación** (más de un cuadro se rechaza).
+3. `.rotate()` (orientación del EXIF), `resize(256, 256, { fit: 'cover' })` y `webp({ quality: 80 })`, **sin** `withMetadata()`: no queda EXIF, GPS ni perfil ICC.
+
+Si algo falla: `400 VALIDATION_ERROR` con `fields.foto` *"Subí una foto JPG, PNG o WebP."*. Límites (auditoría del objetivo B, B1): **10 subidas cada 15 minutos por usuario** (`rateLimits.perfilFoto`, por id de usuario, salgan bien o no): la 11 responde `429 RATE_LIMITED` *"Subiste demasiadas fotos seguidas. Esperá unos minutos antes de volver a probar."*; el límite va **antes** de `express.raw`, así un pedido limitado no se lee. Además, `procesarFoto` re-codifica **como mucho 2 fotos a la vez** en todo el proceso (`semaforoFotos`, `src/lib/semaforo.ts`): las demás esperan su turno en orden, no se rechazan (la firma se mira antes de esperar). Se sube a Storage (`avatares/<id>.webp`, `x-upsert: true`) y recién después se pone `foto_actualizada_at = now()`: `200 { "perfil": {...} }` con la `fotoVersion` nueva. `503` si falta la clave o Storage falla (el perfil no cambia).
+
+#### `DELETE /api/admin/perfil/foto`
+
+Borra el objeto en Storage y pone `foto_actualizada_at = null`: `200 { "perfil": {...} }`, también si no tenía foto. `503` si falta la clave o Storage falla.
+
+#### `GET /api/admin/usuarios/:id/foto`
+
+La propia, cualquier rol; la de otro, solo admin y superadmin (`puedeGestionarUsuarios`); el empleado pidiendo la de otro: `403` (exista o no). Se monta antes del router de usuarios. `200 image/webp` con:
+
+- `Cache-Control: private, max-age=86400, immutable` si `?v=` es la versión actual; si no, `private, no-cache`.
+- `ETag: "<fotoVersion>"` y `304` si coincide `If-None-Match`.
+- `X-Content-Type-Options: nosniff` y `Content-Security-Policy: default-src 'none'` (es una imagen, nunca un documento).
+
+`404` si no existe, no tiene foto o el objeto no está en Storage (eso último queda en el log).
+
+#### Storage desde el backend
+
+`src/lib/supabase-storage.ts` (`SupabaseStorageClient`): `POST /storage/v1/object/avatares/<id>.webp` con `x-upsert: true`, `GET` y `DELETE`, con `fetch` inyectable (`storageFetch` en `createApp`), 10 s de timeout y errores tipados (`StorageUnavailableError`, sin URL, claves ni cuerpos). Va con la **secret key solo en la cabecera `apikey`**: según la documentación de Supabase (*API keys*, "Known limitations"), las claves `sb_secret_...` no son JWT y no se mandan en `Authorization: Bearer`; el gateway arma el `Authorization` a partir del `apikey`. Un objeto inexistente se reconoce por `404` o por el `400 { statusCode: "404" }` de la API de Storage. El bucket `avatares` es privado y sin policies: solo entra la secret key. En los tests, `test/storage-fake.ts` (en memoria). Al arrancar, `verifyPostgresSchema` exige `perfiles.foto_actualizada_at`.
 
 ### Objeto `Servicio` (catálogo)
 
@@ -1318,7 +1408,7 @@ Igual que en desarrollo: los usuarios se crean en el panel de Supabase y se acti
 - **Contraseñas y sesiones**: las maneja **Supabase Auth** (el backend no guarda contraseñas). El backend verifica cada access token con `jose` contra el JWKS del proyecto con el algoritmo (**ES256**), emisor, audiencia y vencimiento **fijados**; exige `sub`/`session_id` UUID, `role = authenticated` y no anónimo. Los tokens viajan solo en cookies `HttpOnly; SameSite=Strict` (`Secure` en producción); el refresh token solo a `/api/auth`. Cada request comprueba en la base que la sesión siga en `auth.sessions` y que el perfil esté activo: **logout, desactivación y cambio de rol son inmediatos**.
 - **Autorización**: por rol en el backend (`domain/permisos.ts`), no en la UI. Usuarios nuevos nacen inactivos.
 - **CSRF**: `SameSite=Strict` + chequeo de `Origin` + `Content-Type: application/json` obligatorio en métodos que modifican.
-- **Rate limits**: general por IP, 5 turnos / 15 min, 5 logins fallidos / 15 min, 60 consultas de seguimiento / 15 min (más los límites propios de Supabase Auth).
+- **Rate limits**: general por IP, 5 turnos / 15 min, 5 logins fallidos / 15 min, 60 consultas de seguimiento / 15 min, 30 PDF / min, y por usuario 5 intentos de cambiar la propia contraseña / 15 min y 10 subidas de foto / 15 min (más los límites propios de Supabase Auth). La re-codificación de fotos corre de a 2 a la vez como mucho.
 - **Endpoint interno de recordatorios**: `Bearer <CRON_SECRET>` comparado en tiempo constante (`timingSafeEqual` sobre los sha256, así tampoco depende del largo), secreto de al menos 32 caracteres; sin la variable, `404`. Pasa por el mismo control de `Origin` y `Content-Type` que el resto.
 - **Seguimiento público**: solo campos sin datos personales, `404` igual para inexistente e inválido, UUID aleatorio (122 bits), rate limit propio y `noindex`.
 - **Último lugar**: el alta pública bloquea la fecha con `pg_advisory_xact_lock` dentro de la transacción del `INSERT` (sin carreras). Con mucha contención, el `lock_timeout` de 5 s de `buddys_app` puede cortar una espera (`500`); para un taller no pasa.
@@ -1370,6 +1460,7 @@ Los tests usan un reloj fijo, **PGlite** (Postgres compilado a WebAssembly, en m
 
 - `auth.test.ts`: login, cookies, credenciales inválidas, usuario inactivo o sin perfil, Supabase caído o limitando, refresh, refresh reutilizado, logout (el token viejo deja de servir), tokens manipulados (otra clave, HS256, `none`, `iss`/`aud` ajenos, anónimo, sesión inexistente), vencido sin refresh, desactivación y cambio de rol con la sesión abierta.
 - `usuarios.test.ts`: matriz de roles sobre los turnos y gestión de usuarios (listar, activar, no degradarse, nunca sin superadmin, validación).
+- `perfil.test.ts` (contrato 04): `GET`/`PATCH /api/admin/perfil` (los tres roles, nombre reflejado en `/api/auth/me`, validación estricta), contraseña (actual incorrecta `400`, correcta con la sesión de verificación cerrada y la sesión actual abierta, débil, `429` por usuario, Supabase caído y sin `SUPABASE_SECRET_KEY` `503`), foto (JPG, PNG y WebP reales generadas con sharp → WebP 256×256; JPG con EXIF y GPS → salida sin metadatos; PNG como JPG, HTML y SVG renombrados, GIF y WebP animados, JPG cortada `400`; 48 MP `400`; 3 MB `413`; `text/plain`, `image/gif` y `image/svg+xml` `415`; excepción del CSRF solo en esa ruta y método; Origin; Storage caído `503`), quitarla, acceso a la foto (uno mismo, admin y superadmin `200`, empleado con la de otro `403`, sin foto `404`, `304` con ETag, `nosniff`, CSP y `Cache-Control` según `?v=`), baja y eliminación que borran la foto (con Storage caído la versión igual queda en `null`), cambiar la contraseña cierra las otras sesiones (la otra da `401`, la actual sigue; si la base falla, `200` y log), y `verifyPostgresSchema`. Storage falso en memoria: `test/storage-fake.ts`. `perfil-limites.test.ts` suma el `429` de la foto (antes de leer el cuerpo) y el semáforo de `procesarFoto`; `migracion-cerrar-otras-sesiones-bucket.test.ts`, la función y el bucket con un `storage.buckets` simulado.
 - `postgres.test.ts`: RLS y privilegios de `anon`/`authenticated`/`service_role` y de `buddys_app`, trigger de `auth.users`, CHECK y `updated_at`, CHECK de la agenda (fecha y franja confirmadas juntas) e índice `bookings_agenda_idx`, verificación del esquema y `/api/health` con Postgres caído.
 - `repositories.contract.test.ts`: turnos (incluida la agenda y la reprogramación, con `TurnoCerradoError`), perfiles y servicios (backfill, alta al final, id repetido, varios destacados, duración por vehículo, edición parcial, reordenamiento y CHECK de la base) sobre Postgres como `buddys_app`.
 - `agenda.test.ts`: `GET /api/admin/agenda` (roles, campos exactos, orden fecha/franja/llegada, sin cancelados, rango inclusivo, tope de 42 días, validaciones, fin de mes y de año, bisiesto) y `PATCH` con fecha/franja confirmadas (permisos, "juntas", rango hoy a hoy + 120 en hora de La Rioja, turnos cerrados, volver a la pedida, turno viejo que conserva su fecha).
@@ -1439,7 +1530,7 @@ Se arma en el backend con `pdfkit` (única dependencia nueva, más sus tipos) a 
 | Tabla | Para qué | Restricciones |
 |---|---|---|
 | `insumos` | Insumos con stock decimal | `stock numeric(12,2)` CHECK 0 a 9.999.999,99; `stock_minimo` 0 a 999.999; `costo_unitario` entero 0 a 99.999.999 o null; `unidad` CHECK (7 valores); índice único parcial `lower(btrim(nombre)) WHERE activo`. `buddys_app`: SELECT, INSERT y UPDATE por columna (sin DELETE). |
-| `movimientos_stock` | Historial inmutable | `insumo_id` FK `RESTRICT`; `tipo` CHECK; `cantidad` con signo (CHECK por tipo: compra > 0, uso < 0, ajuste <> 0); `costo_total`/`proveedor`/`gasto_id` solo en compras; `nota` <= 200; `turno_id`, `perfil_id` `ON DELETE SET NULL`; `gasto_id` único `SET NULL`. `buddys_app`: SELECT e INSERT. |
+| `movimientos_stock` | Historial inmutable | `insumo_id` FK `RESTRICT`; `tipo` CHECK; `cantidad` con signo (CHECK por tipo: compra > 0, uso < 0, ajuste <> 0); `costo_total`/`proveedor`/`gasto_id` solo en compras; `nota` <= 200; `turno_id` `ON DELETE SET NULL`, `perfil_id` `ON DELETE RESTRICT` (desde `usuarios_baja`); `gasto_id` único `SET NULL`. `buddys_app`: SELECT e INSERT. |
 | `presupuestos` | Presupuestos | `numero` identidad única; `items jsonb` validado por `buddys.presupuesto_items_validos` (IMMUTABLE: 1 a 30 ítems con claves exactas); `total` 0 a 999.999.999; `validez_dias` 1 a 90; `estado` CHECK; `cliente_telefono` 8 a 15 dígitos. `buddys_app`: SELECT, DELETE, INSERT/UPDATE por columna (nunca `id` ni `numero`). |
 | `comprobantes` | Comprobantes de pago | `numero` identidad única; `booking_id` único, FK `RESTRICT`; `forma_pago` CHECK; foto de nombre/servicio/vehículo/monto. `buddys_app`: SELECT e INSERT (sin UPDATE ni DELETE). |
 

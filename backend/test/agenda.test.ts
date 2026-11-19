@@ -34,6 +34,7 @@ const CAMPOS_TURNO = [
   'nombre',
   'notasInternas',
   'origen',
+  'registradoPor',
   'servicioId',
   'servicios',
   'telefono',

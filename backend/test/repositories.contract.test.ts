@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { type NewBooking, TurnoCerradoError } from '../src/domain/booking.js';
 import { DestacadoInactivoError, type NuevoServicio, OrdenInvalidoError, ServicioExisteError } from '../src/domain/servicios.js';
-import { SinSuperadminError } from '../src/domain/perfil.js';
+import { ROLES, SinSuperadminError } from '../src/domain/perfil.js';
 import { type Repositories, createPostgresRepositories } from '../src/repositories/index.js';
 import { NOW } from './helpers.js';
 import { type PgliteDatabase, createPgliteDatabase } from './pglite.js';
@@ -71,6 +71,7 @@ describe('turnos', () => {
       turnosDelCliente: 1,
       monto: null,
       trabajador: null,
+      registradoPor: null,
       formaPago: null,
       // El trigger bookings_servicio_principal le dio su fila en lavado_servicios (pulido: "Consultá").
       servicios: [{ id: 'pulido', nombre: 'Pulido', precioLista: null }],
@@ -220,6 +221,8 @@ describe('perfiles', () => {
         nombre: null,
         rol: 'admin',
         activo: true,
+        eliminadoAt: null,
+        fotoVersion: null,
         createdAt: expect.stringMatching(/Z$/),
         updatedAt: expect.stringMatching(/Z$/),
       },
@@ -233,6 +236,14 @@ describe('perfiles', () => {
 
     expect(await repositories.perfiles.findForSession('no-es-un-uuid', sessionId)).toBeUndefined();
     expect(await repositories.perfiles.findForSession('22222222-2222-4222-8222-222222222222', sessionId)).toBeUndefined();
+
+    // setFoto: la versión de la foto (contrato 04). null la borra; id inexistente o mal formado => undefined.
+    const conFoto = await repositories.perfiles.setFoto(id, new Date('2026-10-16T15:30:00.000Z'));
+    expect(conFoto?.fotoVersion).toBe('2026-10-16T15:30:00.000Z');
+    expect((await repositories.perfiles.list()).find((p) => p.id === id)?.fotoVersion).toBe('2026-10-16T15:30:00.000Z');
+    expect((await repositories.perfiles.setFoto(id, null))?.fotoVersion).toBeNull();
+    expect(await repositories.perfiles.setFoto('22222222-2222-4222-8222-222222222222', null)).toBeUndefined();
+    expect(await repositories.perfiles.setFoto('no-es-un-uuid', null)).toBeUndefined();
   });
 
   it('update cambia solo lo indicado, borra el nombre con null y no deja el sistema sin superadmin activo', async () => {
@@ -241,23 +252,112 @@ describe('perfiles', () => {
     const ana = await usuario(db, 'ana@buddys.test');
     const later = new Date('2026-10-17T10:30:00.000Z');
 
-    expect(await repositories.perfiles.update(ana, { nombre: 'Ana', activo: true }, later)).toMatchObject({
+    expect(await repositories.perfiles.update(ana, { nombre: 'Ana', activo: true }, later, ROLES)).toMatchObject({
       rol: 'empleado',
       activo: true,
       nombre: 'Ana',
       updatedAt: later.toISOString(),
     });
-    expect(await repositories.perfiles.update(ana, { nombre: null }, later)).toMatchObject({ nombre: null, activo: true });
-    expect(await repositories.perfiles.update('22222222-2222-4222-8222-222222222222', { activo: true }, later)).toBeUndefined();
+    expect(await repositories.perfiles.update(ana, { nombre: null }, later, ROLES)).toMatchObject({ nombre: null, activo: true });
+    expect(await repositories.perfiles.update('22222222-2222-4222-8222-222222222222', { activo: true }, later, ROLES)).toBeUndefined();
 
-    await expect(repositories.perfiles.update(jefe, { rol: 'admin' }, later)).rejects.toBeInstanceOf(SinSuperadminError);
-    await repositories.perfiles.update(ana, { rol: 'superadmin' }, later);
-    expect(await repositories.perfiles.update(jefe, { activo: false }, later)).toMatchObject({ activo: false });
+    await expect(repositories.perfiles.update(jefe, { rol: 'admin' }, later, ROLES)).rejects.toBeInstanceOf(SinSuperadminError);
+    await repositories.perfiles.update(ana, { rol: 'superadmin' }, later, ROLES);
+    expect(await repositories.perfiles.update(jefe, { activo: false }, later, ROLES)).toMatchObject({ activo: false });
 
     expect((await repositories.perfiles.list()).map((perfil) => perfil.email)).toEqual([
       'jefe@buddys.test',
       'ana@buddys.test',
     ]);
+  });
+
+  it('list y tieneHistorial: historial por turnos, gastos y demás, en una sola consulta para todo el listado', async () => {
+    const { repositories, db } = await open();
+    const ana = await usuario(db, 'ana@buddys.test', 'empleado', true);
+    const beto = await usuario(db, 'beto@buddys.test', 'empleado', true);
+    await db.sql.query(
+      `INSERT INTO buddys.bookings (nombre, telefono, vehiculo_tipo, servicio_id, fecha_preferida, franja, estado, trabajador_id)
+       VALUES ('Cliente', '12345678', 'auto', 'pulido', '2026-10-16', 'manana', 'completado', $1::uuid)`,
+      [ana],
+    );
+    expect((await repositories.perfiles.list()).map((p) => [p.email, p.tieneHistorial])).toEqual([
+      ['ana@buddys.test', true],
+      ['beto@buddys.test', false],
+    ]);
+    expect(await repositories.perfiles.tieneHistorial(ana)).toBe(true);
+    expect(await repositories.perfiles.tieneHistorial(beto)).toBe(false);
+    expect(await repositories.perfiles.tieneHistorial('no-es-un-uuid')).toBe(false);
+  });
+
+  it('darDeBaja: inactivo, eliminado_at y la parte del email antes de la @ como nombre si no tenía; revertirBaja lo deja inactivo y sin baja', async () => {
+    const { repositories, db } = await open();
+    const jefe = await usuario(db, 'jefe@buddys.test', 'superadmin', true);
+    const largo = `${'x'.repeat(90)}@buddys.test`;
+    const ana = await usuario(db, largo, 'empleado', true);
+    const later = new Date('2026-10-17T10:30:00.000Z');
+
+    const baja = await repositories.perfiles.darDeBaja(ana, later, ROLES);
+    expect(baja).toEqual({
+      perfil: expect.objectContaining({ id: ana, activo: false, eliminadoAt: later.toISOString(), nombre: largo.slice(0, 80) }),
+      nombreAnterior: null,
+    });
+    // Ya dado de baja: ni otra baja ni edición.
+    expect(await repositories.perfiles.darDeBaja(ana, later, ROLES)).toBeUndefined();
+    expect(await repositories.perfiles.update(ana, { nombre: 'Otra' }, later, ROLES)).toBeUndefined();
+    // Un dado de baja nunca está activo (CHECK de la migración usuarios_baja).
+    await expect(db.appSql.query('UPDATE buddys.perfiles SET activo = true WHERE id = $1::uuid', [ana])).rejects.toThrow();
+
+    expect(await repositories.perfiles.revertirBaja(ana, null, later)).toMatchObject({ activo: false, eliminadoAt: null, nombre: null });
+    expect(await repositories.perfiles.darDeBaja('22222222-2222-4222-8222-222222222222', later, ROLES)).toBeUndefined();
+
+    // El último superadmin activo no se da de baja (trigger impedir_sin_superadmin).
+    await expect(repositories.perfiles.darDeBaja(jefe, later, ROLES)).rejects.toBeInstanceOf(SinSuperadminError);
+    expect(await repositories.perfiles.findById(jefe)).toMatchObject({ activo: true, eliminadoAt: null });
+  });
+
+  it('update y darDeBaja solo escriben si el rol sigue siendo gestionable (TOCTOU); la baja cierra sus sesiones', async () => {
+    const { repositories, db } = await open();
+    await usuario(db, 'jefe@buddys.test', 'superadmin', true);
+    const ana = await usuario(db, 'ana@buddys.test', 'admin', true);
+    const beto = await usuario(db, 'beto@buddys.test', 'empleado', true);
+    const later = new Date('2026-10-17T10:30:00.000Z');
+    const soloEmpleados = ['empleado'] as const;
+
+    // Ana es admin: quien solo gestiona empleados no la toca, ni la edita ni la da de baja.
+    expect(await repositories.perfiles.update(ana, { nombre: 'Ana', activo: false }, later, soloEmpleados)).toBeUndefined();
+    expect(await repositories.perfiles.darDeBaja(ana, later, soloEmpleados)).toBeUndefined();
+    expect(await repositories.perfiles.findById(ana)).toMatchObject({ nombre: null, activo: true, eliminadoAt: null });
+
+    // Beto es empleado: sí. El rol que se mira es el de antes del cambio.
+    expect(await repositories.perfiles.update(beto, { nombre: 'Beto' }, later, soloEmpleados)).toMatchObject({ nombre: 'Beto' });
+    for (const sesion of ['33333333-3333-4333-8333-333333333331', '33333333-3333-4333-8333-333333333332']) {
+      await db.sql.query('INSERT INTO auth.sessions (id, user_id) VALUES ($1::uuid, $2::uuid)', [sesion, beto]);
+    }
+    await db.sql.query('INSERT INTO auth.sessions (id, user_id) VALUES ($1::uuid, $2::uuid)', ['33333333-3333-4333-8333-333333333333', ana]);
+    expect(await repositories.perfiles.darDeBaja(beto, later, soloEmpleados)).toMatchObject({ perfil: { nombre: 'Beto' } });
+    const { rows } = await db.sql.query('SELECT user_id::text AS user_id FROM auth.sessions');
+    expect(rows).toEqual([{ user_id: ana }]);
+
+    expect(await repositories.perfiles.cerrarSesiones(ana)).toBe(1);
+    expect(await repositories.perfiles.cerrarSesiones(ana)).toBe(0);
+    expect(await repositories.perfiles.cerrarSesiones('no-es-un-uuid')).toBe(0);
+
+    // Cerrar las OTRAS sesiones (cambio de la propia contraseña): la actual queda, las de los demás también.
+    const [actual, otra1, otra2, deBeto] = [
+      '44444444-4444-4444-8444-444444444441',
+      '44444444-4444-4444-8444-444444444442',
+      '44444444-4444-4444-8444-444444444443',
+      '44444444-4444-4444-8444-444444444444',
+    ];
+    for (const [sesion, user] of [[actual, ana], [otra1, ana], [otra2, ana], [deBeto, beto]] as const) {
+      await db.sql.query('INSERT INTO auth.sessions (id, user_id) VALUES ($1::uuid, $2::uuid)', [sesion, user]);
+    }
+    expect(await repositories.perfiles.cerrarOtrasSesiones(ana, actual)).toBe(2);
+    expect(await repositories.perfiles.cerrarOtrasSesiones(ana, actual)).toBe(0);
+    expect(await repositories.perfiles.cerrarOtrasSesiones(ana, 'no-es-un-uuid')).toBe(0);
+    expect(await repositories.perfiles.cerrarOtrasSesiones('no-es-un-uuid', actual)).toBe(0);
+    const { rows: quedan } = await db.sql.query('SELECT id::text AS id FROM auth.sessions ORDER BY id');
+    expect(quedan).toEqual([{ id: actual }, { id: deBeto }]);
   });
 });
 

@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import sharp from 'sharp';
 import { afterEach, describe, expect, it } from 'vitest';
 import { BACKEND_ROOT } from '../src/config.js';
 import { type TestContext, addUser, closeAllContexts, createClient, createTestContext, loginClient } from './helpers.js';
@@ -42,7 +43,9 @@ describe('flujo completo: cobro, estadísticas, empleado, baja de la persona y v
     expect(r1.status).toBe(200);
     let s = await stats();
     expect(s.periodo).toMatchObject({ completados: 1, ingresos: 60000, ticketPromedio: 60000, completadosSinMonto: 0 });
-    expect(s.porTrabajador).toEqual([{ id: carla, nombre: 'Carla', completados: 1, ingresos: 60000 }]);
+    // Sin ranking (contrato 2026-11-17_05): las estadísticas no comparan personas.
+    expect(s).not.toHaveProperty('porTrabajador');
+    expect(s).not.toHaveProperty('completadosSinTrabajador');
     expect(s.resumen.hoy.actual).toEqual({ completados: 1, ingresos: 60000, gastos: 0, ganancia: 60000 });
 
     // 2. el empleado completa otro: queda él, sin monto
@@ -51,7 +54,6 @@ describe('flujo completo: cobro, estadísticas, empleado, baja de la persona y v
     expect(r2.body.booking).toMatchObject({ monto: null, trabajador: { id: beto, nombre: 'Beto' } });
     s = await stats();
     expect(s.periodo).toMatchObject({ completados: 2, ingresos: 60000, completadosSinMonto: 1, ticketPromedio: 60000 });
-    expect(s.porTrabajador.map((f: { nombre: string }) => f.nombre).sort()).toEqual(['Beto', 'Carla']);
     const mias = (await empleado.get('/api/admin/estadisticas/mias')).body;
     expect(mias.completados).toBe(1);
     expect(mias.porServicio).toEqual([{ servicioId: 'encerado', nombre: 'Encerado', completados: 1 }]);
@@ -62,16 +64,14 @@ describe('flujo completo: cobro, estadísticas, empleado, baja de la persona y v
     expect(r3.status).toBe(200);
     s = await stats();
     expect(s.periodo).toMatchObject({ ingresos: 100000, completadosSinMonto: 0, ticketPromedio: 50000 });
-    expect(s.completadosSinTrabajador).toBe(0);
 
-    // 4. se borra a Carla: su trabajo queda "Sin asignar" y no se pierde el ingreso
-    await context.db.sql.query('DELETE FROM auth.users WHERE id = $1::uuid', [carla]);
+    // 4. Carla no se puede borrar (tiene trabajos: FK RESTRICT); se la da de baja y su trabajo sigue con su nombre
+    await expect(context.db.sql.query('DELETE FROM auth.users WHERE id = $1::uuid', [carla])).rejects.toMatchObject({ code: '23001' });
+    await context.db.sql.query('UPDATE buddys.perfiles SET activo = false, eliminado_at = now() WHERE id = $1::uuid', [carla]);
     s = await stats();
-    expect(s.periodo.ingresos).toBe(100000);
-    expect(s.porTrabajador).toContainEqual({ id: null, nombre: 'Sin asignar', completados: 1, ingresos: 60000 });
-    expect(s.completadosSinTrabajador).toBe(1);
+    expect(s.periodo).toMatchObject({ completados: 2, ingresos: 100000 });
     const lista = (await admin.get('/api/admin/bookings')).body.bookings as { id: string; monto: number | null; trabajador: unknown }[];
-    expect(lista.find((b) => b.id === t1)).toMatchObject({ monto: 60000, trabajador: null });
+    expect(lista.find((b) => b.id === t1)).toMatchObject({ monto: 60000, trabajador: { id: carla, nombre: 'Carla' } });
 
     // 5. vuelve a pendiente: se limpia el cobro y bajan los ingresos
     const r5 = await admin.patch(`/api/admin/bookings/${t1}`, { estado: 'pendiente' });
@@ -79,7 +79,6 @@ describe('flujo completo: cobro, estadísticas, empleado, baja de la persona y v
     expect(r5.body.booking).toMatchObject({ estado: 'pendiente', monto: null, trabajador: null });
     s = await stats();
     expect(s.periodo).toMatchObject({ completados: 1, ingresos: 40000, ticketPromedio: 40000 });
-    expect(s.completadosSinTrabajador).toBe(0);
     expect(s.resumen.hoy.actual).toEqual({ completados: 1, ingresos: 40000, gastos: 0, ganancia: 40000 });
   });
 });
@@ -104,7 +103,7 @@ describe('respuestas reales del backend (contrato de la API)', () => {
   it('coinciden con las guardadas en test/fixtures/respuestas-api.json (ACTUALIZAR_FIXTURES=1 las regenera)', async () => {
     const context = await createTestContext();
     const ana = await addUser(context, { email: 'ana@t.test', rol: 'admin', nombre: 'Ana' });
-    await addUser(context, { email: 'beto@t.test', rol: 'empleado', nombre: 'Beto' });
+    const beto = await addUser(context, { email: 'beto@t.test', rol: 'empleado', nombre: 'Beto' });
     await addUser(context, { email: 'sin@t.test', rol: 'empleado', nombre: null });
     const admin = await loginClient(context, 'ana@t.test');
     const empleado = await loginClient(context, 'beto@t.test');
@@ -277,6 +276,54 @@ describe('respuestas reales del backend (contrato de la API)', () => {
     cap('error403ServiciosEmpleado', await empleado.patch(`/api/admin/bookings/${idVarios}`, { servicioIds: ['pulido'] }));
     cap('lavadosDiaVariosEmpleado', await empleado.get('/api/admin/lavados'));
     cap('comprobanteVarios', await admin.post(`/api/admin/bookings/${idVarios}/comprobante`, {}));
+
+    // Gestión de usuarios (contrato 2026-11-17_03): Ana es admin (gestiona solo empleados). Al final: dar de baja a Beto
+    // no mueve nada de arriba.
+    cap('usuariosVistaAdmin', await admin.get('/api/admin/usuarios'));
+    const nuevo = await admin.post('/api/admin/usuarios', { email: 'nuevo@t.test', password: 'clave-nueva-123', nombre: 'Nuevo', rol: 'empleado', activo: true });
+    cap('usuarioCreaEmpleado', nuevo);
+    cap('error403UsuarioCreaAdmin', await admin.post('/api/admin/usuarios', { email: 'otro@t.test', password: 'clave-nueva-123', rol: 'admin', activo: true }));
+    const jefeId = await addUser(context, { email: 'jefe@t.test', rol: 'superadmin', nombre: 'Jefe' });
+    cap('error403UsuarioGestionarAdmin', await admin.patch(`/api/admin/usuarios/${jefeId}`, { nombre: 'Otro' }));
+    cap('usuarioPatchEmpleado', await admin.patch(`/api/admin/usuarios/${String(nuevo.body.usuario.id)}`, { activo: false }));
+    cap('usuarioEliminado', await admin.delete(`/api/admin/usuarios/${String(nuevo.body.usuario.id)}`));
+    cap('usuarioBaja', await admin.delete(`/api/admin/usuarios/${beto}`));
+    cap('error409UsuarioDadoDeBaja', await admin.patch(`/api/admin/usuarios/${beto}`, { nombre: 'Beto' }));
+    cap('error409UsuarioEliminarseASiMismo', await admin.delete(`/api/admin/usuarios/${ana}`));
+    cap('error403UsuariosEmpleado', await otroEmpleado.get('/api/admin/usuarios'));
+    cap('usuariosVistaSuperadmin', await (await loginClient(context, 'jefe@t.test')).get('/api/admin/usuarios'));
+
+    // Seguimiento sin ranking (contrato 2026-11-17_05): Beto ya está dado de baja y sus lavados siguen "Registrado por: Beto".
+    cap('lavadosDiaConBaja', await admin.get('/api/admin/lavados'));
+    const conBaja = capturas.lavadosDiaConBaja?.body as { lavados: { registradoPor: unknown }[]; resumen: object };
+    expect(conBaja.lavados.map((l) => l.registradoPor)).toContainEqual({ id: beto, nombre: 'Beto' });
+    expect(conBaja.resumen).not.toHaveProperty('porTrabajador');
+
+    // Mi perfil y foto (contrato 2026-11-17_04). Al final: Ana cambia su nombre y vuelve, no mueve nada de arriba.
+    const foto = (tipo: string, bytes: Buffer | string) =>
+      admin.agent.put('/api/admin/perfil/foto').set('Origin', 'http://localhost:5173').set('Content-Type', tipo).send(bytes);
+    cap('perfilGet', await admin.get('/api/admin/perfil'));
+    cap('perfilGetEmpleado', await otroEmpleado.get('/api/admin/perfil'));
+    cap('perfilPatchNombre', await admin.patch('/api/admin/perfil', { nombre: 'Ana María' }));
+    await admin.patch('/api/admin/perfil', { nombre: 'Ana' });
+    cap('perfilPatchPassword', await admin.patch('/api/admin/perfil', { passwordActual: 'clave-de-prueba-123', passwordNueva: 'clave-nueva-456' }));
+    cap('error400PerfilPasswordActual', await admin.patch('/api/admin/perfil', { passwordActual: 'otra-clave-999', passwordNueva: 'clave-nueva-789' }));
+    cap('error400PerfilPasswordFaltante', await admin.patch('/api/admin/perfil', { passwordActual: 'clave-nueva-456' }));
+    cap('error400PerfilVacio', await admin.patch('/api/admin/perfil', {}));
+    const png = await sharp({ create: { width: 320, height: 240, channels: 3, background: '#2a6' } }).png().toBuffer();
+    const subida = await foto('image/png', png);
+    cap('perfilFotoSube', subida);
+    cap('error400FotoInvalida', await foto('image/jpeg', png));
+    const pesada = Buffer.alloc(3 * 1024 * 1024, 0);
+    pesada.set([0xff, 0xd8, 0xff], 0);
+    cap('error413FotoPesada', await foto('image/jpeg', pesada));
+    cap('error415FotoTipo', await foto('image/gif', png));
+    cap('error403FotoAjena', await otroEmpleado.get(`/api/admin/usuarios/${ana}/foto`));
+    cap('error404FotoSinFoto', await admin.get(`/api/admin/usuarios/${jefeId}/foto`));
+    cap('usuariosConFoto', await admin.get('/api/admin/usuarios'));
+    cap('meConFoto', await admin.get('/api/auth/me'));
+    expect((await admin.get(`/api/admin/usuarios/${ana}/foto?v=${String(subida.body.perfil.fotoVersion)}`)).status).toBe(200);
+    cap('perfilFotoQuita', await admin.delete('/api/admin/perfil/foto'));
 
     const generadas = normalizar(capturas);
     if (process.env.ACTUALIZAR_FIXTURES === '1') {

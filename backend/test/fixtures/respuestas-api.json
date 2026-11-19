@@ -25,6 +25,7 @@
           "id": "00000000-0000-4000-8000-000000000002",
           "nombre": "Ana"
         },
+        "registradoPor": null,
         "formaPago": null,
         "servicios": [
           {
@@ -64,6 +65,7 @@
           "id": "00000000-0000-4000-8000-000000000004",
           "nombre": "Beto"
         },
+        "registradoPor": null,
         "formaPago": null,
         "servicios": [
           {
@@ -100,6 +102,7 @@
         "turnosDelCliente": null,
         "monto": null,
         "trabajador": null,
+        "registradoPor": null,
         "formaPago": null,
         "servicios": [
           {
@@ -496,6 +499,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -527,6 +531,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -558,6 +563,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -592,6 +598,7 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -626,6 +633,7 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -665,6 +673,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -696,6 +705,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -727,6 +737,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -761,6 +772,7 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -795,6 +807,7 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -834,6 +847,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -868,6 +882,7 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -902,6 +917,7 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -966,6 +982,7 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": null,
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -1000,6 +1017,7 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -1034,6 +1052,7 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "registradoPor": null,
           "formaPago": null,
           "servicios": [
             {
@@ -1090,7 +1109,7 @@
         },
         {
           "id": "00000000-0000-4000-8000-000000000011",
-          "nombre": "sin@t.test",
+          "nombre": "sin",
           "rol": "empleado"
         }
       ]
@@ -1298,20 +1317,6 @@
           "ingresos": 0
         }
       ],
-      "porTrabajador": [
-        {
-          "id": "00000000-0000-4000-8000-000000000002",
-          "nombre": "Ana",
-          "completados": 1,
-          "ingresos": 60000
-        },
-        {
-          "id": "00000000-0000-4000-8000-000000000004",
-          "nombre": "Beto",
-          "completados": 1,
-          "ingresos": 0
-        }
-      ],
       "porDiaSemana": [
         {
           "dia": 0,
@@ -1349,7 +1354,6 @@
           "tarde": 0
         }
       ],
-      "completadosSinTrabajador": 0,
       "gastosPorCategoria": [
         {
           "categoria": "alquiler",
@@ -1540,26 +1544,6 @@
           "ingresos": 0
         }
       ],
-      "porTrabajador": [
-        {
-          "id": "00000000-0000-4000-8000-000000000002",
-          "nombre": "Ana",
-          "completados": 1,
-          "ingresos": 60000
-        },
-        {
-          "id": "00000000-0000-4000-8000-000000000004",
-          "nombre": "Beto",
-          "completados": 1,
-          "ingresos": 0
-        },
-        {
-          "id": null,
-          "nombre": "Sin asignar",
-          "completados": 1,
-          "ingresos": 0
-        }
-      ],
       "porDiaSemana": [
         {
           "dia": 0,
@@ -1597,7 +1581,6 @@
           "tarde": 0
         }
       ],
-      "completadosSinTrabajador": 1,
       "gastosPorCategoria": [
         {
           "categoria": "alquiler",
@@ -1762,7 +1745,6 @@
           "ingresos": 0
         }
       ],
-      "porTrabajador": [],
       "porDiaSemana": [
         {
           "dia": 0,
@@ -1800,7 +1782,6 @@
           "tarde": 0
         }
       ],
-      "completadosSinTrabajador": 0,
       "gastosPorCategoria": []
     }
   },
@@ -1961,12 +1942,12 @@
         {
           "id": "superadmin",
           "nombre": "Superadministrador",
-          "descripcion": "Puede todo lo del administrador y, además, gestionar usuarios: alta, baja, rol y acceso al panel."
+          "descripcion": "Puede todo lo del administrador y, además, gestionar a todos los usuarios: alta, rol, acceso al panel y baja (sin perder su historial)."
         },
         {
           "id": "admin",
           "nombre": "Administrador",
-          "descripcion": "Gestiona turnos, el cobro de cada trabajo, catálogo y disponibilidad; ve estadísticas con importes; lleva gastos, metas, presupuestos, comprobantes, datos del taller e inventario. No gestiona usuarios."
+          "descripcion": "Gestiona turnos, el cobro de cada trabajo, catálogo y disponibilidad; ve estadísticas con importes; lleva gastos, metas, presupuestos, comprobantes, datos del taller e inventario. Gestiona solo a los empleados."
         },
         {
           "id": "empleado",
@@ -1978,14 +1959,14 @@
         {
           "id": "lavados.registrar",
           "grupo": "Lavados",
-          "texto": "Registrar un lavado de mostrador (servicios, vehículo, cobro, forma de pago y quién lavó)",
+          "texto": "Registrar un lavado de mostrador (servicios, vehículo, cobro y forma de pago)",
           "roles": {
             "superadmin": "si",
             "admin": "si",
             "empleado": "parcial"
           },
           "matiz": {
-            "empleado": "Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)"
+            "empleado": "Queda registrado a su nombre; carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)"
           }
         },
         {
@@ -2080,7 +2061,7 @@
         {
           "id": "cobro.corregir",
           "grupo": "Cobro",
-          "texto": "Corregir el monto, el trabajador, la forma de pago y los servicios de un turno",
+          "texto": "Corregir el monto, la forma de pago y los servicios de un turno",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2130,7 +2111,7 @@
         {
           "id": "estadisticas.completas",
           "grupo": "Estadísticas",
-          "texto": "Ver las estadísticas del taller, con importes y de todo el equipo",
+          "texto": "Ver las estadísticas del taller, con importes",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2140,7 +2121,7 @@
         {
           "id": "estadisticas.propias",
           "grupo": "Estadísticas",
-          "texto": "Ver los trabajos que uno mismo completó, sin importes",
+          "texto": "Ver los trabajos que uno mismo registró, sin importes",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2230,11 +2211,24 @@
         {
           "id": "usuarios.gestionar",
           "grupo": "Usuarios",
-          "texto": "Crear, editar y desactivar usuarios del panel",
+          "texto": "Crear, editar, desactivar y eliminar usuarios del panel",
           "roles": {
             "superadmin": "si",
-            "admin": "no",
+            "admin": "parcial",
             "empleado": "no"
+          },
+          "matiz": {
+            "admin": "Solo empleados: crearlos, editarlos, desactivarlos y darlos de baja"
+          }
+        },
+        {
+          "id": "perfil.editar",
+          "grupo": "Perfil",
+          "texto": "Cambiar su propio nombre, foto y contraseña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
           }
         },
         {
@@ -2258,12 +2252,12 @@
         {
           "id": "superadmin",
           "nombre": "Superadministrador",
-          "descripcion": "Puede todo lo del administrador y, además, gestionar usuarios: alta, baja, rol y acceso al panel."
+          "descripcion": "Puede todo lo del administrador y, además, gestionar a todos los usuarios: alta, rol, acceso al panel y baja (sin perder su historial)."
         },
         {
           "id": "admin",
           "nombre": "Administrador",
-          "descripcion": "Gestiona turnos, el cobro de cada trabajo, catálogo y disponibilidad; ve estadísticas con importes; lleva gastos, metas, presupuestos, comprobantes, datos del taller e inventario. No gestiona usuarios."
+          "descripcion": "Gestiona turnos, el cobro de cada trabajo, catálogo y disponibilidad; ve estadísticas con importes; lleva gastos, metas, presupuestos, comprobantes, datos del taller e inventario. Gestiona solo a los empleados."
         },
         {
           "id": "empleado",
@@ -2275,14 +2269,14 @@
         {
           "id": "lavados.registrar",
           "grupo": "Lavados",
-          "texto": "Registrar un lavado de mostrador (servicios, vehículo, cobro, forma de pago y quién lavó)",
+          "texto": "Registrar un lavado de mostrador (servicios, vehículo, cobro y forma de pago)",
           "roles": {
             "superadmin": "si",
             "admin": "si",
             "empleado": "parcial"
           },
           "matiz": {
-            "empleado": "Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)"
+            "empleado": "Queda registrado a su nombre; carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)"
           }
         },
         {
@@ -2377,7 +2371,7 @@
         {
           "id": "cobro.corregir",
           "grupo": "Cobro",
-          "texto": "Corregir el monto, el trabajador, la forma de pago y los servicios de un turno",
+          "texto": "Corregir el monto, la forma de pago y los servicios de un turno",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2427,7 +2421,7 @@
         {
           "id": "estadisticas.completas",
           "grupo": "Estadísticas",
-          "texto": "Ver las estadísticas del taller, con importes y de todo el equipo",
+          "texto": "Ver las estadísticas del taller, con importes",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2437,7 +2431,7 @@
         {
           "id": "estadisticas.propias",
           "grupo": "Estadísticas",
-          "texto": "Ver los trabajos que uno mismo completó, sin importes",
+          "texto": "Ver los trabajos que uno mismo registró, sin importes",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2527,11 +2521,24 @@
         {
           "id": "usuarios.gestionar",
           "grupo": "Usuarios",
-          "texto": "Crear, editar y desactivar usuarios del panel",
+          "texto": "Crear, editar, desactivar y eliminar usuarios del panel",
           "roles": {
             "superadmin": "si",
-            "admin": "no",
+            "admin": "parcial",
             "empleado": "no"
+          },
+          "matiz": {
+            "admin": "Solo empleados: crearlos, editarlos, desactivarlos y darlos de baja"
+          }
+        },
+        {
+          "id": "perfil.editar",
+          "grupo": "Perfil",
+          "texto": "Cambiar su propio nombre, foto y contraseña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
           }
         },
         {
@@ -4336,6 +4343,10 @@
           "id": "00000000-0000-4000-8000-000000000002",
           "nombre": "Ana"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
         "formaPago": "transferencia",
         "servicios": [
           {
@@ -4376,6 +4387,10 @@
           "id": "00000000-0000-4000-8000-000000000004",
           "nombre": "Beto"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
         "formaPago": "efectivo",
         "servicios": [
           {
@@ -4413,6 +4428,10 @@
         "turnosDelCliente": null,
         "monto": null,
         "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "registradoPor": {
           "id": "00000000-0000-4000-8000-000000000004",
           "nombre": "Beto"
         },
@@ -4479,6 +4498,10 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
           "formaPago": "transferencia",
           "servicios": [
             {
@@ -4510,6 +4533,10 @@
           "turnosDelCliente": null,
           "monto": 9000,
           "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "registradoPor": {
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
@@ -4547,6 +4574,10 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -4563,24 +4594,6 @@
         "cantidad": 3,
         "total": 28000,
         "sinMonto": 0,
-        "porTrabajador": [
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-000000000002",
-              "nombre": "Ana"
-            },
-            "cantidad": 2,
-            "total": 19000
-          },
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-000000000004",
-              "nombre": "Beto"
-            },
-            "cantidad": 1,
-            "total": 9000
-          }
-        ],
         "porFormaPago": [
           {
             "formaPago": "transferencia",
@@ -4629,6 +4642,10 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
           "formaPago": "transferencia",
           "servicios": [
             {
@@ -4660,6 +4677,10 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "registradoPor": {
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
@@ -4697,6 +4718,10 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -4713,24 +4738,6 @@
         "cantidad": 3,
         "total": null,
         "sinMonto": 0,
-        "porTrabajador": [
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-000000000002",
-              "nombre": "Ana"
-            },
-            "cantidad": 2,
-            "total": null
-          },
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-000000000004",
-              "nombre": "Beto"
-            },
-            "cantidad": 1,
-            "total": null
-          }
-        ],
         "porFormaPago": [
           {
             "formaPago": "efectivo",
@@ -4774,6 +4781,10 @@
         "turnosDelCliente": null,
         "monto": 9000,
         "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "registradoPor": {
           "id": "00000000-0000-4000-8000-000000000004",
           "nombre": "Beto"
         },
@@ -4882,6 +4893,10 @@
           "id": "00000000-0000-4000-8000-000000000002",
           "nombre": "Ana"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
         "formaPago": "efectivo",
         "servicios": [
           {
@@ -4924,6 +4939,10 @@
         "turnosDelCliente": null,
         "monto": null,
         "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "registradoPor": {
           "id": "00000000-0000-4000-8000-000000000004",
           "nombre": "Beto"
         },
@@ -5008,6 +5027,10 @@
           "id": "00000000-0000-4000-8000-000000000002",
           "nombre": "Ana"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
         "formaPago": "efectivo",
         "servicios": [
           {
@@ -5068,6 +5091,10 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
           "formaPago": "transferencia",
           "servicios": [
             {
@@ -5102,6 +5129,10 @@
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -5133,6 +5164,10 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
             "id": "00000000-0000-4000-8000-000000000002",
             "nombre": "Ana"
           },
@@ -5180,6 +5215,10 @@
             "id": "00000000-0000-4000-8000-000000000004",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
           "formaPago": "efectivo",
           "servicios": [
             {
@@ -5201,24 +5240,6 @@
         "cantidad": 4,
         "total": null,
         "sinMonto": 0,
-        "porTrabajador": [
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-000000000002",
-              "nombre": "Ana"
-            },
-            "cantidad": 3,
-            "total": null
-          },
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-000000000004",
-              "nombre": "Beto"
-            },
-            "cantidad": 1,
-            "total": null
-          }
-        ],
         "porFormaPago": [
           {
             "formaPago": "efectivo",
@@ -5253,6 +5274,643 @@
         "servicioNombre": "Encerado + Restauración de ópticas + Lavado Básico",
         "vehiculo": "SUV",
         "notas": null
+      }
+    }
+  },
+  "usuariosVistaAdmin": {
+    "status": 200,
+    "body": {
+      "usuarios": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "email": "ana@t.test",
+          "nombre": "Ana",
+          "rol": "admin",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": true,
+          "gestionable": false,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "email": "beto@t.test",
+          "nombre": "Beto",
+          "rol": "empleado",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": true,
+          "gestionable": true,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "sin@t.test",
+          "nombre": null,
+          "rol": "empleado",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": true,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "gestionCuentas": true
+    }
+  },
+  "usuarioCreaEmpleado": {
+    "status": 201,
+    "body": {
+      "usuario": {
+        "id": "00000000-0000-4000-8000-000000000029",
+        "email": "nuevo@t.test",
+        "nombre": "Nuevo",
+        "rol": "empleado",
+        "activo": true,
+        "eliminadoAt": null,
+        "tieneHistorial": false,
+        "gestionable": true,
+        "fotoVersion": null,
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error403UsuarioCreaAdmin": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol solo podés crear y editar empleados."
+      }
+    }
+  },
+  "error403UsuarioGestionarAdmin": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol solo podés gestionar empleados."
+      }
+    }
+  },
+  "usuarioPatchEmpleado": {
+    "status": 200,
+    "body": {
+      "usuario": {
+        "id": "00000000-0000-4000-8000-000000000029",
+        "email": "nuevo@t.test",
+        "nombre": "Nuevo",
+        "rol": "empleado",
+        "activo": false,
+        "eliminadoAt": null,
+        "tieneHistorial": false,
+        "gestionable": true,
+        "fotoVersion": null,
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "usuarioEliminado": {
+    "status": 200,
+    "body": {
+      "resultado": "eliminado"
+    }
+  },
+  "usuarioBaja": {
+    "status": 200,
+    "body": {
+      "resultado": "baja",
+      "usuario": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "email": null,
+        "nombre": "Beto",
+        "rol": "empleado",
+        "activo": false,
+        "eliminadoAt": "2026-10-16T15:00:00.000Z",
+        "tieneHistorial": true,
+        "gestionable": false,
+        "fotoVersion": null,
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error409UsuarioDadoDeBaja": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CONFLICT",
+        "message": "Ese usuario está dado de baja."
+      }
+    }
+  },
+  "error409UsuarioEliminarseASiMismo": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CONFLICT",
+        "message": "No podés eliminar tu propio usuario."
+      }
+    }
+  },
+  "error403UsuariosEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés gestionar usuarios."
+      }
+    }
+  },
+  "usuariosVistaSuperadmin": {
+    "status": 200,
+    "body": {
+      "usuarios": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "email": "ana@t.test",
+          "nombre": "Ana",
+          "rol": "admin",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": true,
+          "gestionable": true,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "email": null,
+          "nombre": "Beto",
+          "rol": "empleado",
+          "activo": false,
+          "eliminadoAt": "2026-10-16T15:00:00.000Z",
+          "tieneHistorial": true,
+          "gestionable": false,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "sin@t.test",
+          "nombre": null,
+          "rol": "empleado",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": true,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "email": "jefe@t.test",
+          "nombre": "Jefe",
+          "rol": "superadmin",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": false,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "gestionCuentas": true
+    }
+  },
+  "lavadosDiaConBaja": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "lavados": [
+        {
+          "id": "00000000-0000-4000-8000-000000000022",
+          "nombre": "Juan",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 15000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "transferencia",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000024",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 4000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000026",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "encerado",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 30000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            },
+            {
+              "id": "restauracion-opticas",
+              "nombre": "Restauración de ópticas",
+              "precioLista": null
+            },
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 25000
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000027",
+          "nombre": "Cliente de mostrador",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "suv",
+          "vehiculoModelo": null,
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": 30000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 25000
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "resumen": {
+        "cantidad": 4,
+        "total": 79000,
+        "sinMonto": 0,
+        "porFormaPago": [
+          {
+            "formaPago": "efectivo",
+            "cantidad": 2,
+            "total": 60000
+          },
+          {
+            "formaPago": "transferencia",
+            "cantidad": 1,
+            "total": 15000
+          },
+          {
+            "formaPago": null,
+            "cantidad": 1,
+            "total": 4000
+          }
+        ]
+      }
+    }
+  },
+  "perfilGet": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "email": "ana@t.test",
+        "nombre": "Ana",
+        "rol": "admin",
+        "fotoVersion": null
+      },
+      "fotosDisponibles": true
+    }
+  },
+  "perfilGetEmpleado": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "email": "sin@t.test",
+        "nombre": null,
+        "rol": "empleado",
+        "fotoVersion": null
+      },
+      "fotosDisponibles": true
+    }
+  },
+  "perfilPatchNombre": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "email": "ana@t.test",
+        "nombre": "Ana María",
+        "rol": "admin",
+        "fotoVersion": null
+      }
+    }
+  },
+  "perfilPatchPassword": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "email": "ana@t.test",
+        "nombre": "Ana",
+        "rol": "admin",
+        "fotoVersion": null
+      }
+    }
+  },
+  "error400PerfilPasswordActual": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "La contraseña actual no es correcta.",
+        "fields": {
+          "passwordActual": "La contraseña actual no es correcta."
+        }
+      }
+    }
+  },
+  "error400PerfilPasswordFaltante": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "passwordNueva": "Ingresá la contraseña nueva."
+        }
+      }
+    }
+  },
+  "error400PerfilVacio": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Indicá al menos un cambio: nombre o contraseña."
+      }
+    }
+  },
+  "perfilFotoSube": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "email": "ana@t.test",
+        "nombre": "Ana",
+        "rol": "admin",
+        "fotoVersion": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400FotoInvalida": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Subí una foto JPG, PNG o WebP.",
+        "fields": {
+          "foto": "Subí una foto JPG, PNG o WebP."
+        }
+      }
+    }
+  },
+  "error413FotoPesada": {
+    "status": 413,
+    "body": {
+      "error": {
+        "code": "PAYLOAD_TOO_LARGE",
+        "message": "La foto pesa más de 2 MB. Elegí una más liviana."
+      }
+    }
+  },
+  "error415FotoTipo": {
+    "status": 415,
+    "body": {
+      "error": {
+        "code": "UNSUPPORTED_MEDIA_TYPE",
+        "message": "Subí una foto JPG, PNG o WebP."
+      }
+    }
+  },
+  "error403FotoAjena": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol solo podés ver tu propia foto."
+      }
+    }
+  },
+  "error404FotoSinFoto": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "Ese usuario no tiene foto."
+      }
+    }
+  },
+  "usuariosConFoto": {
+    "status": 200,
+    "body": {
+      "usuarios": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "email": "ana@t.test",
+          "nombre": "Ana",
+          "rol": "admin",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": true,
+          "gestionable": false,
+          "fotoVersion": "2026-10-16T15:00:00.000Z",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "email": null,
+          "nombre": "Beto",
+          "rol": "empleado",
+          "activo": false,
+          "eliminadoAt": "2026-10-16T15:00:00.000Z",
+          "tieneHistorial": true,
+          "gestionable": false,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "sin@t.test",
+          "nombre": null,
+          "rol": "empleado",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": true,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "email": null,
+          "nombre": "Jefe",
+          "rol": "superadmin",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": false,
+          "fotoVersion": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "gestionCuentas": true
+    }
+  },
+  "meConFoto": {
+    "status": 200,
+    "body": {
+      "usuario": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "email": "ana@t.test",
+        "nombre": "Ana",
+        "rol": "admin",
+        "fotoVersion": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "perfilFotoQuita": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "email": "ana@t.test",
+        "nombre": "Ana",
+        "rol": "admin",
+        "fotoVersion": null
       }
     }
   }

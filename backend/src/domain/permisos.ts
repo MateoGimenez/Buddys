@@ -27,7 +27,8 @@ import type { Rol } from './perfil.js';
  * | Presupuestos, comprobantes, taller     | sí         | sí    | no                                |
  * | Inventario: ver / usar                 | sí         | sí    | sí                                |
  * | Inventario: crear, comprar, ajustar    | sí         | sí    | no                                |
- * | Gestionar usuarios                     | sí         | no    | no                                |
+ * | Gestionar usuarios                     | sí         | parcial: solo empleados | no              |
+ * | Su propio perfil (nombre, foto, clave) | sí         | sí    | sí                                |
  * | Avisos push en su dispositivo          | sí         | sí    | sí                                |
  *
  * "Reprogramar" = cambiar la fecha/franja confirmadas de un turno (también al confirmarlo "para otra fecha", o
@@ -57,11 +58,11 @@ export const CAPACIDADES = [
   {
     id: 'lavados.registrar',
     grupo: 'Lavados',
-    texto: 'Registrar un lavado de mostrador (servicios, vehículo, cobro, forma de pago y quién lavó)',
+    texto: 'Registrar un lavado de mostrador (servicios, vehículo, cobro y forma de pago)',
     roles: { superadmin: 'si', admin: 'si', empleado: 'parcial' },
     matiz: {
       empleado:
-        'Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)',
+        'Queda registrado a su nombre; carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)',
     },
   },
   {
@@ -120,7 +121,7 @@ export const CAPACIDADES = [
   {
     id: 'cobro.corregir',
     grupo: 'Cobro',
-    texto: 'Corregir el monto, el trabajador, la forma de pago y los servicios de un turno',
+    texto: 'Corregir el monto, la forma de pago y los servicios de un turno',
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
@@ -150,13 +151,13 @@ export const CAPACIDADES = [
   {
     id: 'estadisticas.completas',
     grupo: 'Estadísticas',
-    texto: 'Ver las estadísticas del taller, con importes y de todo el equipo',
+    texto: 'Ver las estadísticas del taller, con importes',
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
     id: 'estadisticas.propias',
     grupo: 'Estadísticas',
-    texto: 'Ver los trabajos que uno mismo completó, sin importes',
+    texto: 'Ver los trabajos que uno mismo registró, sin importes',
     roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
   },
   {
@@ -210,8 +211,15 @@ export const CAPACIDADES = [
   {
     id: 'usuarios.gestionar',
     grupo: 'Usuarios',
-    texto: 'Crear, editar y desactivar usuarios del panel',
-    roles: { superadmin: 'si', admin: 'no', empleado: 'no' },
+    texto: 'Crear, editar, desactivar y eliminar usuarios del panel',
+    roles: { superadmin: 'si', admin: 'parcial', empleado: 'no' },
+    matiz: { admin: 'Solo empleados: crearlos, editarlos, desactivarlos y darlos de baja' },
+  },
+  {
+    id: 'perfil.editar',
+    grupo: 'Perfil',
+    texto: 'Cambiar su propio nombre, foto y contraseña',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
   },
   {
     id: 'push.activar',
@@ -282,8 +290,31 @@ export function puedeBorrarTurnos(rol: Rol): boolean {
   return nivelDe(rol, 'turnos.borrar') === 'si';
 }
 
+/** Entrar a la gestión de usuarios (/api/admin/usuarios): superadmin y admin (este, solo sobre empleados). */
 export function puedeGestionarUsuarios(rol: Rol): boolean {
-  return nivelDe(rol, 'usuarios.gestionar') === 'si';
+  return nivelDe(rol, 'usuarios.gestionar') !== 'no';
+}
+
+/**
+ * ¿Puede alguien con `rolActor` editar, desactivar o eliminar a un usuario con `rolObjetivo`? El superadmin, a
+ * cualquiera; el admin ("parcial"), solo a empleados. Que no sea uno mismo ni esté dado de baja lo mira el servicio.
+ */
+export function puedeGestionarA(rolActor: Rol, rolObjetivo: Rol): boolean {
+  const nivel = nivelDe(rolActor, 'usuarios.gestionar');
+  return nivel === 'si' || (nivel === 'parcial' && rolObjetivo === 'empleado');
+}
+
+/** ¿Puede alguien con `rolActor` crear un usuario con `rolNuevo` o pasar a alguien a ese rol? Mismo criterio. */
+export function puedeAsignarRol(rolActor: Rol, rolNuevo: Rol): boolean {
+  return puedeGestionarA(rolActor, rolNuevo);
+}
+
+/**
+ * Mi perfil: cambiar su propio nombre, foto y contraseña (/api/admin/perfil). Todos los roles. Ver la foto de OTRO
+ * usuario es parte de la gestión de usuarios (puedeGestionarUsuarios).
+ */
+export function puedeEditarPerfil(rol: Rol): boolean {
+  return nivelDe(rol, 'perfil.editar') === 'si';
 }
 
 export function puedeEditarCatalogo(rol: Rol): boolean {

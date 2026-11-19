@@ -16,7 +16,7 @@ Challengers: exposure record (declined; raise: neutrales en una rampa corta de p
 
 THESIS: Cada lavado es una hoja del talonario: se escribe, se numera y queda la copia. Rechaza el dashboard gris de tarjetas con métricas grandes.
 OWN-WORLD: Papel blanco de original sobre fondo de copia amarilla canario muy clara; tinta azul carbónico (azul profundo) para texto principal y acciones; numeración roja de imprenta para los números de orden; copia rosa como estado de corrección/peligro suave. Archivo (ancho variable) para todo; números tabulares; serie N° en ancho condensado.
-STORY: El empleado abre, toca el servicio, el vehículo, el monto y "Registrar"; ve su hoja nueva arriba de la planilla. El dueño ve el día como un talonario: total, ranking y cada hoja corregible.
+STORY: El empleado abre, toca el servicio, el vehículo, el monto y "Registrar"; ve su hoja nueva arriba de la planilla. El dueño ve el día como un talonario: total, cierre de caja y cada hoja corregible, con quién la registró.
 FIRST VIEWPORT: Registrar lavado en el celular: barra superior con marca y fecha de hoy; vehículo en control segmentado; servicios como opciones grandes en grilla de 2; monto con teclado numérico; trabajador (admin); "Más datos" plegado; botón Registrar fijo abajo al alcance del pulgar. Navegación inferior: Registrar, Planilla, Números, Más.
 FORM: Talonario de remitos autocopiativo, posición 3 de 7. seed:b5ebe774f125563a
 Signature move: al registrar, la hoja se "arranca" por la línea de troquel (perforado punteado) y cae como copia numerada (N° 0007 en rojo) en la planilla; las filas de la planilla son copias con troquel y serie.

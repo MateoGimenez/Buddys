@@ -28,8 +28,9 @@ const redondear4 = (valor: number): number => Math.round(valor * 10_000) / 10_00
 
 /**
  * Estadísticas del taller (contrato: reportes/2026-10-26_15_estadisticas-y-permisos.md). Las completas llevan
- * importes y datos de todo el equipo: solo las pide quien puede (domain/permisos.ts, puedeVerEstadisticas; lo exige
- * la ruta). "Mis trabajos" lleva solo conteos de una persona y nunca importes. "Hoy" es el de La Rioja, no el del
+ * importes: solo las pide quien puede (domain/permisos.ts, puedeVerEstadisticas; lo exige la ruta). No comparan a las
+ * personas: el ranking por trabajador se sacó (reportes/2026-11-17_05_seguimiento-sin-ranking.md). "Mis trabajos"
+ * lleva solo conteos de una persona y nunca importes. "Hoy" es el de La Rioja, no el del
  * servidor. Las agregaciones las hace la base (repositories/postgres/estadisticas.ts).
  */
 export class EstadisticasService {
@@ -47,7 +48,7 @@ export class EstadisticasService {
     const granularidad = granularidadDe(rango);
     const repo = this.deps.estadisticas;
 
-    const [totales, gastos, conteo, serie, gastosSerie, gastosPorCategoria, porServicio, porTrabajador, porDiaSemana] =
+    const [totales, gastos, conteo, serie, gastosSerie, gastosPorCategoria, porServicio, porDiaSemana] =
       await Promise.all([
         repo.totales(rangosDelResumen(hoy)),
         repo.gastosPorRango([...rangosDelResumen(hoy), { clave: 'periodo', ...rango }]),
@@ -56,7 +57,6 @@ export class EstadisticasService {
         repo.gastosSerie(rango, granularidad),
         repo.gastosPorCategoria(rango),
         repo.porServicio(rango),
-        repo.porTrabajador(rango),
         repo.porDiaSemana(rango),
       ]);
 
@@ -103,14 +103,15 @@ export class EstadisticasService {
         (clave): PuntoSerie => ({ ...(porClave.get(clave) ?? { clave, ...CERO }), gastos: gastosPorClave.get(clave) ?? 0 }),
       ),
       porServicio,
-      porTrabajador,
       porDiaSemana: [0, 1, 2, 3, 4, 5, 6].map((dia): FilaDiaSemana => diasSemana.get(dia) ?? { dia, manana: 0, tarde: 0 }),
-      completadosSinTrabajador: porTrabajador.find((fila) => fila.id === null)?.completados ?? 0,
       gastosPorCategoria,
     };
   }
 
-  /** Los trabajos que completó esa persona (por trabajador_id). Sin importes ni datos de los demás. */
+  /**
+   * Los trabajos que registró esa persona (registrado_por) y, de los que no tienen quién los registró (turnos de la
+   * web), los que completó (trabajador_id). Sin importes ni datos de los demás.
+   */
   async mias(perfilId: string, pedido: { desde?: string; hasta?: string }): Promise<MisTrabajos> {
     const rango = this.rango(pedido, todayInLaRioja(this.deps.now()));
     const granularidad = granularidadDe(rango);

@@ -170,13 +170,15 @@ describe('POST /api/admin/lavados con varios servicios', () => {
     expect((body.lavados[0].servicios as ServicioJson[]).map((s) => s.precioLista)).toEqual([20000, 10000]);
   });
 
-  it('en la planilla y el ranking cuenta como UN lavado', async () => {
+  it('en la planilla cuenta como UN lavado', async () => {
     const { admin, anaId } = await equipo();
     await admin.post('/api/admin/lavados', { servicioIds: ['lavado-basico', 'encerado', 'pulido'], vehiculoTipo: 'auto', monto: 30000 }).expect(201);
     await admin.post('/api/admin/lavados', { servicioIds: ['pulido'], vehiculoTipo: 'auto', monto: 5000 }).expect(201);
     const { body } = await admin.get(`/api/admin/lavados?fecha=${HOY}`);
     expect(body.resumen).toMatchObject({ cantidad: 2, total: 35000 });
-    expect(body.resumen.porTrabajador).toEqual([{ trabajador: { id: anaId, nombre: 'Ana' }, cantidad: 2, total: 35000 }]);
+    expect(body.lavados).toHaveLength(2);
+    expect(body.lavados[0].registradoPor).toEqual({ id: anaId, nombre: 'Ana' });
+    expect(body.resumen).not.toHaveProperty('porTrabajador');
   });
 
   it('deshacer el lavado se lleva sus servicios (ON DELETE CASCADE)', async () => {
@@ -205,9 +207,8 @@ describe('estadísticas por servicio: cada servicio cuenta', () => {
     expect(porId.get('encerado')).toMatchObject({ pedidos: 2, completados: 2, ingresos: 10000 });
     expect(porId.get('pulido')).toMatchObject({ pedidos: 2, completados: 2, ingresos: 4500 });
     expect(body.porServicio[0].pedidos).toBe(2);
-    // El total del período y el ranking cuentan turnos, no servicios.
+    // El total del período cuenta turnos, no servicios.
     expect(body.periodo).toMatchObject({ turnos: 3, completados: 3, ingresos: 39000 });
-    expect((body.porTrabajador as { completados: number }[]).reduce((s, f) => s + f.completados, 0)).toBe(3);
 
     const mias = await franco.get(`/api/admin/estadisticas/mias?desde=${HOY}&hasta=${HOY}`);
     expect(mias.body.completados).toBe(1);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PlanillaDelDia, Turno, Usuario } from '../api/types';
-import { errores, lavado, planillaAdmin, planillaEmpleado, real, usuarioAdmin } from './fixtures';
+import { errores, fx, lavado, planillaAdmin, planillaEmpleado, real, usuarioAdmin } from './fixtures';
 
 /** Forma de un valor: las claves de los objetos (recursivo, el primer elemento de cada lista). Las hojas no importan. */
 function forma(valor: unknown): unknown {
@@ -20,11 +20,37 @@ function cuerpo<T>(clave: string): T {
 }
 
 describe('los fixtures del panel tienen la forma de las respuestas reales del backend', () => {
-  it('login, /me y refresh devuelven { usuario: { id, email, nombre, rol } }', () => {
+  it('login, /me y refresh devuelven { usuario: { id, email, nombre, rol, fotoVersion } }', () => {
     for (const clave of ['loginAdmin', 'meAdmin', 'meEmpleado', 'refreshOk']) {
       expect(real[clave]?.status, clave).toBe(200);
-      expect(Object.keys(cuerpo<{ usuario: Usuario }>(clave).usuario).sort(), clave).toEqual(['email', 'id', 'nombre', 'rol']);
+      const u = cuerpo<{ usuario: Usuario }>(clave).usuario;
+      expect(Object.keys(u).sort(), clave).toEqual(['email', 'fotoVersion', 'id', 'nombre', 'rol']);
+      expect(u.fotoVersion === null || typeof u.fotoVersion === 'string', clave).toBe(true);
     }
+    expect(cuerpo<{ usuario: Usuario }>('meAdminConFoto').usuario.fotoVersion).toMatch(/Z$/);
+  });
+
+  it('el perfil (GET, PATCH, PUT y DELETE de /api/admin/perfil) tiene la forma del usuario de la sesión', () => {
+    const claves = Object.keys(usuarioAdmin).sort();
+    for (const clave of ['perfilAdmin', 'perfilEmpleado', 'perfilSinFotos']) {
+      const body = cuerpo<{ perfil: Usuario; fotosDisponibles: boolean }>(clave);
+      expect(Object.keys(body).sort(), clave).toEqual(['fotosDisponibles', 'perfil']);
+      expect(Object.keys(body.perfil).sort(), clave).toEqual(claves);
+    }
+    expect(cuerpo<{ fotosDisponibles: boolean }>('perfilSinFotos').fotosDisponibles).toBe(false);
+    for (const clave of ['perfilPatchNombre', 'perfilPatchPassword', 'perfilFotoSube', 'perfilFotoQuita']) {
+      expect(real[clave]?.status, clave).toBe(200);
+      expect(Object.keys(cuerpo<object>(clave)), clave).toEqual(['perfil']);
+      expect(Object.keys(cuerpo<{ perfil: Usuario }>(clave).perfil).sort(), clave).toEqual(claves);
+    }
+    expect(cuerpo<{ perfil: Usuario }>('perfilFotoSube').perfil.fotoVersion).toMatch(/Z$/);
+    expect(cuerpo<{ perfil: Usuario }>('perfilFotoQuita').perfil.fotoVersion).toBeNull();
+    // Los errores del perfil que usan los tests son los del backend.
+    expect(errores.fotoInvalida).toMatchObject({ status: 400, body: { error: { fields: { foto: 'Subí una foto JPG, PNG o WebP.' } } } });
+    expect(errores.fotoPesada).toMatchObject({ status: 413, body: { error: { code: 'PAYLOAD_TOO_LARGE' } } });
+    expect(errores.passwordActualMal).toMatchObject({ status: 400, body: { error: { fields: { passwordActual: 'La contraseña actual no es correcta.' } } } });
+    expect(errores.passwordLimite).toMatchObject({ status: 429, body: { error: { code: 'RATE_LIMITED' } } });
+    expect(real.fotoAjenaEmpleado?.status).toBe(403);
     expect(usuarioAdmin.rol).toBe('superadmin');
   });
 
@@ -60,12 +86,29 @@ describe('los fixtures del panel tienen la forma de las respuestas reales del ba
     expect(forma(planillaEmpleado('2026-10-16'))).toEqual(forma(cuerpo<PlanillaDelDia>('planillaEmpleado')));
   });
 
+  it('sin ranking: ni la planilla ni las estadísticas traen porTrabajador; cada lavado trae registradoPor', () => {
+    for (const clave of ['planillaAdmin', 'planillaEmpleado', 'planillaVacia']) {
+      expect(cuerpo<PlanillaDelDia>(clave).resumen, clave).not.toHaveProperty('porTrabajador');
+    }
+    for (const clave of ['estadisticasMes', 'estadisticasAnio', 'estadisticasVacio']) {
+      expect(fx[clave]?.body, clave).not.toHaveProperty('porTrabajador');
+      expect(fx[clave]?.body, clave).not.toHaveProperty('completadosSinTrabajador');
+    }
+    // El empleado también recibe quién registró cada lavado (es un nombre, no un importe).
+    const delEmpleado = cuerpo<PlanillaDelDia>('planillaEmpleado').lavados;
+    expect(delEmpleado.every((l) => l.registradoPor === null || typeof l.registradoPor.nombre === 'string')).toBe(true);
+    expect(delEmpleado.map((l) => l.registradoPor?.nombre)).toContain('Beto');
+    expect(cuerpo<{ lavado: Turno }>('lavadoAdmin').lavado.registradoPor).toEqual({ id: usuarioAdmin.id, nombre: 'Ana' });
+    // Turnos de la web: registradoPor null (backend, lista de turnos).
+    const turnos = (fx.listaAdmin?.body as { bookings: Turno[] }).bookings;
+    expect(turnos.some((t) => t.origen === 'web' && t.registradoPor === null)).toBe(true);
+  });
+
   it('al empleado el backend le manda los montos en null (lavado, planilla y corrección de nota)', () => {
     expect(cuerpo<{ lavado: Turno }>('lavadoEmpleado').lavado.monto).toBeNull();
     const p = cuerpo<PlanillaDelDia>('planillaEmpleado');
     expect(p.lavados.every((l) => l.monto === null)).toBe(true);
     expect(p.resumen.total).toBeNull();
-    expect(p.resumen.porTrabajador.every((r) => r.total === null)).toBe(true);
     expect(p.resumen.porFormaPago.length).toBeGreaterThan(0);
     expect(p.resumen.porFormaPago.every((f) => f.total === null)).toBe(true);
     expect(cuerpo<{ booking: Turno }>('patchEmpleado').booking.monto).toBeNull();

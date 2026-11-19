@@ -11,7 +11,7 @@
 //    se regenere ese archivo.
 import contrato from '../../../backend/test/fixtures/respuestas-api.json';
 import reales from './respuestas-reales.json';
-import type { Permisos, PlanillaDelDia, Servicio, Trabajador, Turno, Usuario, VehiculoTipo } from '../api/types';
+import type { Permisos, PlanillaDelDia, Servicio, Trabajador, Turno, Usuario, UsuarioEquipo, VehiculoTipo } from '../api/types';
 
 export interface RespuestaFalsa {
   status: number;
@@ -40,8 +40,15 @@ function cuerpoReal<T>(clave: string): T {
 export const ANA_ID = '00000000-0000-4000-8000-00000000a0a0';
 export const BETO_ID = '00000000-0000-4000-8000-00000000b0b0';
 
+// `fotoVersion` (contrato 04, foto de perfil) llega del backend en el usuario de la sesión: null = sin foto.
 export const usuarioAdmin: Usuario = cuerpoReal<{ usuario: Usuario }>('loginAdmin').usuario;
 export const usuarioEmpleado: Usuario = cuerpoReal<{ usuario: Usuario }>('meEmpleado').usuario;
+
+// Mi perfil (contrato 04): respuestas reales de GET/PATCH /api/admin/perfil y PUT/DELETE de la foto.
+export const perfilReal = (clave: 'perfilAdmin' | 'perfilEmpleado' | 'perfilSinFotos'): { perfil: Usuario; fotosDisponibles: boolean } =>
+  cuerpoReal(clave);
+/** La versión de la foto que devolvió el backend al subirla (PUT /api/admin/perfil/foto). */
+export const VERSION_FOTO_REAL: string = cuerpoReal<{ perfil: Usuario }>('perfilFotoSube').perfil.fotoVersion ?? '';
 
 export const permisosAdmin = (): Permisos => ({ ...cuerpo<Permisos>('permisosAdmin'), tuRol: 'superadmin' });
 export const permisosEmpleado = (): Permisos => cuerpo<Permisos>('permisosEmpleado');
@@ -197,18 +204,15 @@ export function planillaAdmin(fecha: string): PlanillaDelDia {
   return {
     fecha,
     lavados: [
-      lavado({ id: 'l1', servicioId: 'lavado-basico', monto: 12000, formaPago: 'efectivo', franja: 'manana', trabajador: { id: BETO_ID, nombre: 'Beto' }, vehiculoModelo: 'Gol AB123CD' }),
-      lavado({ id: 'l2', servicioId: 'pulido', monto: 60000, formaPago: 'transferencia', franja: 'manana', trabajador: { id: ANA_ID, nombre: 'Ana' } }),
-      lavado({ id: 'l3', servicioId: 'lavado-premium', monto: null, formaPago: null, franja: 'tarde', trabajador: { id: BETO_ID, nombre: 'Beto' }, nombre: 'Juan Pérez' }),
+      lavado({ id: 'l1', servicioId: 'lavado-basico', monto: 12000, formaPago: 'efectivo', franja: 'manana', trabajador: { id: BETO_ID, nombre: 'Beto' }, registradoPor: { id: BETO_ID, nombre: 'Beto' }, vehiculoModelo: 'Gol AB123CD' }),
+      lavado({ id: 'l2', servicioId: 'pulido', monto: 60000, formaPago: 'transferencia', franja: 'manana', trabajador: { id: ANA_ID, nombre: 'Ana' }, registradoPor: { id: ANA_ID, nombre: 'Ana' } }),
+      // Un turno de antes de "Registrado por" (o de la web): sin registradoPor, se muestra quién lo hizo.
+      lavado({ id: 'l3', servicioId: 'lavado-premium', monto: null, formaPago: null, franja: 'tarde', trabajador: { id: BETO_ID, nombre: 'Beto' }, registradoPor: null, nombre: 'Juan Pérez' }),
     ],
     resumen: {
       cantidad: 3,
       total: 72000,
       sinMonto: 1,
-      porTrabajador: [
-        { trabajador: { id: BETO_ID, nombre: 'Beto' }, cantidad: 2, total: 12000 },
-        { trabajador: { id: ANA_ID, nombre: 'Ana' }, cantidad: 1, total: 60000 },
-      ],
       // Como lo ordena el backend para quien ve importes: más cobrado primero.
       porFormaPago: [
         { formaPago: 'transferencia', cantidad: 1, total: 60000 },
@@ -228,7 +232,6 @@ export function planillaEmpleado(fecha: string): PlanillaDelDia {
     resumen: {
       ...p.resumen,
       total: null,
-      porTrabajador: p.resumen.porTrabajador.map((r) => ({ ...r, total: null })),
       // Sin importes el backend no ordena por lo cobrado (no se puede deducir): más lavados primero y, en empate, el
       // orden de las formas de pago con "sin indicar" al final.
       porFormaPago: [
@@ -256,4 +259,82 @@ export const errores = {
   deshacerAjeno: fx.error403DeshacerAjeno as RespuestaFalsa,
   idLocalAjeno: fx.error409IdLocalAjeno as RespuestaFalsa,
   conComprobante: fx.error409DeshacerConComprobante as RespuestaFalsa,
+  // Mi perfil (contrato 04): foto inválida o pesada, contraseña actual incorrecta y límite de intentos.
+  fotoInvalida: respuesta('perfilFotoInvalida'),
+  fotoPesada: respuesta('perfilFotoPesada'),
+  passwordActualMal: respuesta('perfilPasswordActualMal'),
+  passwordLimite: respuesta('perfilPasswordLimite'),
 } satisfies Record<string, RespuestaFalsa>;
+
+// ------------------------------------------------------------------ Equipo (contrato 03, gestión de usuarios)
+// Forma de `Usuario` de GET /api/admin/usuarios según reportes/2026-11-17_03_gestion-usuarios.md, armada a mano mientras
+// el backend la implementa en paralelo (eliminadoAt, tieneHistorial, gestionable). Al regenerar respuestas-reales.json,
+// `usuariosAdmin` tiene que salir con estas mismas claves.
+
+export const CARLA_ID = '00000000-0000-4000-8000-00000000c0c0';
+
+/** Carla, encargada (rol admin): gestiona solo empleados. */
+export const usuarioEncargado: Usuario = { id: CARLA_ID, email: 'carla@buddys.test', nombre: 'Carla', rol: 'admin', fotoVersion: null };
+
+/** La tabla de permisos vista por un admin: `usuarios.gestionar` en parcial (solo empleados). */
+export function permisosEncargado(): Permisos {
+  const p = cuerpo<Permisos>('permisosAdmin');
+  return {
+    ...p,
+    tuRol: 'admin',
+    capacidades: p.capacidades.map((c) =>
+      c.id === 'usuarios.gestionar'
+        ? {
+            ...c,
+            texto: 'Crear, editar, desactivar y eliminar usuarios del panel',
+            roles: { superadmin: 'si', admin: 'parcial', empleado: 'no' },
+            matiz: { admin: 'Solo empleados: crearlos, editarlos, desactivarlos y darlos de baja' },
+          }
+        : c,
+    ),
+  };
+}
+
+/** La tabla del superadmin con la capacidad nueva. */
+export function permisosDueno(): Permisos {
+  return { ...permisosEncargado(), tuRol: 'superadmin' };
+}
+
+export function usuarioEquipo(cambios: Partial<UsuarioEquipo> & { id: string }): UsuarioEquipo {
+  return {
+    email: null,
+    nombre: null,
+    rol: 'empleado',
+    activo: true,
+    eliminadoAt: null,
+    tieneHistorial: false,
+    gestionable: true,
+    fotoVersion: null,
+    createdAt: '2026-10-18T15:00:00.000Z',
+    updatedAt: '2026-10-18T15:00:00.000Z',
+    ...cambios,
+  };
+}
+
+/** El equipo como lo ve `yo`: Ana (superadmin) o Carla (admin; no ve emails de admins ni superadmins). */
+export function equipo(yo: 'ana' | 'carla'): { usuarios: UsuarioEquipo[]; gestionCuentas: boolean } {
+  const esAna = yo === 'ana';
+  return {
+    usuarios: [
+      usuarioEquipo({ id: ANA_ID, nombre: 'Ana', rol: 'superadmin', email: esAna ? 'ana@buddys.test' : null, tieneHistorial: true, gestionable: false }),
+      usuarioEquipo({ id: CARLA_ID, nombre: 'Carla', rol: 'admin', email: 'carla@buddys.test', tieneHistorial: true, gestionable: esAna }),
+      usuarioEquipo({ id: BETO_ID, nombre: 'Beto', email: 'beto@buddys.test', tieneHistorial: true }),
+      usuarioEquipo({ id: '00000000-0000-4000-8000-0000000011c1', nombre: 'Lucía Gómez', email: 'lucia@ejemplo.com', tieneHistorial: true }),
+      usuarioEquipo({ id: '00000000-0000-4000-8000-0000000011d1', nombre: 'Dani', email: 'dani@ejemplo.com', activo: false }),
+      usuarioEquipo({
+        id: '00000000-0000-4000-8000-0000000011e1',
+        nombre: 'Ezequiel',
+        activo: false,
+        eliminadoAt: '2026-11-17T13:30:00.000Z',
+        tieneHistorial: true,
+        gestionable: false,
+      }),
+    ].map((u) => (esAna || u.id !== CARLA_ID ? u : { ...u, email: null })),
+    gestionCuentas: true,
+  };
+}

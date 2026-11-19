@@ -8,7 +8,6 @@ import {
   planillaAdmin,
   planillaEmpleado,
   serviciosAdmin,
-  trabajadores,
   usuarioAdmin,
   usuarioEmpleado,
 } from './fixtures';
@@ -19,23 +18,21 @@ function sesionAdmin() {
     'GET /api/auth/me': { status: 200, body: { usuario: usuarioAdmin } },
     'GET /api/admin/permisos': { status: 200, body: permisosAdmin() },
     'GET /api/admin/servicios': { status: 200, body: serviciosAdmin() },
-    'GET /api/admin/trabajadores': { status: 200, body: trabajadores() },
   };
 }
 
 describe('Planilla del día', () => {
-  it('el encargado ve total, montos, quién lavó más y lo que falta cargar', async () => {
+  it('el encargado ve total, montos y lo que falta cargar; sin ranking', async () => {
     const api = apiFalsa({ ...sesionAdmin(), 'GET /api/admin/lavados': { status: 200, body: planillaAdmin(hoy()) } });
     renderApp('/planilla');
 
     // En el resumen y en el total de la caja.
     expect(await screen.findAllByText('$ 72.000')).toHaveLength(2);
     expect(api.de('GET', '/api/admin/lavados')[0]?.path).toBe(`/api/admin/lavados?fecha=${hoy()}`);
-    const ranking = screen.getByRole('heading', { name: 'Quién lavó más' }).parentElement;
-    if (!ranking) throw new Error('sin ranking');
-    const filas = within(ranking).getAllByRole('listitem');
-    expect(filas[0]).toHaveTextContent('Beto');
-    expect(filas[0]).toHaveTextContent('2 lavados');
+    // Contrato 05: ni "Quién lavó más" ni una lista que compare personas.
+    expect(screen.queryByRole('heading', { name: 'Quién lavó más' })).toBeNull();
+    expect(screen.getByRole('main')).not.toHaveTextContent(/Quién lavó|Lavó:|ranking/i);
+    expect(api.de('GET', '/api/admin/trabajadores')).toHaveLength(0);
     expect(screen.getByText('N° 0001')).toBeInTheDocument();
     // En el resumen (cuántos faltan) y en la copia del lavado sin monto.
     expect(screen.getAllByText('Sin monto')).toHaveLength(2);
@@ -61,8 +58,8 @@ describe('Planilla del día', () => {
     expect(patch?.body).toEqual({ monto: 20000 });
   });
 
-  it('cambiar solo la nota no reenvía el monto ni quien lavó (aunque esa persona ya no esté en el equipo)', async () => {
-    // l1: $ 12.000, lo lavó alguien que ya no figura entre los trabajadores activos.
+  it('cambiar solo la nota no reenvía el monto ni quien lo hizo; la corrección ya no tiene "Quién lo lavó"', async () => {
+    // l1: $ 12.000, lo hizo alguien que ya no figura entre los trabajadores activos.
     const dia = planillaAdmin(hoy());
     const ex = { id: '00000000-0000-4000-8000-0000000000e0', nombre: 'Ex empleado' };
     dia.lavados = dia.lavados.map((l) => (l.id === 'l1' ? { ...l, trabajador: ex } : l));
@@ -77,11 +74,25 @@ describe('Planilla del día', () => {
     const [corregir] = await screen.findAllByRole('button', { name: 'Corregir' });
     await user.click(corregir as HTMLElement);
     expect(screen.getByLabelText('Monto cobrado')).toHaveValue('12.000');
-    expect(screen.getByLabelText('Quién lo lavó')).toHaveValue(ex.id);
+    expect(screen.queryByLabelText('Quién lo lavó')).toBeNull();
     await user.type(screen.getByLabelText('Nota'), 'Pagó con transferencia');
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await screen.findAllByRole('button', { name: 'Corregir' });
     expect(api.de('PATCH', '/api/admin/bookings/l1').map((p) => p.body)).toEqual([{ notasInternas: 'Pagó con transferencia' }]);
+  });
+
+  it('cada lavado dice quién lo registró: registradoPor, si no quién lo hizo, si no "sin dato"', async () => {
+    const dia = planillaAdmin(hoy());
+    // l1 lo registró Beto; l2, Ana; l3 no tiene registradoPor (se usa trabajador: Beto). Se suma uno sin ninguno.
+    const base = dia.lavados[0];
+    if (!base) throw new Error('sin lavado');
+    dia.lavados = [...dia.lavados, { ...base, id: 'l4', franja: 'tarde', trabajador: null, registradoPor: null }];
+    apiFalsa({ ...sesionAdmin(), 'GET /api/admin/lavados': { status: 200, body: dia } });
+    renderApp('/planilla');
+    await screen.findByText('N° 0004');
+    const lineas = screen.getAllByText(/^Registrado por:/).map((p) => p.textContent);
+    expect(lineas).toEqual(['Registrado por: Beto', 'Registrado por: Ana', 'Registrado por: Beto', 'Registrado por: sin dato']);
+    expect(screen.queryByText(/^Lavó:/)).toBeNull();
   });
 
   it('vaciar el monto avisa que se borra y manda monto null; sin cambios no manda nada', async () => {
@@ -140,5 +151,7 @@ describe('Planilla del día', () => {
     expect(screen.queryByRole('button', { name: 'Borrar' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Corregir' })).toBeNull();
     expect(screen.getAllByRole('button', { name: /nota/ }).length).toBeGreaterThan(0);
+    // También ve quién registró cada lavado (es un nombre, no un importe).
+    expect(screen.getAllByText(/^Registrado por:/)).toHaveLength(3);
   });
 });

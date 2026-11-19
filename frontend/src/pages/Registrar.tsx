@@ -9,13 +9,11 @@ import {
   type FormaPago,
   type Franja,
   type NuevoLavado,
-  type Persona,
-  type Trabajador,
   type VehiculoTipo,
 } from '../api/types';
 import { ElegirServicios, Tilde } from '../components/ElegirServicios';
 import { nombreDe } from '../components/Layout';
-import { AreaTexto, Aviso, Boton, Campo, Cargando, Encabezado, Segmentado, Selector, Vacio } from '../components/ui';
+import { AreaTexto, Aviso, Boton, Campo, Cargando, Encabezado, Segmentado, Vacio } from '../components/ui';
 import { encolarLavado, enviarCola, nuevoIdLocal } from '../lib/cola';
 import {
   NOMBRE_FRANJA,
@@ -63,20 +61,16 @@ interface Registrado {
   vehiculoModelo: string | null;
   formaPago: FormaPago | null;
   montoCargado: number | null;
-  trabajador: Persona | null;
   envio: { tipo: 'enviado'; id: string; deshacerLimite: number } | { tipo: 'en-cola' };
 }
 
 export function Registrar() {
   const usuario = useUsuario();
-  const eligeTrabajador = usuario.rol !== 'empleado';
+  // El empleado nunca ve montos ni precios de lista (los carga, pero no se le sugieren).
+  const veImportes = usuario.rol !== 'empleado';
   const hoyAR = hoy();
 
   const [catalogo, recargarCatalogo] = useCarga(() => ep.servicios().then((r) => r.servicios), []);
-  const [equipo] = useCarga(
-    () => (eligeTrabajador ? ep.trabajadores().then((r) => r.trabajadores) : Promise.resolve([])),
-    [eligeTrabajador],
-  );
 
   const [vehiculo, setVehiculo] = useState<VehiculoTipo>('auto');
   /** En el orden en que se tocaron: el primero es el principal. */
@@ -87,7 +81,6 @@ export function Registrar() {
   /** Lo que se sacó al cambiar de vehículo, para avisarlo. */
   const [sacados, setSacados] = useState<string[]>([]);
   const [formaPago, setFormaPago] = useState<FormaPago | null>(null);
-  const [trabajadorId, setTrabajadorId] = useState(usuario.id);
   const [abierto, setAbierto] = useState(false);
   // null = "hoy": así, si la pantalla queda abierta de un día para el otro, el lavado no se anota con la fecha de ayer.
   const [fechaElegida, setFechaElegida] = useState<string | null>(null);
@@ -113,11 +106,11 @@ export function Registrar() {
     [servicioIds, ofrecidos],
   );
   // El empleado nunca ve montos: ni la suma ni el precio de cada uno.
-  const lista = eligeTrabajador ? sumaDeLista(elegidos, vehiculo) : null;
+  const lista = veImportes ? sumaDeLista(elegidos, vehiculo) : null;
 
   /** Pone la suma de lista en el monto, salvo que la persona ya haya escrito uno. */
   const sugerir = (ids: string[], v: VehiculoTipo) => {
-    if (!eligeTrabajador || (montoManual && montoTexto !== '')) return;
+    if (!veImportes || (montoManual && montoTexto !== '')) return;
     const servicios = ids.map((id) => activos.find((x) => x.id === id)).filter((x) => x !== undefined);
     const { total } = sumaDeLista(servicios, v);
     setMontoTexto(total > 0 ? miles(String(total)) : '');
@@ -186,7 +179,6 @@ export function Registrar() {
     };
     const nombres = unirServicios(elegidos.map((x) => x.nombre));
     if (formaPago) datos.formaPago = formaPago;
-    if (eligeTrabajador && trabajadorId) datos.trabajadorId = trabajadorId;
     if (fecha && fecha !== hoyAR) datos.fecha = fecha;
     if (franja !== 'auto') datos.franja = franja;
     if (nombre.trim()) datos.nombre = nombre.trim();
@@ -213,11 +205,9 @@ export function Registrar() {
         setErrorGeneral(MENSAJE_SIN_GUARDAR);
         return;
       }
-      const elegido = trabajadorId === usuario.id ? undefined : (equipo.datos ?? []).find((t) => t.id === trabajadorId);
       listo({
         ...base,
         clave: `cola-${String(Date.now())}`,
-        trabajador: elegido ? { id: elegido.id, nombre: elegido.nombre } : null,
         envio: { tipo: 'en-cola' },
       });
     };
@@ -239,7 +229,6 @@ export function Registrar() {
         clave: lavado.id,
         vehiculoModelo: lavado.vehiculoModelo,
         formaPago: lavado.formaPago,
-        trabajador: lavado.trabajador,
         envio: { tipo: 'enviado', id: lavado.id, deshacerLimite: limiteParaDeshacer(deshacerHasta) },
       });
       // Si quedó algo guardado sin conexión, ya hay señal: que salga.
@@ -313,9 +302,7 @@ export function Registrar() {
         <Talon
           key={registrado.clave}
           registrado={registrado}
-          veMonto={eligeTrabajador}
-          usuarioId={usuario.id}
-          equipo={equipo.datos ?? []}
+          veMonto={veImportes}
           onCerrar={() => {
             setRegistrado(null);
           }}
@@ -347,7 +334,7 @@ export function Registrar() {
             vehiculo={vehiculo}
             elegidos={servicioIds}
             onCambio={elegirServicios}
-            vePrecios={eligeTrabajador}
+            vePrecios={veImportes}
             error={errores.servicioIds || undefined}
             ayuda="Marcá todos los que se hicieron. Tocá de nuevo para sacar uno."
           />
@@ -391,33 +378,10 @@ export function Registrar() {
           opciones={FORMAS_PAGO.map((f) => ({ valor: f, etiqueta: NOMBRE_PAGO[f] }))}
         />
 
-        {eligeTrabajador ? (
-          <Selector
-            etiqueta="Quién lo lavó"
-            name="trabajador"
-            value={trabajadorId}
-            onChange={(e) => {
-              setTrabajadorId(e.target.value);
-            }}
-            error={errores.trabajadorId || undefined}
-            ayuda={equipo.estado === 'error' ? 'No pudimos cargar el equipo: queda a tu nombre.' : undefined}
-          >
-            {(equipo.datos ?? []).some((t) => t.id === usuario.id) ? null : (
-              <option value={usuario.id}>{nombreDe(usuario)} (vos)</option>
-            )}
-            {(equipo.datos ?? []).map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nombre}
-                {t.id === usuario.id ? ' (vos)' : ''}
-              </option>
-            ))}
-          </Selector>
-        ) : (
-          <p className="dato-fijo">
-            <span className="dato-fijo-etiqueta">Quién lo lavó</span>
-            <span>Vos, {nombreDe(usuario)}</span>
-          </p>
-        )}
+        <p className="dato-fijo">
+          <span className="dato-fijo-etiqueta">Registrado por</span>
+          <span>Vos, {nombreDe(usuario)}</span>
+        </p>
 
         <details
           className="plegable"
@@ -533,14 +497,10 @@ export function Registrar() {
 function Talon({
   registrado,
   veMonto,
-  usuarioId,
-  equipo,
   onCerrar,
 }: {
   registrado: Registrado;
   veMonto: boolean;
-  usuarioId: string;
-  equipo: Trabajador[];
   onCerrar: () => void;
 }) {
   const { envio } = registrado;
@@ -592,8 +552,6 @@ function Talon({
   };
 
   const vehiculo = `${NOMBRE_VEHICULO[registrado.vehiculoTipo]}${registrado.vehiculoModelo ? ` ${registrado.vehiculoModelo}` : ''}`;
-  const otro = registrado.trabajador && registrado.trabajador.id !== usuarioId ? registrado.trabajador : null;
-  const quien = otro ? (equipo.find((t) => t.id === otro.id)?.nombre ?? otro.nombre) : null;
 
   if (estado === 'deshecho') {
     return (
@@ -631,7 +589,6 @@ function Talon({
           {registrado.servicio} · {vehiculo}
           {registrado.formaPago ? ` · ${NOMBRE_PAGO[registrado.formaPago]}` : ''}
           {veMonto && registrado.montoCargado !== null ? ` · ${pesos(registrado.montoCargado)}` : ''}
-          {quien ? ` · lo lavó ${quien}` : ''}
         </p>
         {enCola ? <p className="talon-cola">Se envía solo cuando vuelva la señal.</p> : null}
       </div>

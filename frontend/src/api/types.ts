@@ -13,7 +13,17 @@ export interface Usuario {
   email: string | null;
   nombre: string | null;
   rol: Rol;
+  /** Versión de la foto de perfil (ISO 8601) o null si no tiene. Va en la URL de la foto como `?v=`. */
+  fotoVersion: string | null;
 }
+
+/** GET/PATCH /api/admin/perfil y PUT/DELETE /api/admin/perfil/foto: el perfil propio (misma forma que el de la sesión). */
+export type Perfil = Usuario;
+
+/** Lo que se puede cambiar del perfil propio. La contraseña va siempre con la actual. */
+export type CambioPerfil =
+  | { nombre: string | null }
+  | { passwordActual: string; passwordNueva: string };
 
 export interface Persona {
   id: string;
@@ -45,7 +55,10 @@ export interface Turno {
   formaPago: FormaPago | null;
   turnosDelCliente: number | null;
   monto: number | null;
+  /** Quién hizo el trabajo. Sigue llegando, pero el panel ya no lo muestra (contrato 05: solo "Registrado por"). */
   trabajador: Persona | null;
+  /** Quién lo registró en el panel. null en los turnos de la web (o si no hay dato). Lo reciben todos los roles. */
+  registradoPor: Persona | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,12 +67,6 @@ export interface ServicioDelTurno {
   id: string;
   nombre: string;
   precioLista: number | null;
-}
-
-export interface ResumenTrabajador {
-  trabajador: Persona | null;
-  cantidad: number;
-  total: number | null;
 }
 
 /** Cierre de caja: lavados y total por forma de pago. formaPago null = "Sin indicar"; total null para el empleado. */
@@ -76,7 +83,6 @@ export interface PlanillaDelDia {
     cantidad: number;
     total: number | null;
     sinMonto: number;
-    porTrabajador: ResumenTrabajador[];
     porFormaPago: ResumenFormaPago[];
   };
 }
@@ -208,9 +214,7 @@ export interface Estadisticas {
   };
   serie: { clave: string; completados: number; ingresos: number; gastos: number }[];
   porServicio: { servicioId: string; nombre: string; pedidos: number; completados: number; ingresos: number }[];
-  porTrabajador: { id: string | null; nombre: string; completados: number; ingresos: number }[];
   porDiaSemana: { dia: number; manana: number; tarde: number }[];
-  completadosSinTrabajador: number;
   gastosPorCategoria: { categoria: string; monto: number }[];
 }
 
@@ -240,15 +244,29 @@ export interface MetaActual {
   };
 }
 
+/**
+ * Un usuario de GET /api/admin/usuarios. `email` llega en null para quien no podés ver (el admin no ve el de admins ni
+ * superadmins) y para los dados de baja. `gestionable`: si quien pide puede editarlo y eliminarlo.
+ */
 export interface UsuarioEquipo {
   id: string;
   email: string | null;
   nombre: string | null;
   rol: Rol;
   activo: boolean;
+  /** ISO 8601 si está dado de baja; si no, null. */
+  eliminadoAt: string | null;
+  /** Aparece en algún lavado, turno, gasto, movimiento, presupuesto o comprobante: eliminarlo lo da de baja. */
+  tieneHistorial: boolean;
+  gestionable: boolean;
+  /** Como en la sesión: versión de la foto o null. */
+  fotoVersion: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+/** DELETE /api/admin/usuarios/:id: sin historial se borra; con historial se da de baja. */
+export type ResultadoEliminar = { resultado: 'eliminado' } | { resultado: 'baja'; usuario: UsuarioEquipo };
 
 export interface NuevoUsuario {
   email: string;

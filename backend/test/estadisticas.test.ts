@@ -23,6 +23,8 @@ interface NuevoTurno {
   estado?: Estado;
   monto?: number | null;
   trabajador?: string | null;
+  /** Quién lo registró en el panel (registrado_por); omitido = null, como un turno de la web. */
+  registradoPor?: string | null;
   servicio?: string;
   confirmada?: { fecha: string; franja: Franja };
 }
@@ -31,8 +33,8 @@ async function turno(context: TestContext, t: NuevoTurno): Promise<string> {
   const { rows } = await context.db.sql.query(
     `INSERT INTO buddys.bookings
        (nombre, telefono, vehiculo_tipo, servicio_id, fecha_preferida, franja, estado, monto, trabajador_id,
-        fecha_confirmada, franja_confirmada)
-     VALUES ('Cliente', '12345678', 'auto', $1, $2::date, $3, $4, $5, $6::uuid, $7::date, $8)
+        fecha_confirmada, franja_confirmada, registrado_por)
+     VALUES ('Cliente', '12345678', 'auto', $1, $2::date, $3, $4, $5, $6::uuid, $7::date, $8, $9::uuid)
      RETURNING id::text AS id`,
     [
       t.servicio ?? 'pulido',
@@ -43,6 +45,7 @@ async function turno(context: TestContext, t: NuevoTurno): Promise<string> {
       t.trabajador ?? null,
       t.confirmada?.fecha ?? null,
       t.confirmada?.franja ?? null,
+      t.registradoPor ?? null,
     ],
   );
   return String(rows[0]?.id);
@@ -97,12 +100,12 @@ describe('PATCH /api/admin/bookings/:id con cobro', () => {
     expect(agenda.body.turnos[0]).toMatchObject({ monto: 60000, trabajador: { id: adminId } });
   });
 
-  it('el nombre del trabajador es su email si no tiene nombre', async () => {
+  it('sin nombre, el trabajador se muestra con la parte de su email antes de la @ (nunca el email entero)', async () => {
     const { context, admin } = await equipo();
     const sinNombre = await addUser(context, { email: 'sin@t.test', rol: 'empleado', nombre: null });
     const id = await turno(context, { fecha: '2026-10-16', estado: 'confirmado' });
     const response = await admin.patch(`/api/admin/bookings/${id}`, { estado: 'completado', trabajadorId: sinNombre });
-    expect(response.body.booking.trabajador).toEqual({ id: sinNombre, nombre: 'sin@t.test' });
+    expect(response.body.booking.trabajador).toEqual({ id: sinNombre, nombre: 'sin' });
   });
 
   it('corregir solo el cobro de un completado no cambia updatedAt; cambiar el estado sí', async () => {
@@ -293,15 +296,16 @@ describe('base de datos: monto y trabajador_id', () => {
     expect(((await fila(context, id))?.updated_at as Date).getUTCFullYear()).toBeGreaterThan(2020);
   });
 
-  it('si la persona se borra, el turno queda sin asignar y las estadísticas lo cuentan como "Sin asignar"', async () => {
+  it('una persona con trabajos no se puede borrar (FK RESTRICT): el turno conserva su trabajador', async () => {
     const { context, admin } = await equipo();
     const baja = await addUser(context, { email: 'baja@t.test', rol: 'empleado', nombre: 'Baja' });
     const id = await turno(context, { fecha: '2026-10-16', monto: 1000, trabajador: baja });
-    await context.db.sql.query('DELETE FROM auth.users WHERE id = $1::uuid', [baja]);
-    expect(await fila(context, id)).toMatchObject({ monto: 1000, trabajador_id: null });
+    // Migración usuarios_baja: borrar el usuario de Auth con historial falla y no toca el turno.
+    await expect(context.db.sql.query('DELETE FROM auth.users WHERE id = $1::uuid', [baja])).rejects.toMatchObject({ code: '23001' });
+    expect(await fila(context, id)).toMatchObject({ monto: 1000, trabajador_id: baja });
     const stats = await admin.get('/api/admin/estadisticas?desde=2026-10-16&hasta=2026-10-16');
-    expect(stats.body.porTrabajador).toEqual([{ id: null, nombre: 'Sin asignar', completados: 1, ingresos: 1000 }]);
-    expect(stats.body.completadosSinTrabajador).toBe(1);
+    expect(stats.body.periodo).toMatchObject({ completados: 1, ingresos: 1000 });
+    expect((await admin.get('/api/admin/bookings')).body.bookings[0].trabajador).toEqual({ id: baja, nombre: 'Baja' });
   });
 });
 
@@ -317,7 +321,7 @@ describe('GET /api/admin/trabajadores', () => {
       expect((response.body.trabajadores as { nombre: string; rol: string }[]).map((t) => [t.nombre, t.rol])).toEqual([
         ['Ana', 'admin'],
         ['Beto', 'empleado'],
-        ['mail@t.test', 'admin'],
+        ['mail', 'admin'],
         ['Super', 'superadmin'],
         ['zeta', 'empleado'],
       ]);
@@ -349,7 +353,7 @@ describe('GET /api/admin/estadisticas', () => {
     expect(response.status, JSON.stringify(response.body)).toBe(200);
     const body = response.body;
     expect(Object.keys(body).sort()).toEqual(
-      ['completadosSinTrabajador', 'gastosPorCategoria', 'granularidad', 'periodo', 'porDiaSemana', 'porServicio', 'porTrabajador', 'rango', 'resumen', 'serie'],
+      ['gastosPorCategoria', 'granularidad', 'periodo', 'porDiaSemana', 'porServicio', 'rango', 'resumen', 'serie'],
     );
     expect(body.rango).toEqual({ desde: '2026-10-01', hasta: '2026-10-16' });
     expect(body.granularidad).toBe('dia');
@@ -379,12 +383,10 @@ describe('GET /api/admin/estadisticas', () => {
     expect(body.serie[15]).toEqual({ clave: '2026-10-16', completados: 1, ingresos: 50000, gastos: 0 });
     expect(body.serie[1]).toEqual({ clave: '2026-10-02', completados: 1, ingresos: 0, gastos: 0 });
     expect(body.porServicio[0]).toEqual({ servicioId: 'pulido', nombre: 'Pulido', pedidos: 3, completados: 2, ingresos: 50000 });
-    expect(body.porTrabajador).toEqual([
-      { id: adminId, nombre: 'Ana', completados: 1, ingresos: 50000 },
-      { id: empleadoId, nombre: 'Beto', completados: 1, ingresos: 30000 },
-      { id: null, nombre: 'Sin asignar', completados: 1, ingresos: 0 },
-    ]);
-    expect(body.completadosSinTrabajador).toBe(1);
+    // Sin ranking (contrato 05): nada que compare a las personas, ni siquiera sus nombres.
+    expect(body).not.toHaveProperty('porTrabajador');
+    expect(body).not.toHaveProperty('completadosSinTrabajador');
+    expect(JSON.stringify(body)).not.toMatch(/Ana|Beto|Sin asignar|[tT]rabajador/);
     expect(body.porDiaSemana).toHaveLength(7);
     // viernes 16/10 mañana (1), jueves 15/10 tarde (1), lunes 12/10 tarde, martes 13/10 mañana, viernes 2/10 mañana
     expect(body.porDiaSemana[5]).toEqual({ dia: 5, manana: 2, tarde: 0 });
@@ -422,7 +424,6 @@ describe('GET /api/admin/estadisticas', () => {
     const { body } = await admin.get('/api/admin/estadisticas?desde=2027-03-01&hasta=2027-03-03');
     expect(body.periodo).toMatchObject({ turnos: 0, ingresos: 0, ticketPromedio: null, tasaCancelacion: null, completadosSinMonto: 0, gastos: 0, gananciaNeta: 0, margen: null });
     expect(body.serie).toEqual(['2027-03-01', '2027-03-02', '2027-03-03'].map((clave) => ({ clave, completados: 0, ingresos: 0, gastos: 0 })));
-    expect(body.porTrabajador).toEqual([]);
     expect(body.resumen.hoy).toEqual({ actual: { completados: 0, ingresos: 0, gastos: 0, ganancia: 0 }, anterior: { completados: 0, ingresos: 0, gastos: 0, ganancia: 0 } });
   });
 
@@ -590,5 +591,64 @@ describe('GET /api/admin/estadisticas/mias', () => {
     const largo = await empleado.get('/api/admin/estadisticas/mias?desde=2026-01-01&hasta=2026-12-31');
     expect(largo.body.serie).toHaveLength(12);
     expect(largo.body.serie[9]).toEqual({ clave: '2026-10', completados: 3 });
+  });
+
+  it('cuenta lo que registré y, de lo que no tiene quién lo registró (turnos web), lo que completé', async () => {
+    const { context, empleado, empleadoId, adminId, admin } = await equipo();
+    // Registrado por el empleado, aunque figure otro trabajador: es del empleado.
+    await turno(context, { fecha: '2026-10-15', trabajador: adminId, registradoPor: empleadoId, servicio: 'encerado' });
+    // Registrado por el empleado sin trabajador: también.
+    await turno(context, { fecha: '2026-10-15', registradoPor: empleadoId, servicio: 'encerado' });
+    // Turno web (sin registrado_por) que completó el empleado: suyo.
+    await turno(context, { fecha: '2026-10-16', trabajador: empleadoId, servicio: 'pulido' });
+    // Registrado por el admin con el empleado de trabajador: del admin, no del empleado.
+    await turno(context, { fecha: '2026-10-16', trabajador: empleadoId, registradoPor: adminId, servicio: 'pulido' });
+    // Registrado por el empleado pero sin completar: no cuenta.
+    await turno(context, { fecha: '2026-10-16', estado: 'confirmado', registradoPor: empleadoId });
+
+    const mias = await empleado.get('/api/admin/estadisticas/mias');
+    expect(mias.body.completados).toBe(3);
+    expect(mias.body.porServicio).toEqual([
+      { servicioId: 'encerado', nombre: 'Encerado', completados: 2 },
+      { servicioId: 'pulido', nombre: 'Pulido', completados: 1 },
+    ]);
+    expect(mias.body.serie[14]).toEqual({ clave: '2026-10-15', completados: 2 });
+    const largo = await empleado.get('/api/admin/estadisticas/mias?desde=2026-01-01&hasta=2026-12-31');
+    expect(largo.body.serie[9]).toEqual({ clave: '2026-10', completados: 3 });
+
+    const suyas = await admin.get('/api/admin/estadisticas/mias');
+    expect(suyas.body.completados).toBe(1);
+    expect(suyas.body.porServicio).toEqual([{ servicioId: 'pulido', nombre: 'Pulido', completados: 1 }]);
+  });
+
+  it('EXPLAIN: la consulta usa los índices parciales de registrado_por y trabajador_id', async () => {
+    const { context, empleadoId, adminId } = await equipo();
+    const pg = context.db.pg;
+    // Un año de lavados (casi todos del admin o de la web) y unos pocos del empleado: así el planner tiene que elegir.
+    await context.db.sql.query(
+      `INSERT INTO buddys.bookings
+         (nombre, telefono, vehiculo_tipo, servicio_id, fecha_preferida, franja, estado, trabajador_id, registrado_por)
+       SELECT 'C' || g, '12345678', 'auto', 'pulido', date '2026-01-01' + (g % 300), 'manana', 'completado',
+              CASE WHEN g % 97 = 0 THEN $1::uuid WHEN g % 3 = 0 THEN $2::uuid END,
+              CASE WHEN g % 89 = 0 THEN $1::uuid WHEN g % 2 = 0 THEN $2::uuid END
+       FROM generate_series(1, 6000) AS g`,
+      [empleadoId, adminId],
+    );
+    await pg.exec('ANALYZE buddys.bookings');
+    const plan = async (consulta: string): Promise<string> =>
+      // eslint-disable-next-line no-restricted-syntax -- EXPLAIN de consultas fijas del propio test
+      (await pg.query<Record<string, string>>(`EXPLAIN ${consulta}`, ['2026-01-01', '2026-10-31', empleadoId])).rows
+        .map((r) => r['QUERY PLAN'])
+        .join('\n');
+    // El mismo WHERE que PostgresEstadisticasRepository.misSerie / misServicios.
+    const texto = await plan(
+      `SELECT count(*) FROM buddys.bookings b
+       WHERE b.estado = 'completado'
+         AND (b.registrado_por = $3::uuid OR (b.registrado_por IS NULL AND b.trabajador_id = $3::uuid))
+         AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date`,
+    );
+    expect(texto).toMatch(/BitmapOr/);
+    expect(texto).toContain('bookings_registrado_por_idx');
+    expect(texto).toContain('bookings_trabajador_id_idx');
   });
 });

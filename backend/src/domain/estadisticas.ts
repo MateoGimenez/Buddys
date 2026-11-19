@@ -113,14 +113,6 @@ export interface FilaServicio {
   ingresos: number;
 }
 
-export interface FilaTrabajador {
-  /** null = "Sin asignar". */
-  id: string | null;
-  nombre: string;
-  completados: number;
-  ingresos: number;
-}
-
 export interface FilaDiaSemana {
   /** 0 = domingo ... 6 = sábado. */
   dia: number;
@@ -135,14 +127,12 @@ export interface Estadisticas {
   periodo: PeriodoTurnos;
   serie: PuntoSerie[];
   porServicio: FilaServicio[];
-  porTrabajador: FilaTrabajador[];
   porDiaSemana: FilaDiaSemana[];
-  completadosSinTrabajador: number;
   /** Por monto descendente; solo categorías con gastos en el período. */
   gastosPorCategoria: FilaGastoCategoria[];
 }
 
-/** "Mis trabajos": lo que hizo una persona. Nunca tiene importes. */
+/** "Mis trabajos": lo que registró una persona (o completó, si no tiene quién lo registró). Nunca tiene importes. */
 export interface MisTrabajos {
   rango: Rango;
   completados: number;
@@ -173,8 +163,6 @@ export interface EstadisticasRepository {
   gastosPorCategoria(rango: Rango): Promise<FilaGastoCategoria[]>;
   /** Por pedidos descendente; servicios sin pedidos solo si están activos. */
   porServicio(rango: Rango): Promise<FilaServicio[]>;
-  /** Por completados descendente; id null = sin asignar (sin trabajador o la persona se borró). */
-  porTrabajador(rango: Rango): Promise<FilaTrabajador[]>;
   /** Solo los días de la semana con pedidos. */
   porDiaSemana(rango: Rango): Promise<FilaDiaSemana[]>;
   misServicios(perfilId: string, rango: Rango): Promise<MisTrabajos['porServicio']>;

@@ -6,7 +6,8 @@
         "id": "00000000-0000-4000-8000-00000000a0a0",
         "email": "ana@buddys.test",
         "nombre": "Ana",
-        "rol": "superadmin"
+        "rol": "superadmin",
+        "fotoVersion": null
       }
     }
   },
@@ -17,7 +18,8 @@
         "id": "00000000-0000-4000-8000-00000000a0a0",
         "email": "ana@buddys.test",
         "nombre": "Ana",
-        "rol": "superadmin"
+        "rol": "superadmin",
+        "fotoVersion": null
       }
     }
   },
@@ -28,7 +30,8 @@
         "id": "00000000-0000-4000-8000-00000000b0b0",
         "email": "beto@buddys.test",
         "nombre": "Beto",
-        "rol": "empleado"
+        "rol": "empleado",
+        "fotoVersion": null
       }
     }
   },
@@ -116,6 +119,10 @@
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
         "formaPago": "efectivo",
         "servicios": [
           {
@@ -156,6 +163,10 @@
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
         "formaPago": null,
         "servicios": [
           {
@@ -193,6 +204,10 @@
         "turnosDelCliente": null,
         "monto": null,
         "trabajador": {
+          "id": "00000000-0000-4000-8000-00000000b0b0",
+          "nombre": "Beto"
+        },
+        "registradoPor": {
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
@@ -295,6 +310,10 @@
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
         "formaPago": "transferencia",
         "servicios": [
           {
@@ -340,6 +359,10 @@
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-00000000b0b0",
+          "nombre": "Beto"
+        },
         "formaPago": null,
         "servicios": [
           {
@@ -382,6 +405,10 @@
         "turnosDelCliente": null,
         "monto": null,
         "trabajador": {
+          "id": "00000000-0000-4000-8000-00000000b0b0",
+          "nombre": "Beto"
+        },
+        "registradoPor": {
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
@@ -475,6 +502,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
           "formaPago": "efectivo",
           "servicios": [
             {
@@ -506,6 +537,10 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
             "id": "00000000-0000-4000-8000-00000000a0a0",
             "nombre": "Ana"
           },
@@ -543,6 +578,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -574,6 +613,10 @@
           "turnosDelCliente": null,
           "monto": 30000,
           "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
             "id": "00000000-0000-4000-8000-00000000a0a0",
             "nombre": "Ana"
           },
@@ -616,6 +659,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -655,6 +702,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -671,24 +722,6 @@
         "cantidad": 6,
         "total": 51000,
         "sinMonto": 3,
-        "porTrabajador": [
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-00000000b0b0",
-              "nombre": "Beto"
-            },
-            "cantidad": 4,
-            "total": 21000
-          },
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-00000000a0a0",
-              "nombre": "Ana"
-            },
-            "cantidad": 2,
-            "total": 30000
-          }
-        ],
         "porFormaPago": [
           {
             "formaPago": "transferencia",
@@ -737,6 +770,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
           "formaPago": "efectivo",
           "servicios": [
             {
@@ -768,6 +805,10 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
             "id": "00000000-0000-4000-8000-00000000a0a0",
             "nombre": "Ana"
           },
@@ -805,6 +846,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -836,6 +881,10 @@
           "turnosDelCliente": null,
           "monto": null,
           "trabajador": {
+            "id": "00000000-0000-4000-8000-00000000a0a0",
+            "nombre": "Ana"
+          },
+          "registradoPor": {
             "id": "00000000-0000-4000-8000-00000000a0a0",
             "nombre": "Ana"
           },
@@ -878,6 +927,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -917,6 +970,10 @@
             "id": "00000000-0000-4000-8000-00000000b0b0",
             "nombre": "Beto"
           },
+          "registradoPor": {
+            "id": "00000000-0000-4000-8000-00000000b0b0",
+            "nombre": "Beto"
+          },
           "formaPago": null,
           "servicios": [
             {
@@ -933,24 +990,6 @@
         "cantidad": 6,
         "total": null,
         "sinMonto": 3,
-        "porTrabajador": [
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-00000000b0b0",
-              "nombre": "Beto"
-            },
-            "cantidad": 4,
-            "total": null
-          },
-          {
-            "trabajador": {
-              "id": "00000000-0000-4000-8000-00000000a0a0",
-              "nombre": "Ana"
-            },
-            "cantidad": 2,
-            "total": null
-          }
-        ],
         "porFormaPago": [
           {
             "formaPago": null,
@@ -980,7 +1019,6 @@
         "cantidad": 0,
         "total": 0,
         "sinMonto": 0,
-        "porTrabajador": [],
         "porFormaPago": []
       }
     }
@@ -1023,6 +1061,10 @@
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
         "formaPago": "efectivo",
         "servicios": [
           {
@@ -1032,7 +1074,7 @@
           }
         ],
         "createdAt": "2026-10-16T15:00:00.000Z",
-        "updatedAt": "2026-11-14T20:08:17.850Z"
+        "updatedAt": "2026-11-18T22:55:22.029Z"
       }
     }
   },
@@ -1068,6 +1110,10 @@
         "turnosDelCliente": 1,
         "monto": 15000,
         "trabajador": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
+        "registradoPor": {
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
@@ -1110,6 +1156,10 @@
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
         "formaPago": "efectivo",
         "servicios": [
           {
@@ -1124,7 +1174,7 @@
           }
         ],
         "createdAt": "2026-10-16T15:00:00.000Z",
-        "updatedAt": "2026-11-14T20:08:17.877Z"
+        "updatedAt": "2026-11-18T22:55:22.057Z"
       }
     }
   },
@@ -1154,6 +1204,10 @@
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana"
         },
+        "registradoPor": {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "nombre": "Ana"
+        },
         "formaPago": "efectivo",
         "servicios": [
           {
@@ -1168,7 +1222,7 @@
           }
         ],
         "createdAt": "2026-10-16T15:00:00.000Z",
-        "updatedAt": "2026-11-14T20:08:17.877Z"
+        "updatedAt": "2026-11-18T22:55:22.057Z"
       }
     }
   },
@@ -1250,8 +1304,12 @@
           "nombre": "Ana",
           "rol": "superadmin",
           "activo": true,
-          "createdAt": "2026-11-14T20:08:17.549Z",
-          "updatedAt": "2026-11-14T20:08:17.553Z"
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": false,
+          "fotoVersion": null,
+          "createdAt": "2026-11-18T23:36:00.018Z",
+          "updatedAt": "2026-11-18T23:36:00.027Z"
         },
         {
           "id": "00000000-0000-4000-8000-00000000b0b0",
@@ -1259,8 +1317,12 @@
           "nombre": "Beto",
           "rol": "empleado",
           "activo": true,
-          "createdAt": "2026-11-14T20:08:17.554Z",
-          "updatedAt": "2026-11-14T20:08:17.555Z"
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": true,
+          "fotoVersion": null,
+          "createdAt": "2026-11-18T23:36:00.030Z",
+          "updatedAt": "2026-11-18T23:36:00.032Z"
         }
       ],
       "gestionCuentas": true
@@ -1271,7 +1333,7 @@
     "body": {
       "error": {
         "code": "FORBIDDEN",
-        "message": "Solo un superadmin puede gestionar usuarios."
+        "message": "Con tu rol no podés gestionar usuarios."
       }
     }
   },
@@ -1309,7 +1371,8 @@
         "id": "00000000-0000-4000-8000-00000000a0a0",
         "email": "ana@buddys.test",
         "nombre": "Ana",
-        "rol": "superadmin"
+        "rol": "superadmin",
+        "fotoVersion": null
       }
     }
   },
@@ -1324,5 +1387,201 @@
   },
   "logout": {
     "status": 204
+  },
+  "perfilAdmin": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana",
+        "rol": "superadmin",
+        "fotoVersion": null
+      },
+      "fotosDisponibles": true
+    }
+  },
+  "perfilEmpleado": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000b0b0",
+        "email": "beto@buddys.test",
+        "nombre": "Beto",
+        "rol": "empleado",
+        "fotoVersion": null
+      },
+      "fotosDisponibles": true
+    }
+  },
+  "perfilPatchNombre": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana Pérez",
+        "rol": "superadmin",
+        "fotoVersion": null
+      }
+    }
+  },
+  "perfilPatchNombreNull": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": null,
+        "rol": "superadmin",
+        "fotoVersion": null
+      }
+    }
+  },
+  "perfilPatchPassword": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana",
+        "rol": "superadmin",
+        "fotoVersion": null
+      }
+    }
+  },
+  "perfilPasswordActualMal": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "La contraseña actual no es correcta.",
+        "fields": {
+          "passwordActual": "La contraseña actual no es correcta."
+        }
+      }
+    }
+  },
+  "perfilPasswordLimite": {
+    "status": 429,
+    "body": {
+      "error": {
+        "code": "RATE_LIMITED",
+        "message": "Hiciste demasiados intentos de cambiar la contraseña. Esperá unos minutos antes de volver a probar."
+      }
+    }
+  },
+  "perfilFotoSube": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana",
+        "rol": "superadmin",
+        "fotoVersion": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "perfilFotoInvalida": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Subí una foto JPG, PNG o WebP.",
+        "fields": {
+          "foto": "Subí una foto JPG, PNG o WebP."
+        }
+      }
+    }
+  },
+  "perfilFotoPesada": {
+    "status": 413,
+    "body": {
+      "error": {
+        "code": "PAYLOAD_TOO_LARGE",
+        "message": "La foto pesa más de 2 MB. Elegí una más liviana."
+      }
+    }
+  },
+  "meAdminConFoto": {
+    "status": 200,
+    "body": {
+      "usuario": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana",
+        "rol": "superadmin",
+        "fotoVersion": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "usuariosAdminConFoto": {
+    "status": 200,
+    "body": {
+      "usuarios": [
+        {
+          "id": "00000000-0000-4000-8000-00000000a0a0",
+          "email": "ana@buddys.test",
+          "nombre": "Ana",
+          "rol": "superadmin",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": false,
+          "fotoVersion": "2026-10-16T15:00:00.000Z",
+          "createdAt": "2026-11-18T23:36:00.018Z",
+          "updatedAt": "2026-11-18T23:36:00.315Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-00000000b0b0",
+          "email": "beto@buddys.test",
+          "nombre": "Beto",
+          "rol": "empleado",
+          "activo": true,
+          "eliminadoAt": null,
+          "tieneHistorial": false,
+          "gestionable": true,
+          "fotoVersion": null,
+          "createdAt": "2026-11-18T23:36:00.030Z",
+          "updatedAt": "2026-11-18T23:36:00.032Z"
+        }
+      ],
+      "gestionCuentas": true
+    }
+  },
+  "fotoAjenaEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol solo podés ver tu propia foto."
+      }
+    }
+  },
+  "perfilFotoQuita": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana",
+        "rol": "superadmin",
+        "fotoVersion": null
+      }
+    }
+  },
+  "perfilSinFotos": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-00000000a0a0",
+        "email": "ana@buddys.test",
+        "nombre": "Ana",
+        "rol": "superadmin",
+        "fotoVersion": null
+      },
+      "fotosDisponibles": false
+    }
   }
 }

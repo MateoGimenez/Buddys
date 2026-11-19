@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight, FileDown, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type SyntheticEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError, mensajeDeError } from '../api/client';
 import * as ep from '../api/endpoints';
-import { FORMAS_PAGO, type CambioTurno, type FormaPago, type PlanillaDelDia, type Servicio, type Trabajador, type Turno } from '../api/types';
+import { FORMAS_PAGO, type CambioTurno, type FormaPago, type PlanillaDelDia, type Servicio, type Turno } from '../api/types';
 import { ElegirServicios } from '../components/ElegirServicios';
 import { AreaTexto, Aviso, Boton, Campo, Cargando, Confirmar, Encabezado, Segmentado, Selector, Vacio } from '../components/ui';
 import { EVENTO_ENVIADOS } from '../lib/cola';
@@ -22,9 +22,9 @@ import {
   sumaDeLista,
   sumarDias,
 } from '../lib/format';
-import { useContador, useFlip } from '../lib/movimiento';
+import { useContador } from '../lib/movimiento';
 import { useCarga } from '../lib/useCarga';
-import { useSesion, useUsuario, useVeImportes } from '../session/SessionContext';
+import { useSesion, useVeImportes } from '../session/SessionContext';
 import { abrirPdf } from '../lib/pdf';
 
 const NOMBRE_MOSTRADOR = 'Cliente de mostrador';
@@ -52,7 +52,6 @@ export function Planilla() {
     };
   }, [recargar]);
   const [catalogo] = useCarga(() => ep.servicios().then((r) => r.servicios), []);
-  const [equipo] = useCarga(() => (corrige ? ep.trabajadores().then((r) => r.trabajadores) : Promise.resolve([])), [corrige]);
 
   const nombresServicio = useMemo(() => {
     const m = new Map<string, string>();
@@ -143,7 +142,6 @@ export function Planilla() {
               corrige={corrige}
               borra={borra}
               comprobantes={comprobantes}
-              equipo={equipo.datos ?? []}
               catalogo={catalogo.datos ?? []}
               onCambio={(t) => {
                 actualizarDia((prev) => ({ ...prev, lavados: prev.lavados.map((l) => (l.id === t.id ? t : l)) }));
@@ -167,10 +165,6 @@ function Cifra({ valor, formato = String }: { valor: number; formato?: (n: numbe
 
 function Resumen({ datos, veImportes }: { datos: PlanillaDelDia; veImportes: boolean }) {
   const { resumen } = datos;
-  const lider = resumen.porTrabajador[0];
-  const listaRef = useRef<HTMLOListElement>(null);
-  // El ranking se reordena deslizándose cuando alguien pasa adelante.
-  useFlip(listaRef, resumen.porTrabajador.map((r) => r.trabajador?.id ?? '-').join(','));
   return (
     <section className="resumen hoja" aria-labelledby="resumen-titulo">
       <h2 id="resumen-titulo" className="solo-lectores">
@@ -198,31 +192,6 @@ function Resumen({ datos, veImportes }: { datos: PlanillaDelDia; veImportes: boo
           </div>
         ) : null}
       </dl>
-
-      {resumen.porTrabajador.length ? (
-        <div className="ranking">
-          <h3 className="ranking-titulo">Quién lavó más</h3>
-          <ol className="ranking-lista" ref={listaRef}>
-            {resumen.porTrabajador.map((r, i) => {
-              const ancho = lider ? Math.max(0.08, r.cantidad / lider.cantidad) : 0;
-              const clave = r.trabajador?.id ?? 'sin-asignar';
-              return (
-                <li key={clave} data-flip={clave} className="ranking-fila" data-primero={i === 0 ? '' : undefined}>
-                  <span className="ranking-puesto">{i + 1}</span>
-                  <span className="ranking-nombre">{r.trabajador?.nombre ?? 'Sin asignar'}</span>
-                  <span className="ranking-barra" aria-hidden>
-                    <span style={{ transform: `scaleX(${String(ancho)})` }} />
-                  </span>
-                  <span className="ranking-cantidad">
-                    {r.cantidad} {r.cantidad === 1 ? 'lavado' : 'lavados'}
-                  </span>
-                  {veImportes && r.total !== null ? <span className="ranking-total">{pesos(r.total)}</span> : null}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-      ) : null}
     </section>
   );
 }
@@ -290,7 +259,6 @@ interface ListaProps {
   corrige: boolean;
   borra: boolean;
   comprobantes: boolean;
-  equipo: Trabajador[];
   catalogo: Servicio[];
   onCambio: (t: Turno) => void;
   onBorrado: (id: string) => void;
@@ -335,8 +303,7 @@ function Lista(props: ListaProps) {
 
 type Modo = 'ver' | 'corregir' | 'comprobante' | 'nota';
 
-function Copia({ lavado, numero, orden, nombresServicio, veImportes, corrige, borra, comprobantes, equipo, catalogo, onCambio, onBorrado }: ListaProps & { lavado: Turno; numero: number; orden: number }) {
-  const usuario = useUsuario();
+function Copia({ lavado, numero, orden, nombresServicio, veImportes, corrige, borra, comprobantes, catalogo, onCambio, onBorrado }: ListaProps & { lavado: Turno; numero: number; orden: number }) {
   const [modo, setModo] = useState<Modo>('ver');
   const [confirmando, setConfirmando] = useState(false);
   const [borrando, setBorrando] = useState(false);
@@ -386,8 +353,8 @@ function Copia({ lavado, numero, orden, nombresServicio, veImportes, corrige, bo
           <span className="copia-pago copia-pago-falta">Pago sin indicar</span>
         ) : null}
       </p>
-      <p className="copia-trabajador">
-        Lavó: <strong>{lavado.trabajador?.nombre ?? 'Sin asignar'}</strong>
+      <p className="copia-registro">
+        Registrado por: <strong>{registradoPor(lavado)}</strong>
         {lavado.origen === 'web' ? <span className="etiqueta">Turno web</span> : null}
       </p>
       {lavado.notasInternas ? <p className="copia-nota">{lavado.notasInternas}</p> : null}
@@ -421,9 +388,7 @@ function Copia({ lavado, numero, orden, nombresServicio, veImportes, corrige, bo
       {modo === 'corregir' ? (
         <Corregir
           lavado={lavado}
-          equipo={equipo}
           catalogo={catalogo}
-          usuarioId={usuario.id}
           onListo={(t) => {
             setModo('ver');
             onCambio(t);
@@ -451,10 +416,18 @@ function Copia({ lavado, numero, orden, nombresServicio, veImportes, corrige, bo
         onConfirmar={() => void borrar()}
         onCancelar={() => { setConfirmando(false); }}
       >
-        {servicio} · {NOMBRE_VEHICULO[lavado.vehiculoTipo]}. Deja de contar en la planilla, las estadísticas y el ranking. No se puede deshacer.
+        {servicio} · {NOMBRE_VEHICULO[lavado.vehiculoTipo]}. Deja de contar en la planilla y en las estadísticas. No se puede deshacer.
       </Confirmar>
     </li>
   );
+}
+
+/**
+ * Quién anotó el lavado. Los turnos viejos o de la web no tienen `registradoPor`: ahí se muestra quién lo hizo, y si
+ * tampoco hay, "sin dato" (contrato 05). Nunca un ranking: solo el nombre en cada hoja.
+ */
+function registradoPor(lavado: Turno): string {
+  return lavado.registradoPor?.nombre ?? lavado.trabajador?.nombre ?? 'sin dato';
 }
 
 /** Los ids de servicios de un lavado, en orden (si el backend no mandara `servicios`, el principal). */
@@ -465,23 +438,18 @@ function idsDe(lavado: Turno): string[] {
 
 function Corregir({
   lavado,
-  equipo,
   catalogo,
-  usuarioId,
   onListo,
   onCancelar,
 }: {
   lavado: Turno;
-  equipo: Trabajador[];
   catalogo: Servicio[];
-  usuarioId: string;
   onListo: (t: Turno) => void;
   onCancelar: () => void;
 }) {
   const originales = idsDe(lavado);
   const [servicioIds, setServicioIds] = useState<string[]>(originales);
   const [montoTexto, setMontoTexto] = useState(lavado.monto === null ? '' : miles(String(lavado.monto)));
-  const [trabajadorId, setTrabajadorId] = useState(lavado.trabajador?.id ?? '');
   const [nota, setNota] = useState(lavado.notasInternas ?? '');
   const [formaPago, setFormaPago] = useState<FormaPago | null>(lavado.formaPago);
   const [errores, setErrores] = useState<Record<string, string>>({});
@@ -497,8 +465,8 @@ function Corregir({
 
   const guardar = async (e: SyntheticEvent) => {
     e.preventDefault();
-    // Solo viaja lo que se cambió: así no se pisa un monto que cargó otra persona mientras tanto, y no se vuelve a
-    // mandar quién lavó (el backend rechaza a alguien que ya no está activo aunque no se lo cambie).
+    // Solo viaja lo que se cambió: así no se pisa un monto que cargó otra persona mientras tanto. Quién lo hizo
+    // (trabajadorId) no se toca desde el panel: queda como está en la base.
     if (!servicioIds.length) {
       setErrores({ servicioIds: 'Tiene que quedar al menos un servicio.' });
       return;
@@ -506,8 +474,6 @@ function Corregir({
     const cambio: CambioTurno = {};
     if (cambiaronServicios) cambio.servicioIds = servicioIds;
     if (monto !== lavado.monto) cambio.monto = monto;
-    const trabajador = trabajadorId || null;
-    if (trabajador !== (lavado.trabajador?.id ?? null)) cambio.trabajadorId = trabajador;
     const notaNueva = nota.trim() || null;
     if (notaNueva !== (lavado.notasInternas ?? null)) cambio.notasInternas = notaNueva;
     if (formaPago !== lavado.formaPago) cambio.formaPago = formaPago;
@@ -531,8 +497,6 @@ function Corregir({
       setGuardando(false);
     }
   };
-
-  const enEquipo = equipo.some((t) => t.id === lavado.trabajador?.id);
 
   return (
     <form className="copia-form formulario" onSubmit={(e) => void guardar(e)} noValidate>
@@ -582,18 +546,6 @@ function Corregir({
         ayuda={formaPago === null ? 'Sin indicar. Tocá una para cargarla.' : 'Tocá la elegida de nuevo para dejarla sin indicar.'}
         opciones={FORMAS_PAGO.map((f) => ({ valor: f, etiqueta: NOMBRE_PAGO[f] }))}
       />
-      <Selector etiqueta="Quién lo lavó" value={trabajadorId} onChange={(e) => { setTrabajadorId(e.target.value); }} error={errores.trabajadorId}>
-        <option value="">Sin asignar</option>
-        {lavado.trabajador && !enEquipo ? (
-          <option value={lavado.trabajador.id}>{lavado.trabajador.nombre}</option>
-        ) : null}
-        {equipo.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.nombre}
-            {t.id === usuarioId ? ' (vos)' : ''}
-          </option>
-        ))}
-      </Selector>
       <AreaTexto etiqueta="Nota" value={nota} maxLength={1000} onChange={(e) => { setNota(e.target.value); }} error={errores.notasInternas} />
       <div className="fila-botones">
         <Boton variante="fantasma" onClick={onCancelar} disabled={guardando}>

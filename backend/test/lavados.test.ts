@@ -168,18 +168,20 @@ describe('POST /api/admin/lavados (Registrar lavado)', () => {
 });
 
 describe('los lavados cuentan en todo el sistema', () => {
-  it('entran en las estadísticas: ingresos y ranking del equipo (quién lava más)', async () => {
-    const { admin, francoId, nicoId } = await equipo();
+  it('entran en las estadísticas (ingresos, sin ranking) y en "mis trabajos" de quien los registró', async () => {
+    const { admin, franco, francoId } = await equipo();
+    // El admin registra tres, aunque mande a Franco de trabajador (clientes viejos): son del admin.
     for (let i = 0; i < 3; i += 1) await admin.post('/api/admin/lavados', { ...LAVADO, monto: 10000, trabajadorId: francoId });
-    await admin.post('/api/admin/lavados', { ...LAVADO, monto: 25000, trabajadorId: nicoId });
+    await franco.post('/api/admin/lavados', { ...LAVADO, monto: 25000 });
 
     const stats = await admin.get(`/api/admin/estadisticas?desde=${HOY}&hasta=${HOY}`);
     expect(stats.status, JSON.stringify(stats.body)).toBe(200);
     expect(stats.body.periodo).toMatchObject({ completados: 4, ingresos: 55000 });
-    expect(stats.body.porTrabajador.slice(0, 2)).toEqual([
-      { id: francoId, nombre: 'Franco', completados: 3, ingresos: 30000 },
-      { id: nicoId, nombre: 'Nico', completados: 1, ingresos: 25000 },
-    ]);
+    expect(stats.body).not.toHaveProperty('porTrabajador');
+    expect(stats.body).not.toHaveProperty('completadosSinTrabajador');
+
+    expect((await franco.get('/api/admin/estadisticas/mias')).body.completados).toBe(1);
+    expect((await admin.get('/api/admin/estadisticas/mias')).body.completados).toBe(3);
   });
 
   it('no ocupan cupo de la agenda: con la franja llena de lavados, la web todavía toma turnos', async () => {
@@ -216,8 +218,78 @@ describe('los lavados cuentan en todo el sistema', () => {
   });
 });
 
+describe('registradoPor (contrato 2026-11-17_05: seguimiento sin ranking)', () => {
+  it('está en lavados, turnos, agenda y PATCH; también para el empleado; null en los turnos de la web', async () => {
+    const { context, admin, franco, francoId, anaId } = await equipo();
+    const registrado = await franco.post('/api/admin/lavados', { ...LAVADO, monto: 9000 });
+    expect(registrado.body.lavado.registradoPor).toEqual({ id: francoId, nombre: 'Franco' });
+    const lavadoId = String(registrado.body.lavado.id);
+    const web = await rawPost(context.app, '/api/bookings').send(validBooking({ fechaPreferida: HOY }));
+    expect(web.status, JSON.stringify(web.body)).toBe(201);
+    const webId = String(web.body.booking.id);
+
+    for (const cliente of [admin, franco]) {
+      const planilla = await cliente.get('/api/admin/lavados');
+      expect(planilla.body.lavados[0].registradoPor).toEqual({ id: francoId, nombre: 'Franco' });
+      const lista = (await cliente.get('/api/admin/bookings')).body.bookings as { id: string; registradoPor: unknown }[];
+      expect(lista.find((b) => b.id === webId)?.registradoPor).toBeNull();
+      expect(lista.find((b) => b.id === lavadoId)?.registradoPor).toEqual({ id: francoId, nombre: 'Franco' });
+      const agenda = (await cliente.get(`/api/admin/agenda?desde=${HOY}&hasta=${HOY}`)).body.turnos as {
+        id: string;
+        registradoPor: unknown;
+      }[];
+      expect(agenda.find((b) => b.id === webId)?.registradoPor).toBeNull();
+      expect(agenda.find((b) => b.id === lavadoId)?.registradoPor).toEqual({ id: francoId, nombre: 'Franco' });
+    }
+    // El empleado recibe el nombre, pero no el importe.
+    expect(JSON.stringify((await franco.get('/api/admin/lavados')).body)).not.toContain('9000');
+
+    // PATCH: el admin corrige el cobro y quien lo registró no cambia. Completar un turno web no lo vuelve "registrado".
+    const patch = await admin.patch(`/api/admin/bookings/${lavadoId}`, { monto: 9500 });
+    expect(patch.body.booking).toMatchObject({ registradoPor: { id: francoId, nombre: 'Franco' }, monto: 9500 });
+    const completado = await admin.patch(`/api/admin/bookings/${webId}`, { estado: 'completado', trabajadorId: anaId });
+    expect(completado.body.booking).toMatchObject({ registradoPor: null, trabajador: { id: anaId } });
+  });
+
+  it('con el mismo nombre que `trabajador`: sin nombre, lo de antes de la @; dado de baja, su nombre de siempre', async () => {
+    const { context, admin, franco, francoId } = await equipo();
+    const sinNombre = await addUser(context, { email: 'sin-nombre@buddys.test', rol: 'empleado', nombre: null });
+    const anonimo = await loginClient(context, 'sin-nombre@buddys.test');
+    await anonimo.post('/api/admin/lavados', LAVADO);
+    await franco.post('/api/admin/lavados', LAVADO);
+    // Baja de Franco como la hace el servicio de usuarios (objetivo A): inactivo, eliminado_at y el email liberado.
+    await context.db.sql.query(
+      "UPDATE buddys.perfiles SET activo = false, eliminado_at = now(), email = 'baja+' || id::text || '@buddys.invalid' WHERE id = $1::uuid",
+      [francoId],
+    );
+    const lavados = (await admin.get('/api/admin/lavados')).body.lavados as { registradoPor: unknown; trabajador: unknown }[];
+    expect(lavados.map((l) => l.registradoPor)).toEqual([
+      { id: sinNombre, nombre: 'sin-nombre' },
+      { id: francoId, nombre: 'Franco' },
+    ]);
+    for (const lavado of lavados) expect(lavado.registradoPor).toEqual(lavado.trabajador);
+  });
+
+  it('el empleado nunca recibe el email de un superadmin sin nombre (ni en registradoPor ni en trabajador)', async () => {
+    const { context, franco } = await equipo();
+    const jefe = await addUser(context, { email: 'jefe.secreto@buddys.test', rol: 'superadmin', nombre: null });
+    const superadmin = await loginClient(context, 'jefe.secreto@buddys.test');
+    const { id } = (await superadmin.post('/api/admin/lavados', LAVADO)).body.lavado as { id: string };
+
+    for (const ruta of ['/api/admin/bookings', '/api/admin/lavados', `/api/admin/agenda?desde=${HOY}&hasta=${HOY}`]) {
+      const response = await franco.get(ruta);
+      expect(response.status, ruta).toBe(200);
+      expect(JSON.stringify(response.body), ruta).not.toContain('@buddys.test');
+    }
+    const lista = (await franco.get('/api/admin/bookings')).body.bookings as { id: string; registradoPor: unknown; trabajador: unknown }[];
+    const lavado = lista.find((b) => b.id === id);
+    expect(lavado?.registradoPor).toEqual({ id: jefe, nombre: 'jefe.secreto' });
+    expect(lavado?.trabajador).toEqual({ id: jefe, nombre: 'jefe.secreto' });
+  });
+});
+
 describe('GET /api/admin/lavados (planilla del día)', () => {
-  it('lista los lavados del día con el total y quién lavó más', async () => {
+  it('lista los lavados del día con el total y quién registró cada uno (sin ranking)', async () => {
     const { admin, anaId, francoId, nicoId } = await equipo();
     await admin.post('/api/admin/lavados', { ...LAVADO, monto: 10000, trabajadorId: nicoId });
     await admin.post('/api/admin/lavados', { ...LAVADO, monto: 10000, trabajadorId: francoId });
@@ -233,13 +305,11 @@ describe('GET /api/admin/lavados (planilla del día)', () => {
       cantidad: 4,
       total: 32000,
       sinMonto: 1,
-      porTrabajador: [
-        { trabajador: { id: francoId, nombre: 'Franco' }, cantidad: 2, total: 22000 },
-        { trabajador: { id: nicoId, nombre: 'Nico' }, cantidad: 1, total: 10000 },
-        { trabajador: { id: anaId, nombre: 'Ana' }, cantidad: 1, total: 0 },
-      ],
       porFormaPago: [{ formaPago: null, cantidad: 4, total: 32000 }],
     });
+    // Los registró todos Ana; `trabajador` sigue en el JSON sin cambios.
+    for (const lavado of response.body.lavados) expect(lavado.registradoPor).toEqual({ id: anaId, nombre: 'Ana' });
+    expect(response.body.lavados.map((l: { trabajador: { id: string } }) => l.trabajador.id)).toEqual([nicoId, francoId, francoId, anaId]);
 
     const ayer = await admin.get('/api/admin/lavados?fecha=2026-10-15');
     expect(ayer.body.resumen).toMatchObject({ cantidad: 1, total: 5000 });
@@ -252,18 +322,8 @@ describe('GET /api/admin/lavados (planilla del día)', () => {
     const response = await franco.get('/api/admin/lavados');
     expect(response.body.lavados[0].monto).toBeNull();
     expect(response.body.resumen).toMatchObject({ cantidad: 1, total: null });
-    expect(response.body.resumen.porTrabajador[0]).toEqual({ trabajador: { id: francoId, nombre: 'Franco' }, cantidad: 1, total: null });
-  });
-
-  it('para el empleado, el orden del ranking no depende de lo cobrado (no revela quién cobró más)', async () => {
-    const { admin, franco, francoId, nicoId } = await equipo();
-    // Mismo número de lavados; Nico cobró más. Para el admin, Nico primero; para el empleado, por nombre.
-    await admin.post('/api/admin/lavados', { ...LAVADO, monto: 1000, trabajadorId: francoId });
-    await admin.post('/api/admin/lavados', { ...LAVADO, monto: 50000, trabajadorId: nicoId });
-    const ids = (r: { body: { resumen: { porTrabajador: { trabajador: { id: string } }[] } } }) =>
-      r.body.resumen.porTrabajador.map((f) => f.trabajador.id);
-    expect(ids(await admin.get('/api/admin/lavados'))).toEqual([nicoId, francoId]);
-    expect(ids(await franco.get('/api/admin/lavados'))).toEqual([francoId, nicoId]);
+    expect(response.body.resumen).not.toHaveProperty('porTrabajador');
+    expect(response.body.lavados[0].registradoPor).toEqual({ id: expect.any(String), nombre: 'Ana' });
   });
 
   it('un lavado cancelado no cuenta en la planilla', async () => {

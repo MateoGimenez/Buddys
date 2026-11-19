@@ -1,4 +1,4 @@
-import type { Booking, BookingRepository, Franja, NuevoLavado, Trabajador } from '../domain/booking.js';
+import type { Booking, BookingRepository, Franja, NuevoLavado } from '../domain/booking.js';
 import { type FormaDePago, FORMAS_DE_PAGO, TurnoConComprobanteError } from '../domain/comprobantes.js';
 import type { PerfilRepository } from '../domain/perfil.js';
 import {
@@ -64,13 +64,6 @@ export interface ResumenFormaDePago {
   total: number | null;
 }
 
-export interface ResumenTrabajador {
-  trabajador: Trabajador | null;
-  cantidad: number;
-  /** Pesos cobrados; null para quien no ve importes. */
-  total: number | null;
-}
-
 export interface LavadosDelDia {
   fecha: string;
   lavados: Booking[];
@@ -80,11 +73,6 @@ export interface LavadosDelDia {
     total: number | null;
     /** Lavados sin monto cargado (para completarlos). */
     sinMonto: number;
-    /**
-     * Quién lavó más ese día: más lavados primero; a igual cantidad, más cobrado (solo para quien ve importes) y después
-     * por nombre.
-     */
-    porTrabajador: ResumenTrabajador[];
     /**
      * Cierre de caja: una entrada por forma de pago usada ese día (null = sin indicar). Más cobrado primero (solo
      * para quien ve importes); si no, más lavados primero. Empates: el orden de FORMAS_DE_PAGO, "sin indicar" al final.
@@ -113,8 +101,9 @@ export function rangoLavado(now: Date): { min: string; max: string } {
 
 /**
  * "Registrar lavado": el auto que llega sin turno. Se guarda como turno completado de origen 'mostrador' con su cobro,
- * así cuenta en estadísticas, metas y el ranking del equipo. Permisos (domain/permisos.ts, lavados.registrar):
- * admin y superadmin anotan a cualquiera del equipo; el empleado, solo a su nombre. El monto lo puede cargar
+ * así cuenta en estadísticas, metas y "mis trabajos". Queda registrado a nombre de quien lo carga (registradoPor).
+ * `trabajadorId` se sigue aceptando por compatibilidad (domain/permisos.ts, lavados.registrar): admin y superadmin
+ * pueden anotar a otra persona del equipo; el empleado, solo a su nombre. El panel ya no lo manda. El monto lo puede cargar
  * cualquiera al registrar (es el momento de cobrar), pero el empleado nunca lo recibe en las respuestas.
  */
 export class LavadoService {
@@ -177,10 +166,9 @@ export class LavadoService {
 
   /** El lavado ya registrado con ese idLocal (creado: false), 409 si lo registró otra persona, o undefined. */
   private async yaRegistrado(actor: UsuarioSesion, idLocal: string): Promise<LavadoRegistrado | undefined> {
-    const existente = await this.deps.bookings.lavadoPorIdLocal(idLocal);
-    if (existente === undefined) return undefined;
-    if (existente.registradoPor !== actor.id) throw AppError.conflict(ID_LOCAL_AJENO_MESSAGE);
-    const { lavado } = existente;
+    const lavado = await this.deps.bookings.lavadoPorIdLocal(idLocal);
+    if (lavado === undefined) return undefined;
+    if (lavado.registradoPor?.id !== actor.id) throw AppError.conflict(ID_LOCAL_AJENO_MESSAGE);
     return { lavado: vistaDeTurno(actor.rol, lavado), deshacerHasta: deshacerLavadoHasta(lavado.createdAt), creado: false };
   }
 
@@ -218,24 +206,6 @@ export class LavadoService {
     const veImportes = puedeVerImportes(actor.rol);
     const suma = (lista: Booking[]) => lista.reduce((acc, l) => acc + (l.monto ?? 0), 0);
 
-    const grupos = new Map<string, { trabajador: Trabajador | null; lavados: Booking[] }>();
-    for (const lavado of lavados) {
-      const clave = lavado.trabajador?.id ?? '';
-      const grupo = grupos.get(clave) ?? { trabajador: lavado.trabajador, lavados: [] };
-      grupo.lavados.push(lavado);
-      grupos.set(clave, grupo);
-    }
-    const porTrabajador = [...grupos.values()]
-      .map((g) => ({ trabajador: g.trabajador, cantidad: g.lavados.length, cobrado: suma(g.lavados) }))
-      // El desempate por lo cobrado solo para quien ve importes: si no, el orden mismo revelaría quién cobró más.
-      .sort(
-        (a, b) =>
-          b.cantidad - a.cantidad ||
-          (veImportes ? b.cobrado - a.cobrado : 0) ||
-          (a.trabajador?.nombre ?? '').localeCompare(b.trabajador?.nombre ?? '', 'es'),
-      )
-      .map(({ trabajador, cantidad, cobrado }) => ({ trabajador, cantidad, total: veImportes ? cobrado : null }));
-
     return {
       fecha: dia,
       lavados: lavados.map((l) => vistaDeTurno(actor.rol, l)),
@@ -243,8 +213,7 @@ export class LavadoService {
         cantidad: lavados.length,
         total: veImportes ? suma(lavados) : null,
         sinMonto: lavados.filter((l) => l.monto === null).length,
-        porTrabajador,
-        // Mismo cuidado que en porTrabajador: sin importes, el orden no depende de lo cobrado.
+        // Sin importes, el orden no depende de lo cobrado (si no, el orden mismo lo revelaría).
         porFormaPago: formas
           .sort(
             (a, b) =>
