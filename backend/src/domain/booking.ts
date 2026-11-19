@@ -4,13 +4,37 @@ import type { FormaDePago } from './comprobantes.js';
 export const VEHICULO_TIPOS = ['auto', 'suv', 'pickup', 'moto'] as const;
 export const FRANJAS = ['manana', 'tarde'] as const;
 export const ESTADOS = ['pendiente', 'confirmado', 'completado', 'cancelado'] as const;
-/** web = pedido de turno; mostrador = lavado registrado en el panel ("Registrar lavado"), nace completado. */
-export const ORIGENES = ['web', 'mostrador'] as const;
+/**
+ * web = pedido de turno; mostrador = lavado registrado en el panel ("Registrar lavado"), nace completado; panel = turno
+ * para un trabajo largo que crea un admin desde el panel (con seña opcional).
+ */
+export const ORIGENES = ['web', 'mostrador', 'panel'] as const;
+/** Dónde está el auto de un lavado de mostrador (migración lavados_etapa_descuento). Avanza o retrocede a mano. */
+export const ETAPAS = ['espera', 'lavando', 'listo', 'entregado'] as const;
 
 export type VehiculoTipo = (typeof VEHICULO_TIPOS)[number];
 export type Franja = (typeof FRANJAS)[number];
 export type Estado = (typeof ESTADOS)[number];
 export type Origen = (typeof ORIGENES)[number];
+export type Etapa = (typeof ETAPAS)[number];
+
+/** Seña de un turno (función 8). `monto` es plata: null para quien no ve importes (vistaDeTurno). */
+export interface Sena {
+  monto: number | null;
+  formaPago: FormaDePago;
+  /** YYYY-MM-DD: el día en que se cobró (cuenta en la caja de ese día). */
+  fecha: string;
+}
+
+/** Una seña ya validada, para guardar. */
+export interface NuevaSena {
+  monto: number;
+  formaPago: FormaDePago;
+  fecha: string;
+}
+
+/** Largo máximo del motivo de un descuento (el CHECK bookings_descuento_motivo). */
+export const DESCUENTO_MOTIVO_MAX = 80;
 
 /** Nombre visible de cada tipo de vehículo (avisos, comprobantes, mensajes de error). */
 export const VEHICULO_NOMBRES: Readonly<Record<VehiculoTipo, string>> = {
@@ -104,6 +128,20 @@ export interface Booking extends Omit<NewBooking, 'telefono'> {
    * `servicioId`. Un turno web o viejo tiene uno solo.
    */
   servicios: ServicioDelTurno[];
+  /** Lavados de mostrador: espera, lavando, listo o entregado. null en los turnos de la web o del panel. */
+  etapa: Etapa | null;
+  /** ISO 8601 UTC: desde cuándo está en esa etapa. null si etapa es null. */
+  etapaDesde: string | null;
+  /** Pesos rebajados (0 = sin descuento). `monto` ya es lo cobrado con el descuento. null para quien no ve importes. */
+  descuento: number | null;
+  /** Motivo del descuento; null sin descuento o para quien no ve importes. */
+  descuentoMotivo: string | null;
+  /** Seña cobrada por adelantado; null si no tiene. */
+  sena: Sena | null;
+  /** Lo que falta cobrar: monto - seña (o monto sin seña). null sin monto o para quien no ve importes. */
+  saldo: number | null;
+  /** Link de WhatsApp "ya está listo" para el cliente (domain/mensajes.ts). null sin teléfono normalizado. */
+  whatsappListo: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -182,6 +220,11 @@ export interface ActualizacionTurno {
    * estaban conservan su foto del precio de lista; los nuevos toman el precio de lista vigente para el vehículo.
    */
   servicioIds?: string[];
+  /**
+   * Descuento (undefined = no se toca). Como el cobro: si el turno queda en otro estado que completado, el repositorio
+   * lo deja en 0 sin motivo (CHECK bookings_descuento_solo_completado).
+   */
+  descuento?: { monto: number; motivo: string | null };
 }
 
 /**
@@ -211,6 +254,28 @@ export interface NuevoLavado {
   registradoPor: string;
   /** Id que generó el panel (cola sin conexión); null si no mandó. Único: un reintento no registra otro. */
   idLocal: string | null;
+  /** Dónde está el auto ('entregado' si se registra ya terminado). */
+  etapa: Etapa;
+  /** Pesos rebajados (0 = sin descuento) y su motivo (obligatorio si hay descuento). */
+  descuento: number;
+  descuentoMotivo: string | null;
+}
+
+/** Un turno que crea un admin desde el panel (POST /api/admin/turnos), ya validado. Nace confirmado, origen 'panel'. */
+export interface NuevoTurnoPanel {
+  nombre: string;
+  telefono: string;
+  email: string | null;
+  vehiculoTipo: VehiculoTipo;
+  vehiculoModelo: string | null;
+  /** 1 a MAX_SERVICIOS_LAVADO, activos y ofrecidos para el vehículo; el primero es el principal. */
+  servicioIds: string[];
+  /** YYYY-MM-DD */
+  fecha: string;
+  franja: Franja;
+  comentario: string | null;
+  notasInternas: string | null;
+  sena: NuevaSena | null;
 }
 
 /** Lo que hace falta para decidir si un lavado de mostrador se puede deshacer (DELETE /api/admin/lavados/:id). */
@@ -324,6 +389,20 @@ export interface BookingRepository {
    * ambos inclusive. Orden: fecha de agenda, franja de agenda (mañana antes que tarde) y orden de llegada.
    */
   agenda(desde: string, hasta: string): Promise<Booking[]>;
-  /** true si existía y se borró. */
+  /**
+   * Borra el turno. Antes, en la misma transacción, devuelve al stock los insumos que se descontaron solos
+   * (función 15). true si existía y se borró.
+   */
   delete(id: string): Promise<boolean>;
+  /** Guarda un turno del panel (confirmado, origen 'panel', con su seña si viene). No mira cupos. */
+  crearTurnoPanel(input: NuevoTurnoPanel, now: Date): Promise<Booking>;
+  /** Carga o corrige (sena) o quita (null) la seña. undefined si no existe o es de mostrador. */
+  cambiarSena(id: string, sena: NuevaSena | null): Promise<Booking | undefined>;
+  /**
+   * Cambia la etapa de un lavado de mostrador (quien llama ya sabe que es distinta: mueve etapaDesde y updated_at).
+   * undefined si no existe o no es de mostrador.
+   */
+  cambiarEtapa(id: string, etapa: Etapa, now: Date): Promise<Booking | undefined>;
+  /** Lavados de mostrador de `fecha` que no se entregaron: por etapa (espera, lavando, listo) y orden de llegada. */
+  lavadosEnCurso(fecha: string): Promise<Booking[]>;
 }

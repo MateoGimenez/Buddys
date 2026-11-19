@@ -96,6 +96,7 @@ describe('gestión de usuarios (superadmin)', () => {
         activo: false,
         createdAt: expect.stringMatching(/Z$/),
         updatedAt: expect.stringMatching(/Z$/),
+        avatarUrl: null,
       },
     ]);
 
@@ -355,6 +356,7 @@ describe('UsuarioService: operaciones que tocan Auth y la base (casos a medias)'
     nombre: null,
     rol: 'superadmin' as const,
     sessionId: '00000000-0000-4000-8000-000000000002',
+    avatarPath: null,
   };
   const perfilDe = (id: string, cambios: Partial<Perfil> = {}): Perfil => ({
     id,
@@ -364,6 +366,7 @@ describe('UsuarioService: operaciones que tocan Auth y la base (casos a medias)'
     activo: true,
     createdAt: '2026-10-16T15:00:00.000Z',
     updatedAt: '2026-10-16T15:00:00.000Z',
+    avatarPath: null,
     ...cambios,
   });
 

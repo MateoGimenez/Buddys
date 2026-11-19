@@ -129,8 +129,18 @@ export interface AppConfig {
     loginFailures: RateLimitRule;
     /** Consultas de seguimiento de un turno (GET /api/turnos/:id), por IP. */
     seguimiento: RateLimitRule;
-    /** Descarga de PDF (presupuestos y comprobantes), por IP: generarlos cuesta CPU. */
+    /** Descarga de PDF (presupuestos y comprobantes) y de CSV, por IP: generarlos cuesta CPU. */
     pdf: RateLimitRule;
+    /** Errores del panel con sesión (POST /api/admin/errores-cliente), por usuario. */
+    erroresCliente: RateLimitRule;
+    /** Errores del panel sin sesión (POST /api/errores-cliente, pantalla de login), por IP: estricto. */
+    erroresClientePublico: RateLimitRule;
+    /** Pedidos de URL de subida de fotos (POST /api/admin/lavados/:id/fotos), por usuario. */
+    fotos: RateLimitRule;
+    /** Pedidos de URL de subida de la foto de perfil (POST /api/admin/perfil/avatar), por usuario. */
+    avatar: RateLimitRule;
+    /** Cambios de contraseña propia (POST /api/admin/perfil/clave), por usuario: estricto (cuentan todos). */
+    clave: RateLimitRule;
   };
   whatsapp: WhatsappConfig;
   recordatorios: RecordatoriosConfig;
@@ -154,6 +164,15 @@ export const DEFAULT_RATE_LIMITS: AppConfig['rateLimits'] = {
   seguimiento: { windowMs: 15 * 60 * 1000, limit: 60 },
   // Generar un PDF cuesta CPU: 30 por minuto por IP alcanzan de sobra para un panel con 2 o 3 personas.
   pdf: { windowMs: 60 * 1000, limit: 30 },
+  // Un panel con un error que se repite no puede llenar el log: 30 cada 10 minutos por persona, 5 cada 15 sin sesión.
+  erroresCliente: { windowMs: 10 * 60 * 1000, limit: 30 },
+  erroresClientePublico: { windowMs: 15 * 60 * 1000, limit: 5 },
+  // Cada URL de subida permite subir hasta 1,5 MB: 20 cada 10 minutos por persona alcanzan para el día a día.
+  fotos: { windowMs: 10 * 60 * 1000, limit: 20 },
+  // Una foto de perfil se cambia de vez en cuando: 10 cada 10 minutos por persona.
+  avatar: { windowMs: 10 * 60 * 1000, limit: 10 },
+  // Cada intento verifica la contraseña actual contra Supabase Auth: 5 cada 15 minutos por persona (como el login).
+  clave: { windowMs: 15 * 60 * 1000, limit: 5 },
 };
 
 /** Largo mínimo de CRON_SECRET: suficiente entropía para que no se pueda adivinar por fuerza bruta. */

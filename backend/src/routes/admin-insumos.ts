@@ -51,6 +51,7 @@ function movimientoJson(movimiento: Movimiento) {
     nota: movimiento.nota,
     persona: movimiento.persona,
     turnoId: movimiento.turnoId,
+    automatico: movimiento.automatico,
     createdAt: movimiento.createdAt,
   };
 }

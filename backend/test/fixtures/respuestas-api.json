@@ -33,6 +33,13 @@
             "precioLista": null
           }
         ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 60000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -72,6 +79,13 @@
             "precioLista": null
           }
         ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -108,6 +122,13 @@
             "precioLista": null
           }
         ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -504,6 +525,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -535,6 +563,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -566,6 +601,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -600,6 +642,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -634,6 +683,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 60000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -673,6 +729,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -704,6 +767,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -735,6 +805,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -769,6 +846,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -803,6 +887,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -842,6 +933,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -876,6 +974,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 60000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -910,6 +1015,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -974,6 +1086,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -1008,6 +1127,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -1042,6 +1168,13 @@
               "precioLista": null
             }
           ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -1081,17 +1214,20 @@
         {
           "id": "00000000-0000-4000-8000-000000000002",
           "nombre": "Ana",
-          "rol": "admin"
+          "rol": "admin",
+          "avatarUrl": null
         },
         {
           "id": "00000000-0000-4000-8000-000000000004",
           "nombre": "Beto",
-          "rol": "empleado"
+          "rol": "empleado",
+          "avatarUrl": null
         },
         {
           "id": "00000000-0000-4000-8000-000000000011",
           "nombre": "sin@t.test",
-          "rol": "empleado"
+          "rol": "empleado",
+          "avatarUrl": null
         }
       ]
     }
@@ -1157,6 +1293,8 @@
         "cancelados": 1,
         "ingresos": 60000,
         "gastos": 108500,
+        "gastosFijos": 0,
+        "descuentos": 0,
         "gananciaNeta": -48500,
         "margen": -0.8083,
         "ticketPromedio": 60000,
@@ -1423,6 +1561,8 @@
         "cancelados": 1,
         "ingresos": 60000,
         "gastos": 116500,
+        "gastosFijos": 0,
+        "descuentos": 0,
         "gananciaNeta": -56500,
         "margen": -0.9417,
         "ticketPromedio": 60000,
@@ -1675,6 +1815,8 @@
         "cancelados": 0,
         "ingresos": 0,
         "gastos": 0,
+        "gastosFijos": 0,
+        "descuentos": 0,
         "gananciaNeta": 0,
         "margen": null,
         "ticketPromedio": null,
@@ -2002,6 +2144,42 @@
           }
         },
         {
+          "id": "lavados.etapa",
+          "grupo": "Lavados",
+          "texto": "Mover un lavado de etapa (espera, lavando, listo, entregado) y avisarle al cliente que está listo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo sus lavados: los que lavó o registró él"
+          }
+        },
+        {
+          "id": "fotos.subir",
+          "grupo": "Lavados",
+          "texto": "Subir y ver las fotos antes/después de un lavado o turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "fotos.borrar",
+          "grupo": "Lavados",
+          "texto": "Borrar una foto de un lavado o turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo una que subió él, hasta 5 minutos después de subirla"
+          }
+        },
+        {
           "id": "turnos.ver",
           "grupo": "Turnos",
           "texto": "Ver los turnos y la agenda",
@@ -2009,6 +2187,16 @@
             "superadmin": "si",
             "admin": "si",
             "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.crear",
+          "grupo": "Turnos",
+          "texto": "Crear turnos desde el panel para trabajos largos y cargarles la seña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
           }
         },
         {
@@ -2065,6 +2253,26 @@
           }
         },
         {
+          "id": "clientes.inactivos",
+          "grupo": "Turnos",
+          "texto": "Ver los clientes que no vienen hace tiempo, con su link de WhatsApp",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "fidelizacion.configurar",
+          "grupo": "Turnos",
+          "texto": "Configurar la tarjeta de sellos (cada cuántos lavados hay premio) y cuándo un cliente está inactivo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
+            "empleado": "no"
+          }
+        },
+        {
           "id": "cobro.registrar",
           "grupo": "Cobro",
           "texto": "Registrar cuánto se cobró por un trabajo y quién lo hizo",
@@ -2080,10 +2288,30 @@
         {
           "id": "cobro.corregir",
           "grupo": "Cobro",
-          "texto": "Corregir el monto, el trabajador, la forma de pago y los servicios de un turno",
+          "texto": "Corregir el monto, el descuento, el trabajador, la forma de pago y los servicios de un turno",
           "roles": {
             "superadmin": "si",
             "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "caja.cerrar",
+          "grupo": "Cobro",
+          "texto": "Ver la caja del día y cerrarla con el arqueo (lo contado por forma de pago)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "caja.reabrir",
+          "grupo": "Cobro",
+          "texto": "Corregir o reabrir un cierre de caja ya hecho",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
             "empleado": "no"
           }
         },
@@ -2158,9 +2386,32 @@
           }
         },
         {
+          "id": "finanzas.gastos_fijos",
+          "grupo": "Finanzas",
+          "texto": "Cargar los gastos fijos de cada mes (sueldos, alquiler, servicios)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "parcial",
+            "empleado": "no"
+          },
+          "matiz": {
+            "admin": "Solo los ve: los carga y los cambia el superadmin"
+          }
+        },
+        {
           "id": "finanzas.metas",
           "grupo": "Finanzas",
           "texto": "Fijar y seguir las metas mensuales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "finanzas.exportar",
+          "grupo": "Finanzas",
+          "texto": "Exportar a Excel (CSV) la planilla, los gastos y las estadísticas",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2238,6 +2489,16 @@
           }
         },
         {
+          "id": "perfil.propio",
+          "grupo": "Usuarios",
+          "texto": "Ver y editar su propio perfil: nombre, foto de perfil y contraseña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
           "id": "push.activar",
           "grupo": "Avisos",
           "texto": "Activar los avisos de turnos nuevos en su propio dispositivo",
@@ -2245,6 +2506,16 @@
             "superadmin": "si",
             "admin": "si",
             "empleado": "si"
+          }
+        },
+        {
+          "id": "push.equipo",
+          "grupo": "Avisos",
+          "texto": "Recibir los avisos del encargado: lavado registrado sin monto y meta del mes cumplida",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
           }
         }
       ],
@@ -2299,6 +2570,42 @@
           }
         },
         {
+          "id": "lavados.etapa",
+          "grupo": "Lavados",
+          "texto": "Mover un lavado de etapa (espera, lavando, listo, entregado) y avisarle al cliente que está listo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo sus lavados: los que lavó o registró él"
+          }
+        },
+        {
+          "id": "fotos.subir",
+          "grupo": "Lavados",
+          "texto": "Subir y ver las fotos antes/después de un lavado o turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "fotos.borrar",
+          "grupo": "Lavados",
+          "texto": "Borrar una foto de un lavado o turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo una que subió él, hasta 5 minutos después de subirla"
+          }
+        },
+        {
           "id": "turnos.ver",
           "grupo": "Turnos",
           "texto": "Ver los turnos y la agenda",
@@ -2306,6 +2613,16 @@
             "superadmin": "si",
             "admin": "si",
             "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.crear",
+          "grupo": "Turnos",
+          "texto": "Crear turnos desde el panel para trabajos largos y cargarles la seña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
           }
         },
         {
@@ -2362,6 +2679,26 @@
           }
         },
         {
+          "id": "clientes.inactivos",
+          "grupo": "Turnos",
+          "texto": "Ver los clientes que no vienen hace tiempo, con su link de WhatsApp",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "fidelizacion.configurar",
+          "grupo": "Turnos",
+          "texto": "Configurar la tarjeta de sellos (cada cuántos lavados hay premio) y cuándo un cliente está inactivo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
+            "empleado": "no"
+          }
+        },
+        {
           "id": "cobro.registrar",
           "grupo": "Cobro",
           "texto": "Registrar cuánto se cobró por un trabajo y quién lo hizo",
@@ -2377,10 +2714,30 @@
         {
           "id": "cobro.corregir",
           "grupo": "Cobro",
-          "texto": "Corregir el monto, el trabajador, la forma de pago y los servicios de un turno",
+          "texto": "Corregir el monto, el descuento, el trabajador, la forma de pago y los servicios de un turno",
           "roles": {
             "superadmin": "si",
             "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "caja.cerrar",
+          "grupo": "Cobro",
+          "texto": "Ver la caja del día y cerrarla con el arqueo (lo contado por forma de pago)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "caja.reabrir",
+          "grupo": "Cobro",
+          "texto": "Corregir o reabrir un cierre de caja ya hecho",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
             "empleado": "no"
           }
         },
@@ -2455,9 +2812,32 @@
           }
         },
         {
+          "id": "finanzas.gastos_fijos",
+          "grupo": "Finanzas",
+          "texto": "Cargar los gastos fijos de cada mes (sueldos, alquiler, servicios)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "parcial",
+            "empleado": "no"
+          },
+          "matiz": {
+            "admin": "Solo los ve: los carga y los cambia el superadmin"
+          }
+        },
+        {
           "id": "finanzas.metas",
           "grupo": "Finanzas",
           "texto": "Fijar y seguir las metas mensuales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "finanzas.exportar",
+          "grupo": "Finanzas",
+          "texto": "Exportar a Excel (CSV) la planilla, los gastos y las estadísticas",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2535,6 +2915,16 @@
           }
         },
         {
+          "id": "perfil.propio",
+          "grupo": "Usuarios",
+          "texto": "Ver y editar su propio perfil: nombre, foto de perfil y contraseña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
           "id": "push.activar",
           "grupo": "Avisos",
           "texto": "Activar los avisos de turnos nuevos en su propio dispositivo",
@@ -2542,6 +2932,16 @@
             "superadmin": "si",
             "admin": "si",
             "empleado": "si"
+          }
+        },
+        {
+          "id": "push.equipo",
+          "grupo": "Avisos",
+          "texto": "Recibir los avisos del encargado: lavado registrado sin monto y meta del mes cumplida",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
           }
         }
       ],
@@ -2665,6 +3065,7 @@
           "nombre": "Ana"
         },
         "turnoId": "00000000-0000-4000-8000-000000000001",
+        "automatico": false,
         "createdAt": "2026-10-16T15:00:00.000Z"
       }
     }
@@ -2697,6 +3098,7 @@
           "nombre": "Beto"
         },
         "turnoId": null,
+        "automatico": false,
         "createdAt": "2026-10-16T15:00:00.000Z"
       }
     }
@@ -2729,6 +3131,7 @@
           "nombre": "Ana"
         },
         "turnoId": null,
+        "automatico": false,
         "createdAt": "2026-10-16T15:00:00.000Z"
       }
     }
@@ -2761,6 +3164,7 @@
           "nombre": "Ana"
         },
         "turnoId": null,
+        "automatico": false,
         "createdAt": "2026-10-16T15:00:00.000Z"
       }
     }
@@ -2841,6 +3245,7 @@
             "nombre": "Ana"
           },
           "turnoId": null,
+          "automatico": false,
           "createdAt": "2026-10-16T15:00:00.000Z"
         },
         {
@@ -2855,6 +3260,7 @@
             "nombre": "Ana"
           },
           "turnoId": null,
+          "automatico": false,
           "createdAt": "2026-10-16T15:00:00.000Z"
         },
         {
@@ -2869,6 +3275,7 @@
             "nombre": "Ana"
           },
           "turnoId": null,
+          "automatico": false,
           "createdAt": "2026-10-16T15:00:00.000Z"
         }
       ],
@@ -2888,6 +3295,7 @@
           "nota": "Conteo del sábado",
           "persona": null,
           "turnoId": null,
+          "automatico": false,
           "createdAt": "2026-10-16T15:00:00.000Z"
         },
         {
@@ -2899,6 +3307,7 @@
           "nota": "Factura 0001",
           "persona": null,
           "turnoId": null,
+          "automatico": false,
           "createdAt": "2026-10-16T15:00:00.000Z"
         },
         {
@@ -2910,6 +3319,7 @@
           "nota": "Stock inicial",
           "persona": null,
           "turnoId": null,
+          "automatico": false,
           "createdAt": "2026-10-16T15:00:00.000Z"
         }
       ],
@@ -4344,6 +4754,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 15000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -4384,6 +4801,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -4424,6 +4848,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -4487,6 +4918,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 15000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -4521,6 +4959,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 9000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -4555,6 +5000,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 4000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -4637,6 +5089,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -4671,6 +5130,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -4705,6 +5171,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -4785,6 +5258,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 9000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -4895,6 +5375,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 30000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -4940,6 +5427,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -5026,6 +5520,13 @@
             "precioLista": 25000
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 30000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -5076,6 +5577,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -5110,6 +5618,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -5154,6 +5669,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -5193,6 +5715,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -5253,6 +5782,2566 @@
         "servicioNombre": "Encerado + Restauración de ópticas + Lavado Básico",
         "vehiculo": "SUV",
         "notas": null
+      }
+    }
+  },
+  "lavadoCreaEnEspera": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000029",
+        "nombre": "Juan Pérez",
+        "telefono": "0380 15-4123456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": 1,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
+        "etapa": "espera",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:00:00.000Z"
+    }
+  },
+  "lavadoEtapaListo": {
+    "status": 200,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000029",
+        "nombre": "Juan Pérez",
+        "telefono": "0380 15-4123456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": 1,
+        "monto": null,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": null
+          }
+        ],
+        "etapa": "listo",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "lavadosEnCurso": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "lavados": [
+        {
+          "id": "00000000-0000-4000-8000-000000000029",
+          "nombre": "Juan Pérez",
+          "telefono": "0380 15-4123456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 1,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "etapa": "listo",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "resumen": {
+        "espera": 0,
+        "lavando": 0,
+        "listo": 1
+      }
+    }
+  },
+  "error403EtapaAjena": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Solo podés cambiar la etapa de tus lavados."
+      }
+    }
+  },
+  "error400Etapa": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "etapa": "La etapa tiene que ser una de: espera, lavando, listo, entregado."
+        }
+      }
+    }
+  },
+  "lavadoConDescuento": {
+    "status": 201,
+    "body": {
+      "lavado": {
+        "id": "00000000-0000-4000-8000-000000000030",
+        "nombre": "Juan Pérez",
+        "telefono": "0380 15-4123456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": 2,
+        "monto": 8000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 20000
+          }
+        ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 2000,
+        "descuentoMotivo": "Cliente frecuente",
+        "sena": null,
+        "saldo": 8000,
+        "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      },
+      "deshacerHasta": "2026-10-16T15:00:00.000Z"
+    }
+  },
+  "error400DescuentoSinMotivo": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "descuentoMotivo": "Escribí el motivo del descuento."
+        }
+      }
+    }
+  },
+  "error403DescuentoEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés cargar descuentos: lo carga un administrador."
+      }
+    }
+  },
+  "patchDescuento": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "00000000-0000-4000-8000-000000000030",
+        "nombre": "Juan Pérez",
+        "telefono": "0380 15-4123456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "mostrador",
+        "servicioId": "lavado-basico",
+        "fechaPreferida": "2026-10-16",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": 2,
+        "monto": 8000,
+        "trabajador": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "formaPago": "efectivo",
+        "servicios": [
+          {
+            "id": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "precioLista": 20000
+          }
+        ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 1000,
+        "descuentoMotivo": "Promo",
+        "sena": null,
+        "saldo": 8000,
+        "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "turnoConSenaCrea": {
+    "status": 201,
+    "body": {
+      "turno": {
+        "id": "00000000-0000-4000-8000-000000000031",
+        "nombre": "Juan Pérez",
+        "telefono": "+54 9 380 412-3456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "panel",
+        "servicioId": "pulido",
+        "fechaPreferida": "2026-10-20",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "confirmado",
+        "notasInternas": null,
+        "turnosDelCliente": 3,
+        "monto": null,
+        "trabajador": null,
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "pulido",
+            "nombre": "Pulido",
+            "precioLista": 45000
+          },
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": {
+          "monto": 20000,
+          "formaPago": "transferencia",
+          "fecha": "2026-10-16"
+        },
+        "saldo": null,
+        "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error403TurnoEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés crear turnos desde el panel."
+      }
+    }
+  },
+  "turnoConSenaEmpleadoLista": {
+    "status": 200,
+    "body": {
+      "turnos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000031",
+          "nombre": "Juan Pérez",
+          "telefono": "+54 9 380 412-3456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "panel",
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-20",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "confirmado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": null,
+          "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": {
+            "monto": null,
+            "formaPago": "transferencia",
+            "fecha": "2026-10-16"
+          },
+          "saldo": null,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "cupos": [
+        {
+          "fecha": "2026-10-20",
+          "abierto": true,
+          "cupoManana": 20,
+          "cupoTarde": 20,
+          "ocupadosManana": 0,
+          "ocupadosTarde": 0
+        }
+      ]
+    }
+  },
+  "senaPut": {
+    "status": 200,
+    "body": {
+      "turno": {
+        "id": "00000000-0000-4000-8000-000000000031",
+        "nombre": "Juan Pérez",
+        "telefono": "+54 9 380 412-3456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "panel",
+        "servicioId": "pulido",
+        "fechaPreferida": "2026-10-20",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "confirmado",
+        "notasInternas": null,
+        "turnosDelCliente": 3,
+        "monto": null,
+        "trabajador": null,
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "pulido",
+            "nombre": "Pulido",
+            "precioLista": 45000
+          },
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": {
+          "monto": 25000,
+          "formaPago": "efectivo",
+          "fecha": "2026-10-16"
+        },
+        "saldo": null,
+        "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400Sena": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "monto": "La seña tiene que ser un número entero de pesos, de 1 a 99.999.999.",
+          "formaPago": "La forma de pago de la seña tiene que ser una de: efectivo, transferencia, debito, credito, otro."
+        }
+      }
+    }
+  },
+  "error400MontoMenorSena": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "monto": "El total no puede ser menor que la seña que ya se cobró."
+        }
+      }
+    }
+  },
+  "turnoCompletaConSena": {
+    "status": 200,
+    "body": {
+      "booking": {
+        "id": "00000000-0000-4000-8000-000000000031",
+        "nombre": "Juan Pérez",
+        "telefono": "+54 9 380 412-3456",
+        "telefonoWhatsapp": "5493804123456",
+        "email": null,
+        "vehiculoTipo": "auto",
+        "vehiculoModelo": "Gol AB123CD",
+        "origen": "panel",
+        "servicioId": "pulido",
+        "fechaPreferida": "2026-10-20",
+        "franja": "manana",
+        "fechaConfirmada": null,
+        "franjaConfirmada": null,
+        "comentario": null,
+        "estado": "completado",
+        "notasInternas": null,
+        "turnosDelCliente": 3,
+        "monto": 60000,
+        "trabajador": null,
+        "formaPago": null,
+        "servicios": [
+          {
+            "id": "pulido",
+            "nombre": "Pulido",
+            "precioLista": 45000
+          },
+          {
+            "id": "encerado",
+            "nombre": "Encerado",
+            "precioLista": null
+          }
+        ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": {
+          "monto": 25000,
+          "formaPago": "efectivo",
+          "fecha": "2026-10-16"
+        },
+        "saldo": 35000,
+        "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "clienteHistorialTelefonoAdmin": {
+    "status": 200,
+    "body": {
+      "cliente": {
+        "tipo": "telefono",
+        "clave": "5493804123456",
+        "nombre": "Juan Pérez",
+        "telefonoWhatsapp": "5493804123456",
+        "vehiculos": [
+          "Gol AB123CD"
+        ],
+        "visitas": 3,
+        "ultimaVisita": "2026-10-20",
+        "serviciosMasHechos": [
+          {
+            "servicioId": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "cantidad": 2
+          },
+          {
+            "servicioId": "encerado",
+            "nombre": "Encerado",
+            "cantidad": 1
+          },
+          {
+            "servicioId": "pulido",
+            "nombre": "Pulido",
+            "cantidad": 1
+          }
+        ],
+        "totalGastado": 77000,
+        "sellos": {
+          "visitas": 3,
+          "sellos": 3,
+          "cada": 10,
+          "faltan": 7,
+          "proximoEsPremio": false,
+          "premio": "gratis",
+          "porcentaje": null
+        }
+      },
+      "lavados": [
+        {
+          "id": "00000000-0000-4000-8000-000000000031",
+          "nombre": "Juan Pérez",
+          "telefono": "+54 9 380 412-3456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "panel",
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-20",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": 60000,
+          "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": 45000
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": {
+            "monto": 25000,
+            "formaPago": "efectivo",
+            "fecha": "2026-10-16"
+          },
+          "saldo": 35000,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "nombre": "Juan Pérez",
+          "telefono": "0380 15-4123456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": 8000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 20000
+            }
+          ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 1000,
+          "descuentoMotivo": "Promo",
+          "sena": null,
+          "saldo": 8000,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000029",
+          "nombre": "Juan Pérez",
+          "telefono": "0380 15-4123456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": 9000,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": 20000
+            }
+          ],
+          "etapa": "listo",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 9000,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 3
+    }
+  },
+  "clienteHistorialPatenteEmpleado": {
+    "status": 200,
+    "body": {
+      "cliente": {
+        "tipo": "patente",
+        "clave": "AB123CD",
+        "nombre": "Juan Pérez",
+        "telefonoWhatsapp": "5493804123456",
+        "vehiculos": [
+          "Gol AB123CD"
+        ],
+        "visitas": 4,
+        "ultimaVisita": "2026-10-20",
+        "serviciosMasHechos": [
+          {
+            "servicioId": "lavado-basico",
+            "nombre": "Lavado Básico",
+            "cantidad": 3
+          },
+          {
+            "servicioId": "encerado",
+            "nombre": "Encerado",
+            "cantidad": 1
+          },
+          {
+            "servicioId": "pulido",
+            "nombre": "Pulido",
+            "cantidad": 1
+          }
+        ],
+        "totalGastado": null,
+        "sellos": {
+          "visitas": 4,
+          "sellos": 4,
+          "cada": 10,
+          "faltan": 6,
+          "proximoEsPremio": false,
+          "premio": "gratis",
+          "porcentaje": null
+        }
+      },
+      "lavados": [
+        {
+          "id": "00000000-0000-4000-8000-000000000031",
+          "nombre": "Juan Pérez",
+          "telefono": "+54 9 380 412-3456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "panel",
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-20",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": null,
+          "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": {
+            "monto": null,
+            "formaPago": "efectivo",
+            "fecha": "2026-10-16"
+          },
+          "saldo": null,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "nombre": "Juan Pérez",
+          "telefono": "0380 15-4123456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000029",
+          "nombre": "Juan Pérez",
+          "telefono": "0380 15-4123456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "etapa": "listo",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000022",
+          "nombre": "Juan",
+          "telefono": null,
+          "telefonoWhatsapp": null,
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": null,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "transferencia",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 4
+    }
+  },
+  "error404Cliente": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "No encontramos turnos ni lavados de ese cliente."
+      }
+    }
+  },
+  "error400ClienteDosClaves": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "telefono": "Mandá telefono o patente, uno solo."
+        }
+      }
+    }
+  },
+  "busquedaPatente": {
+    "status": 200,
+    "body": {
+      "bookings": [
+        {
+          "id": "00000000-0000-4000-8000-000000000031",
+          "nombre": "Juan Pérez",
+          "telefono": "+54 9 380 412-3456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "panel",
+          "servicioId": "pulido",
+          "fechaPreferida": "2026-10-20",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": null,
+          "trabajador": null,
+          "formaPago": null,
+          "servicios": [
+            {
+              "id": "pulido",
+              "nombre": "Pulido",
+              "precioLista": null
+            },
+            {
+              "id": "encerado",
+              "nombre": "Encerado",
+              "precioLista": null
+            }
+          ],
+          "etapa": null,
+          "etapaDesde": null,
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": {
+            "monto": null,
+            "formaPago": "efectivo",
+            "fecha": "2026-10-16"
+          },
+          "saldo": null,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "nombre": "Juan Pérez",
+          "telefono": "0380 15-4123456",
+          "telefonoWhatsapp": "5493804123456",
+          "email": null,
+          "vehiculoTipo": "auto",
+          "vehiculoModelo": "Gol AB123CD",
+          "origen": "mostrador",
+          "servicioId": "lavado-basico",
+          "fechaPreferida": "2026-10-16",
+          "franja": "manana",
+          "fechaConfirmada": null,
+          "franjaConfirmada": null,
+          "comentario": null,
+          "estado": "completado",
+          "notasInternas": null,
+          "turnosDelCliente": 3,
+          "monto": null,
+          "trabajador": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "formaPago": "efectivo",
+          "servicios": [
+            {
+              "id": "lavado-basico",
+              "nombre": "Lavado Básico",
+              "precioLista": null
+            }
+          ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": "https://wa.me/5493804123456?text=Hola%20Juan!%20Tu%20Gol%20AB123CD%20ya%20est%C3%A1%20listo%20en%20Buddys%20Wash%20Detail%3A%20ya%20pod%C3%A9s%20pasar%20a%20retirarlo.",
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 4
+    }
+  },
+  "fidelizacionGet": {
+    "status": 200,
+    "body": {
+      "config": {
+        "sellosCada": 10,
+        "premio": "gratis",
+        "premioPorcentaje": null,
+        "inactivosDias": 30,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "fidelizacionPut": {
+    "status": 200,
+    "body": {
+      "config": {
+        "sellosCada": 8,
+        "premio": "descuento",
+        "premioPorcentaje": 50,
+        "inactivosDias": 30,
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error403FidelizacionAdmin": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Solo el superadmin puede cambiar la tarjeta de sellos."
+      }
+    }
+  },
+  "clientesInactivos": {
+    "status": 200,
+    "body": {
+      "dias": 30,
+      "clientes": [
+        {
+          "telefonoWhatsapp": "5493804111111",
+          "nombre": "Ana Gómez",
+          "vehiculoModelo": "Corsa",
+          "visitas": 1,
+          "ultimaVisita": "2026-09-15",
+          "diasSinVenir": 31,
+          "whatsapp": "https://wa.me/5493804111111?text=Hola%20Ana!%20Hace%20un%20tiempo%20que%20no%20te%20vemos%20por%20Buddys%20Wash%20Detail.%20%C2%BFLe%20damos%20una%20mano%20a%20tu%20Corsa%3F%20Te%20esperamos."
+        }
+      ],
+      "total": 1
+    }
+  },
+  "error403InactivosEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver los clientes inactivos."
+      }
+    }
+  },
+  "gastoFijoCrea": {
+    "status": 201,
+    "body": {
+      "gastoFijo": {
+        "id": "00000000-0000-4000-8000-000000000032",
+        "concepto": "Sueldo de Beto",
+        "monto": 300000,
+        "categoria": "sueldos",
+        "perfil": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "activo": true,
+        "desde": "2026-10",
+        "hasta": null,
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "gastosFijosLista": {
+    "status": 200,
+    "body": {
+      "gastosFijos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000033",
+          "concepto": "Alquiler del local",
+          "monto": 150000,
+          "categoria": "alquiler",
+          "perfil": null,
+          "activo": true,
+          "desde": "2026-10",
+          "hasta": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000032",
+          "concepto": "Sueldo de Beto",
+          "monto": 300000,
+          "categoria": "sueldos",
+          "perfil": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "activo": true,
+          "desde": "2026-10",
+          "hasta": null,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "totalMensual": 450000
+    }
+  },
+  "gastoFijoDesactiva": {
+    "status": 200,
+    "body": {
+      "gastoFijo": {
+        "id": "00000000-0000-4000-8000-000000000032",
+        "concepto": "Sueldo de Beto",
+        "monto": 300000,
+        "categoria": "sueldos",
+        "perfil": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "activo": true,
+        "desde": "2026-10",
+        "hasta": "2026-10",
+        "createdAt": "2026-10-16T15:00:00.000Z",
+        "updatedAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error403GastoFijoAdmin": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Solo el superadmin puede cargar o cambiar gastos fijos."
+      }
+    }
+  },
+  "error403GastosFijosEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver los gastos fijos."
+      }
+    }
+  },
+  "estadisticasConFijos": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2026-10-01",
+        "hasta": "2026-10-16"
+      },
+      "granularidad": "dia",
+      "resumen": {
+        "hoy": {
+          "actual": {
+            "completados": 8,
+            "ingresos": 156000,
+            "gastos": 12500,
+            "ganancia": 143500
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "mes": {
+          "actual": {
+            "completados": 8,
+            "ingresos": 156000,
+            "gastos": 571000,
+            "ganancia": -415000
+          },
+          "anterior": {
+            "completados": 1,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        },
+        "anio": {
+          "actual": {
+            "completados": 10,
+            "ingresos": 156000,
+            "gastos": 579000,
+            "ganancia": -423000
+          },
+          "anterior": {
+            "completados": 0,
+            "ingresos": 0,
+            "gastos": 0,
+            "ganancia": 0
+          }
+        }
+      },
+      "periodo": {
+        "turnos": 10,
+        "pedidos": 9,
+        "pendientes": 1,
+        "confirmados": 0,
+        "completados": 8,
+        "cancelados": 1,
+        "ingresos": 156000,
+        "gastos": 571000,
+        "gastosFijos": 450000,
+        "descuentos": 1000,
+        "gananciaNeta": -415000,
+        "margen": -2.6603,
+        "ticketPromedio": 22286,
+        "completadosSinMonto": 1,
+        "tasaCancelacion": 0.1
+      },
+      "serie": [
+        {
+          "clave": "2026-10-01",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 450000
+        },
+        {
+          "clave": "2026-10-02",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 90000
+        },
+        {
+          "clave": "2026-10-03",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-04",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-05",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-06",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-07",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-08",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-09",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-10",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 6000
+        },
+        {
+          "clave": "2026-10-11",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-12",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-13",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-14",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 12500
+        },
+        {
+          "clave": "2026-10-15",
+          "completados": 0,
+          "ingresos": 0,
+          "gastos": 0
+        },
+        {
+          "clave": "2026-10-16",
+          "completados": 8,
+          "ingresos": 156000,
+          "gastos": 12500
+        }
+      ],
+      "porServicio": [
+        {
+          "servicioId": "lavado-basico",
+          "nombre": "Lavado Básico",
+          "pedidos": 6,
+          "completados": 6,
+          "ingresos": 61000
+        },
+        {
+          "servicioId": "encerado",
+          "nombre": "Encerado",
+          "pedidos": 3,
+          "completados": 3,
+          "ingresos": 25000
+        },
+        {
+          "servicioId": "pulido",
+          "nombre": "Pulido",
+          "pedidos": 2,
+          "completados": 1,
+          "ingresos": 60000
+        },
+        {
+          "servicioId": "restauracion-opticas",
+          "nombre": "Restauración de ópticas",
+          "pedidos": 1,
+          "completados": 1,
+          "ingresos": 10000
+        },
+        {
+          "servicioId": "lavado-premium",
+          "nombre": "Lavado Premium",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        },
+        {
+          "servicioId": "tratamiento-ceramico",
+          "nombre": "Tratamiento cerámico",
+          "pedidos": 0,
+          "completados": 0,
+          "ingresos": 0
+        }
+      ],
+      "porTrabajador": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana",
+          "completados": 5,
+          "ingresos": 117000
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto",
+          "completados": 3,
+          "ingresos": 39000
+        }
+      ],
+      "porDiaSemana": [
+        {
+          "dia": 0,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 1,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 2,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 3,
+          "manana": 0,
+          "tarde": 0
+        },
+        {
+          "dia": 4,
+          "manana": 1,
+          "tarde": 0
+        },
+        {
+          "dia": 5,
+          "manana": 8,
+          "tarde": 0
+        },
+        {
+          "dia": 6,
+          "manana": 0,
+          "tarde": 0
+        }
+      ],
+      "completadosSinTrabajador": 0,
+      "gastosPorCategoria": [
+        {
+          "categoria": "sueldos",
+          "monto": 300000
+        },
+        {
+          "categoria": "alquiler",
+          "monto": 240000
+        },
+        {
+          "categoria": "insumos",
+          "monto": 31000
+        }
+      ]
+    }
+  },
+  "cajaAbierta": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "esperado": {
+        "formas": [
+          {
+            "formaPago": "efectivo",
+            "esperado": 93000
+          },
+          {
+            "formaPago": "transferencia",
+            "esperado": 15000
+          },
+          {
+            "formaPago": "debito",
+            "esperado": 0
+          },
+          {
+            "formaPago": "credito",
+            "esperado": 0
+          },
+          {
+            "formaPago": "otro",
+            "esperado": 0
+          }
+        ],
+        "sinIndicar": 73000,
+        "total": 181000
+      },
+      "cierre": null
+    }
+  },
+  "cajaCierra": {
+    "status": 201,
+    "body": {
+      "cierre": {
+        "fecha": "2026-10-16",
+        "formas": [
+          {
+            "formaPago": "efectivo",
+            "esperado": 93000,
+            "contado": 30000,
+            "diferencia": -63000
+          },
+          {
+            "formaPago": "transferencia",
+            "esperado": 15000,
+            "contado": 15000,
+            "diferencia": 0
+          },
+          {
+            "formaPago": "debito",
+            "esperado": 0,
+            "contado": null,
+            "diferencia": null
+          },
+          {
+            "formaPago": "credito",
+            "esperado": 0,
+            "contado": null,
+            "diferencia": null
+          },
+          {
+            "formaPago": "otro",
+            "esperado": 0,
+            "contado": null,
+            "diferencia": null
+          }
+        ],
+        "sinIndicar": 73000,
+        "esperadoTotal": 181000,
+        "contadoTotal": 45000,
+        "diferencia": -63000,
+        "nota": "Faltan 500 de cambio",
+        "cerradoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "cerradoEl": "2026-10-16T15:00:00.000Z",
+        "actualizadoEl": "2026-10-16T15:00:00.000Z",
+        "cambiosDespues": false
+      }
+    }
+  },
+  "cajaCerrada": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "esperado": {
+        "formas": [
+          {
+            "formaPago": "efectivo",
+            "esperado": 93000
+          },
+          {
+            "formaPago": "transferencia",
+            "esperado": 15000
+          },
+          {
+            "formaPago": "debito",
+            "esperado": 0
+          },
+          {
+            "formaPago": "credito",
+            "esperado": 0
+          },
+          {
+            "formaPago": "otro",
+            "esperado": 0
+          }
+        ],
+        "sinIndicar": 73000,
+        "total": 181000
+      },
+      "cierre": {
+        "fecha": "2026-10-16",
+        "formas": [
+          {
+            "formaPago": "efectivo",
+            "esperado": 93000,
+            "contado": 30000,
+            "diferencia": -63000
+          },
+          {
+            "formaPago": "transferencia",
+            "esperado": 15000,
+            "contado": 15000,
+            "diferencia": 0
+          },
+          {
+            "formaPago": "debito",
+            "esperado": 0,
+            "contado": null,
+            "diferencia": null
+          },
+          {
+            "formaPago": "credito",
+            "esperado": 0,
+            "contado": null,
+            "diferencia": null
+          },
+          {
+            "formaPago": "otro",
+            "esperado": 0,
+            "contado": null,
+            "diferencia": null
+          }
+        ],
+        "sinIndicar": 73000,
+        "esperadoTotal": 181000,
+        "contadoTotal": 45000,
+        "diferencia": -63000,
+        "nota": "Faltan 500 de cambio",
+        "cerradoPor": {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana"
+        },
+        "cerradoEl": "2026-10-16T15:00:00.000Z",
+        "actualizadoEl": "2026-10-16T15:00:00.000Z",
+        "cambiosDespues": false
+      }
+    }
+  },
+  "cajaCierres": {
+    "status": 200,
+    "body": {
+      "cierres": [
+        {
+          "fecha": "2026-10-16",
+          "formas": [
+            {
+              "formaPago": "efectivo",
+              "esperado": 93000,
+              "contado": 30000,
+              "diferencia": -63000
+            },
+            {
+              "formaPago": "transferencia",
+              "esperado": 15000,
+              "contado": 15000,
+              "diferencia": 0
+            },
+            {
+              "formaPago": "debito",
+              "esperado": 0,
+              "contado": null,
+              "diferencia": null
+            },
+            {
+              "formaPago": "credito",
+              "esperado": 0,
+              "contado": null,
+              "diferencia": null
+            },
+            {
+              "formaPago": "otro",
+              "esperado": 0,
+              "contado": null,
+              "diferencia": null
+            }
+          ],
+          "sinIndicar": 73000,
+          "esperadoTotal": 181000,
+          "contadoTotal": 45000,
+          "diferencia": -63000,
+          "nota": "Faltan 500 de cambio",
+          "cerradoPor": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "cerradoEl": "2026-10-16T15:00:00.000Z",
+          "actualizadoEl": "2026-10-16T15:00:00.000Z",
+          "cambiosDespues": false
+        }
+      ],
+      "total": 1
+    }
+  },
+  "error403CajaEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver ni cerrar la caja."
+      }
+    }
+  },
+  "error403CajaReabrirAdmin": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Esta caja ya está cerrada: solo el superadmin la puede corregir o reabrir."
+      }
+    }
+  },
+  "error400Caja": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "contado.efectivo": "Lo contado tiene que ser un número entero de pesos, de 0 a 999.999.999."
+        }
+      }
+    }
+  },
+  "recetaPut": {
+    "status": 200,
+    "body": {
+      "servicioId": "lavado-basico",
+      "insumos": [
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000034",
+          "nombre": "Shampoo neutro",
+          "unidad": "litro",
+          "cantidad": 0.25,
+          "cantidadSuv": 0.4,
+          "cantidadPickup": null,
+          "cantidadMoto": null,
+          "stock": 5,
+          "bajoStock": false
+        }
+      ]
+    }
+  },
+  "recetaGet": {
+    "status": 200,
+    "body": {
+      "servicioId": "lavado-basico",
+      "insumos": [
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000034",
+          "nombre": "Shampoo neutro",
+          "unidad": "litro",
+          "cantidad": 0.25,
+          "cantidadSuv": 0.4,
+          "cantidadPickup": null,
+          "cantidadMoto": null,
+          "stock": 5,
+          "bajoStock": false
+        }
+      ]
+    }
+  },
+  "error403RecetaEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés cambiar qué insumos usa un servicio."
+      }
+    }
+  },
+  "movimientosAutomaticos": {
+    "status": 200,
+    "body": {
+      "movimientos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000035",
+          "tipo": "uso",
+          "cantidad": -0.25,
+          "costoTotal": null,
+          "proveedor": null,
+          "nota": "Descuento automático del lavado",
+          "persona": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "turnoId": "00000000-0000-4000-8000-000000000036",
+          "automatico": true,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000037",
+          "tipo": "ajuste",
+          "cantidad": 5,
+          "costoTotal": null,
+          "proveedor": null,
+          "nota": "Stock inicial",
+          "persona": {
+            "id": "00000000-0000-4000-8000-000000000002",
+            "nombre": "Ana"
+          },
+          "turnoId": null,
+          "automatico": false,
+          "createdAt": "2026-10-16T15:00:00.000Z"
+        }
+      ],
+      "total": 2
+    }
+  },
+  "fotoSubida": {
+    "status": 201,
+    "body": {
+      "foto": {
+        "id": "00000000-0000-4000-8000-000000000038",
+        "tipo": "antes",
+        "contentType": "image/webp",
+        "tamano": 523000,
+        "estado": "pendiente",
+        "creadaPor": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z"
+      },
+      "subida": {
+        "url": "https://proyecto-test.supabase.co/storage/v1/object/upload/sign/lavados-fotos/00000000-0000-4000-8000-000000000029/00000000-0000-4000-8000-000000000038.webp?token=token-de-subida",
+        "metodo": "PUT",
+        "headers": {
+          "Content-Type": "image/webp"
+        },
+        "venceEl": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "fotoConfirmada": {
+    "status": 200,
+    "body": {
+      "foto": {
+        "id": "00000000-0000-4000-8000-000000000038",
+        "tipo": "antes",
+        "contentType": "image/webp",
+        "tamano": 523000,
+        "estado": "lista",
+        "creadaPor": {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto"
+        },
+        "createdAt": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "fotosLista": {
+    "status": 200,
+    "body": {
+      "disponible": true,
+      "fotos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000038",
+          "tipo": "antes",
+          "contentType": "image/webp",
+          "tamano": 523000,
+          "estado": "lista",
+          "creadaPor": {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "nombre": "Beto"
+          },
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "url": "https://proyecto-test.supabase.co/storage/v1/object/sign/lavados-fotos/00000000-0000-4000-8000-000000000029/00000000-0000-4000-8000-000000000038.webp?token=token-de-lectura"
+        }
+      ]
+    }
+  },
+  "error409FotosMaximo": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CONFLICT",
+        "message": "Ya hay 6 fotos en este lavado: borrá una para subir otra."
+      }
+    }
+  },
+  "error403FotoBorrarAjena": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Solo podés borrar una foto que subiste vos, hasta 5 minutos después de subirla."
+      }
+    }
+  },
+  "error400FotoTipo": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "contentType": "La foto tiene que ser JPG o WebP (image/jpeg o image/webp)."
+        }
+      }
+    }
+  },
+  "error403ExportarEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés exportar: los archivos llevan importes."
+      }
+    }
+  },
+  "errorClienteRegistrado": {
+    "status": 204,
+    "body": {}
+  },
+  "error400ErrorCliente": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "mensaje": "Falta el mensaje del error.",
+          "url": "Revisá la URL.",
+          "userAgent": "Revisá el navegador."
+        }
+      }
+    }
+  },
+  "permisosAdminMejoras": {
+    "status": 200,
+    "body": {
+      "roles": [
+        {
+          "id": "superadmin",
+          "nombre": "Superadministrador",
+          "descripcion": "Puede todo lo del administrador y, además, gestionar usuarios: alta, baja, rol y acceso al panel."
+        },
+        {
+          "id": "admin",
+          "nombre": "Administrador",
+          "descripcion": "Gestiona turnos, el cobro de cada trabajo, catálogo y disponibilidad; ve estadísticas con importes; lleva gastos, metas, presupuestos, comprobantes, datos del taller e inventario. No gestiona usuarios."
+        },
+        {
+          "id": "empleado",
+          "nombre": "Empleado",
+          "descripcion": "Ve turnos y agenda, escribe notas y marca turnos como completados (sin cargar el monto). Ve sus propios trabajos, sin importes, y el inventario, donde registra el uso de insumos. No ve gastos ni metas."
+        }
+      ],
+      "capacidades": [
+        {
+          "id": "lavados.registrar",
+          "grupo": "Lavados",
+          "texto": "Registrar un lavado de mostrador (servicios, vehículo, cobro, forma de pago y quién lavó)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo a su nombre: carga el monto al registrarlo, pero después no lo ve ni lo corrige (tampoco ve los precios de lista)"
+          }
+        },
+        {
+          "id": "lavados.deshacer",
+          "grupo": "Lavados",
+          "texto": "Deshacer (borrar) un lavado de mostrador",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo uno que registró él, hasta 5 minutos después de registrarlo y si no tiene comprobante"
+          }
+        },
+        {
+          "id": "lavados.etapa",
+          "grupo": "Lavados",
+          "texto": "Mover un lavado de etapa (espera, lavando, listo, entregado) y avisarle al cliente que está listo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo sus lavados: los que lavó o registró él"
+          }
+        },
+        {
+          "id": "fotos.subir",
+          "grupo": "Lavados",
+          "texto": "Subir y ver las fotos antes/después de un lavado o turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "fotos.borrar",
+          "grupo": "Lavados",
+          "texto": "Borrar una foto de un lavado o turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo una que subió él, hasta 5 minutos después de subirla"
+          }
+        },
+        {
+          "id": "turnos.ver",
+          "grupo": "Turnos",
+          "texto": "Ver los turnos y la agenda",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.crear",
+          "grupo": "Turnos",
+          "texto": "Crear turnos desde el panel para trabajos largos y cargarles la seña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "turnos.estado",
+          "grupo": "Turnos",
+          "texto": "Cambiar el estado de un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Solo puede marcarlos como Completado"
+          }
+        },
+        {
+          "id": "turnos.reprogramar",
+          "grupo": "Turnos",
+          "texto": "Cambiar la fecha y la franja de un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "turnos.borrar",
+          "grupo": "Turnos",
+          "texto": "Borrar turnos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "turnos.notas",
+          "grupo": "Turnos",
+          "texto": "Escribir notas internas en un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "turnos.clientes",
+          "grupo": "Turnos",
+          "texto": "Buscar turnos y ver el historial de un cliente",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "clientes.inactivos",
+          "grupo": "Turnos",
+          "texto": "Ver los clientes que no vienen hace tiempo, con su link de WhatsApp",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "fidelizacion.configurar",
+          "grupo": "Turnos",
+          "texto": "Configurar la tarjeta de sellos (cada cuántos lavados hay premio) y cuándo un cliente está inactivo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "cobro.registrar",
+          "grupo": "Cobro",
+          "texto": "Registrar cuánto se cobró por un trabajo y quién lo hizo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "parcial"
+          },
+          "matiz": {
+            "empleado": "Al completar un turno queda como quien lo hizo, pero no carga el monto"
+          }
+        },
+        {
+          "id": "cobro.corregir",
+          "grupo": "Cobro",
+          "texto": "Corregir el monto, el descuento, el trabajador, la forma de pago y los servicios de un turno",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "caja.cerrar",
+          "grupo": "Cobro",
+          "texto": "Ver la caja del día y cerrarla con el arqueo (lo contado por forma de pago)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "caja.reabrir",
+          "grupo": "Cobro",
+          "texto": "Corregir o reabrir un cierre de caja ya hecho",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "catalogo.ver",
+          "grupo": "Catálogo",
+          "texto": "Ver los servicios del catálogo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "catalogo.editar",
+          "grupo": "Catálogo",
+          "texto": "Crear, editar y ordenar los servicios del catálogo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "disponibilidad.ver",
+          "grupo": "Disponibilidad",
+          "texto": "Ver el horario, los días especiales y los cupos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "disponibilidad.editar",
+          "grupo": "Disponibilidad",
+          "texto": "Cambiar el horario semanal y los días especiales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "estadisticas.completas",
+          "grupo": "Estadísticas",
+          "texto": "Ver las estadísticas del taller, con importes y de todo el equipo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "estadisticas.propias",
+          "grupo": "Estadísticas",
+          "texto": "Ver los trabajos que uno mismo completó, sin importes",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "finanzas.gastos",
+          "grupo": "Finanzas",
+          "texto": "Ver y cargar los gastos del taller",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "finanzas.gastos_fijos",
+          "grupo": "Finanzas",
+          "texto": "Cargar los gastos fijos de cada mes (sueldos, alquiler, servicios)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "parcial",
+            "empleado": "no"
+          },
+          "matiz": {
+            "admin": "Solo los ve: los carga y los cambia el superadmin"
+          }
+        },
+        {
+          "id": "finanzas.metas",
+          "grupo": "Finanzas",
+          "texto": "Fijar y seguir las metas mensuales",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "finanzas.exportar",
+          "grupo": "Finanzas",
+          "texto": "Exportar a Excel (CSV) la planilla, los gastos y las estadísticas",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.presupuestos",
+          "grupo": "Documentos",
+          "texto": "Armar presupuestos y descargarlos en PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.comprobantes",
+          "grupo": "Documentos",
+          "texto": "Emitir comprobantes de pago en PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "documentos.taller",
+          "grupo": "Documentos",
+          "texto": "Editar los datos del taller que salen en los PDF",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "inventario.ver",
+          "grupo": "Inventario",
+          "texto": "Ver el inventario",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "inventario.usar",
+          "grupo": "Inventario",
+          "texto": "Registrar el uso de insumos",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "inventario.gestionar",
+          "grupo": "Inventario",
+          "texto": "Crear insumos, cargar compras y ajustar el stock",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "usuarios.gestionar",
+          "grupo": "Usuarios",
+          "texto": "Crear, editar y desactivar usuarios del panel",
+          "roles": {
+            "superadmin": "si",
+            "admin": "no",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "perfil.propio",
+          "grupo": "Usuarios",
+          "texto": "Ver y editar su propio perfil: nombre, foto de perfil y contraseña",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "push.activar",
+          "grupo": "Avisos",
+          "texto": "Activar los avisos de turnos nuevos en su propio dispositivo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
+          "id": "push.equipo",
+          "grupo": "Avisos",
+          "texto": "Recibir los avisos del encargado: lavado registrado sin monto y meta del mes cumplida",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        }
+      ],
+      "tuRol": "admin"
+    }
+  },
+  "perfilGet": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "email": "beto@t.test",
+        "nombre": "Beto",
+        "rol": "empleado",
+        "avatarUrl": null,
+        "avatarVenceEl": null,
+        "creadoEl": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "perfilPatch": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "email": "beto@t.test",
+        "nombre": "Beto Gómez",
+        "rol": "empleado",
+        "avatarUrl": null,
+        "avatarVenceEl": null,
+        "creadoEl": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400PerfilNombre": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "nombre": "El nombre tiene que tener entre 2 y 60 caracteres."
+        }
+      }
+    }
+  },
+  "avatarSubida": {
+    "status": 201,
+    "body": {
+      "subida": {
+        "url": "https://proyecto-test.supabase.co/storage/v1/object/upload/sign/perfiles-avatares/00000000-0000-4000-8000-000000000004/00000000-0000-4000-8000-000000000039.webp?token=token-de-subida",
+        "metodo": "PUT",
+        "headers": {
+          "Content-Type": "image/webp"
+        },
+        "venceEl": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error400AvatarTamano": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "tamano": "La foto de perfil puede pesar hasta 512 KB: achicala antes de subirla."
+        }
+      }
+    }
+  },
+  "avatarConfirmado": {
+    "status": 200,
+    "body": {
+      "perfil": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "email": "beto@t.test",
+        "nombre": "Beto Gómez",
+        "rol": "empleado",
+        "avatarUrl": "https://proyecto-test.supabase.co/storage/v1/object/sign/perfiles-avatares/00000000-0000-4000-8000-000000000004/00000000-0000-4000-8000-000000000039.webp?token=token-de-lectura",
+        "avatarVenceEl": "2026-10-16T15:00:00.000Z",
+        "creadoEl": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "error409AvatarSinPendiente": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "CONFLICT",
+        "message": "No hay ninguna foto pendiente de confirmar: pedí una subida nueva."
+      }
+    }
+  },
+  "meConAvatar": {
+    "status": 200,
+    "body": {
+      "usuario": {
+        "id": "00000000-0000-4000-8000-000000000004",
+        "email": "beto@t.test",
+        "nombre": "Beto Gómez",
+        "rol": "empleado",
+        "avatarUrl": "https://proyecto-test.supabase.co/storage/v1/object/sign/perfiles-avatares/00000000-0000-4000-8000-000000000004/00000000-0000-4000-8000-000000000039.webp?token=token-de-lectura",
+        "avatarVenceEl": "2026-10-16T15:00:00.000Z"
+      }
+    }
+  },
+  "trabajadoresConAvatar": {
+    "status": 200,
+    "body": {
+      "trabajadores": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "nombre": "Ana",
+          "rol": "admin",
+          "avatarUrl": null
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "nombre": "Beto Gómez",
+          "rol": "empleado",
+          "avatarUrl": "https://proyecto-test.supabase.co/storage/v1/object/sign/perfiles-avatares/00000000-0000-4000-8000-000000000004/00000000-0000-4000-8000-000000000039.webp?token=token-de-lectura"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000040",
+          "nombre": "Dueña",
+          "rol": "superadmin",
+          "avatarUrl": null
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "nombre": "sin@t.test",
+          "rol": "empleado",
+          "avatarUrl": null
+        }
+      ]
+    }
+  },
+  "error400ClaveActual": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "La contraseña actual no es correcta.",
+        "fields": {
+          "actual": "La contraseña actual no es correcta."
+        }
+      }
+    }
+  },
+  "usuariosConAvatar": {
+    "status": 200,
+    "body": {
+      "usuarios": [
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "email": "ana@t.test",
+          "nombre": "Ana",
+          "rol": "admin",
+          "activo": true,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z",
+          "avatarUrl": null
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "email": "beto@t.test",
+          "nombre": "Beto Gómez",
+          "rol": "empleado",
+          "activo": true,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z",
+          "avatarUrl": "https://proyecto-test.supabase.co/storage/v1/object/sign/perfiles-avatares/00000000-0000-4000-8000-000000000004/00000000-0000-4000-8000-000000000039.webp?token=token-de-lectura"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "sin@t.test",
+          "nombre": null,
+          "rol": "empleado",
+          "activo": true,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z",
+          "avatarUrl": null
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000040",
+          "email": "duena@t.test",
+          "nombre": "Dueña",
+          "rol": "superadmin",
+          "activo": true,
+          "createdAt": "2026-10-16T15:00:00.000Z",
+          "updatedAt": "2026-10-16T15:00:00.000Z",
+          "avatarUrl": null
+        }
+      ],
+      "gestionCuentas": true
+    }
+  },
+  "error400ClaveIgual": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "nueva": "La contraseña nueva tiene que ser distinta de la actual."
+        }
       }
     }
   }

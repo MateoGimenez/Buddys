@@ -124,6 +124,13 @@
             "precioLista": 12000
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 15000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -164,6 +171,13 @@
             "precioLista": 12000
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 15000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -204,6 +218,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -308,6 +329,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 30000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -353,6 +381,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -393,6 +428,13 @@
             "precioLista": null
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 15000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       },
@@ -483,6 +525,13 @@
               "precioLista": 12000
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 15000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -517,6 +566,13 @@
               "precioLista": 12000
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 15000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -551,6 +607,13 @@
               "precioLista": 12000
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 15000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -590,6 +653,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 15000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -629,6 +699,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 15000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -663,6 +740,13 @@
               "precioLista": 12000
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": 0,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": 15000,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -745,6 +829,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -779,6 +870,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -813,6 +911,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -852,6 +957,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -891,6 +1003,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         },
@@ -925,6 +1044,13 @@
               "precioLista": null
             }
           ],
+          "etapa": "entregado",
+          "etapaDesde": "2026-10-16T15:00:00.000Z",
+          "descuento": null,
+          "descuentoMotivo": null,
+          "sena": null,
+          "saldo": null,
+          "whatsappListo": null,
           "createdAt": "2026-10-16T15:00:00.000Z",
           "updatedAt": "2026-10-16T15:00:00.000Z"
         }
@@ -1031,6 +1157,13 @@
             "precioLista": null
           }
         ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": null,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-11-14T20:08:17.850Z"
       }
@@ -1079,6 +1212,13 @@
             "precioLista": 12000
           }
         ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 60000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-10-16T15:00:00.000Z"
       }
@@ -1123,6 +1263,13 @@
             "precioLista": 12000
           }
         ],
+        "etapa": "entregado",
+        "etapaDesde": "2026-10-16T15:00:00.000Z",
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": 30000,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-11-14T20:08:17.877Z"
       }
@@ -1167,6 +1314,13 @@
             "precioLista": 12000
           }
         ],
+        "etapa": null,
+        "etapaDesde": null,
+        "descuento": 0,
+        "descuentoMotivo": null,
+        "sena": null,
+        "saldo": null,
+        "whatsappListo": null,
         "createdAt": "2026-10-16T15:00:00.000Z",
         "updatedAt": "2026-11-14T20:08:17.877Z"
       }
@@ -1221,12 +1375,14 @@
         {
           "id": "00000000-0000-4000-8000-00000000a0a0",
           "nombre": "Ana",
-          "rol": "superadmin"
+          "rol": "superadmin",
+          "avatarUrl": null
         },
         {
           "id": "00000000-0000-4000-8000-00000000b0b0",
           "nombre": "Beto",
-          "rol": "empleado"
+          "rol": "empleado",
+          "avatarUrl": null
         }
       ]
     }

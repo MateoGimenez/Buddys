@@ -5,26 +5,28 @@ import { getUsuario } from '../middleware/require-session.js';
 import { loginSchema } from '../schemas/auth.js';
 import { parseOrThrow } from '../schemas/common.js';
 import type { AuthService, UsuarioSesion } from '../services/auth.js';
+import type { PerfilService } from '../services/perfil.js';
 
 export interface AuthRouterDeps {
   auth: AuthService;
+  /** Firma la URL de la foto de perfil (avatarUrl). */
+  perfil: PerfilService;
   cookies: SessionCookies;
   /** Limita los intentos de login FALLIDOS por IP. */
   loginLimiter: RequestHandler;
   requireSession: RequestHandler;
 }
 
-/** Lo que el frontend ve del usuario: nunca tokens ni el session_id. */
-function publicUsuario(usuario: UsuarioSesion) {
-  return { id: usuario.id, email: usuario.email, nombre: usuario.nombre, rol: usuario.rol };
-}
-
-function sendUsuario(res: Response, usuario: UsuarioSesion): void {
-  res.json({ usuario: publicUsuario(usuario) });
-}
-
-export function authRouter({ auth, cookies, loginLimiter, requireSession }: AuthRouterDeps): Router {
+export function authRouter({ auth, perfil, cookies, loginLimiter, requireSession }: AuthRouterDeps): Router {
   const router = Router();
+
+  /**
+   * Lo que el frontend ve del usuario: { id, email, nombre, rol, avatarUrl, avatarVenceEl }. Nunca tokens, el
+   * session_id ni la ruta de la foto en el bucket (solo una URL firmada que vence en 1 hora).
+   */
+  const sendUsuario = async (res: Response, usuario: UsuarioSesion): Promise<void> => {
+    res.json({ usuario: await perfil.usuarioPublico(usuario) });
+  };
 
   // POST /api/auth/login { email, password } => 200 { usuario } + cookies bd_at y bd_rt
   router.post('/login', loginLimiter, async (req, res) => {
@@ -32,7 +34,7 @@ export function authRouter({ auth, cookies, loginLimiter, requireSession }: Auth
     try {
       const { usuario, tokens } = await auth.login(email, password);
       cookies.set(res, tokens);
-      sendUsuario(res, usuario);
+      await sendUsuario(res, usuario);
     } catch (error) {
       // Si había una sesión vieja en el navegador, que no quede mezclada con un login fallido.
       if (readAccessToken(req) !== undefined || readRefreshToken(req) !== undefined) cookies.clear(res);
@@ -51,7 +53,7 @@ export function authRouter({ auth, cookies, loginLimiter, requireSession }: Auth
     });
     if (result.status === 'ok') {
       if (result.renewed) cookies.set(res, result.renewed);
-      sendUsuario(res, result.usuario);
+      await sendUsuario(res, result.usuario);
       return;
     }
     if (result.status !== 'none') cookies.clear(res);
@@ -72,10 +74,10 @@ export function authRouter({ auth, cookies, loginLimiter, requireSession }: Auth
     res.status(204).end();
   });
 
-  // GET /api/auth/me => 200 { usuario: { id, email, nombre, rol } } | 401 | 403. Si el access token venció,
-  // acá sí viaja el refresh token: se refresca solo.
-  router.get('/me', requireSession, (_req, res) => {
-    sendUsuario(res, getUsuario(res));
+  // GET /api/auth/me => 200 { usuario: { id, email, nombre, rol, avatarUrl, avatarVenceEl } } | 401 | 403. Si el
+  // access token venció, acá sí viaja el refresh token: se refresca solo.
+  router.get('/me', requireSession, async (_req, res) => {
+    await sendUsuario(res, getUsuario(res));
   });
 
   return router;

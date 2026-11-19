@@ -1,0 +1,30 @@
+/* Gastos: los sueltos del mes y los fijos mensuales (cuentan el día 1). */
+
+.fijos-regla {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radio-chico);
+  background: var(--canario);
+  color: var(--tinta);
+  font-size: 0.9375rem;
+}
+
+.fijos-regla svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--serie);
+}
+
+.fila-fijo[data-terminado] .fila-simple-titulo,
+.fila-fijo[data-terminado] .fila-simple-monto {
+  color: var(--tinta-3);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.form-fijo {
+  inline-size: 100%;
+  padding-block: 6px;
+}

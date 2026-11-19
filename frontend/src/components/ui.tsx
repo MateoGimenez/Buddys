@@ -278,12 +278,17 @@ export function Confirmar({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const tituloId = useId();
+  const cuerpoId = useId();
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
     if (abierto && !d.open) {
       if (typeof d.showModal === 'function') d.showModal();
-      else d.setAttribute('open', '');
+      else {
+        // Safari < 15.4 no tiene <dialog>: se muestra igual, fijo en el centro (ver .dialogo-sin-modal).
+        d.classList.add('dialogo-sin-modal');
+        d.setAttribute('open', '');
+      }
     }
     if (!abierto && d.open) {
       if (typeof d.close === 'function') d.close();
@@ -295,6 +300,7 @@ export function Confirmar({
       ref={ref}
       className="dialogo"
       aria-labelledby={tituloId}
+      aria-describedby={children ? cuerpoId : undefined}
       onCancel={(e) => {
         e.preventDefault();
         onCancelar();
@@ -303,7 +309,11 @@ export function Confirmar({
       <h2 id={tituloId} className="dialogo-titulo">
         {titulo}
       </h2>
-      {children ? <div className="dialogo-cuerpo">{children}</div> : null}
+      {children ? (
+        <div className="dialogo-cuerpo" id={cuerpoId}>
+          {children}
+        </div>
+      ) : null}
       <div className="dialogo-acciones">
         <Boton variante="fantasma" onClick={onCancelar} disabled={ocupado}>
           Cancelar

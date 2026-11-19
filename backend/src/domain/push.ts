@@ -1,4 +1,5 @@
 import type { Booking } from './booking.js';
+import type { Rol } from './perfil.js';
 
 /**
  * Avisos push al celular cuando entra un turno nuevo (contrato: reportes/2026-10-26_13_panel-pulido-y-app.md, bloque A).
@@ -82,6 +83,8 @@ export interface PushRepository {
   borrarPorEndpoint(endpoint: string): Promise<boolean>;
   /** Dispositivos de las personas ACTIVAS del panel. */
   destinosActivos(): Promise<DestinoPush[]>;
+  /** Dispositivos de las personas ACTIVAS con alguno de esos roles, menos los de `excluirPerfilId` (si viene). */
+  destinosDeRoles(roles: readonly Rol[], excluirPerfilId: string | null): Promise<DestinoPush[]>;
   /** Borra dispositivos por id (el servicio de push respondió 404/410). Devuelve cuántos borró. */
   borrarPorIds(ids: readonly string[]): Promise<number>;
   /** Marca el último aviso entregado. */

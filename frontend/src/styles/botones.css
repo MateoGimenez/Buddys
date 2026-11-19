@@ -1,0 +1,117 @@
+/* ------------------------------------------------------------------ Botones */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-block-size: 48px;
+  padding: 10px 18px;
+  border-radius: var(--radio-chico);
+  border: var(--grosor) solid transparent;
+  font: inherit;
+  font-weight: 650;
+  font-size: 1rem;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    transform 120ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn[aria-busy='true'] {
+  opacity: 0.85;
+  cursor: progress;
+}
+
+.btn-primario {
+  background: var(--rosa);
+  color: var(--sobre-rosa);
+  border-color: var(--borde-primario);
+}
+
+.btn-primario:hover:not(:disabled) {
+  background: var(--rosa-fuerte);
+  color: var(--sobre-rosa-fuerte);
+}
+
+.btn-secundario {
+  background: var(--papel);
+  color: var(--tinta);
+  border-color: var(--tinta);
+}
+
+.btn-secundario:hover:not(:disabled) {
+  background: var(--carbon-claro);
+}
+
+.btn-fantasma {
+  background: transparent;
+  color: var(--carbon);
+  border-color: transparent;
+}
+
+.btn-fantasma:hover:not(:disabled) {
+  background: var(--carbon-claro);
+}
+
+.btn-peligro {
+  background: var(--peligro);
+  color: var(--sobre-peligro);
+}
+
+.btn-peligro:hover:not(:disabled) {
+  background: var(--peligro-hover);
+}
+
+.btn-texto-peligro {
+  color: var(--peligro);
+}
+
+.btn-texto-peligro:hover:not(:disabled) {
+  background: var(--peligro-claro);
+}
+
+.btn-chico {
+  min-block-size: 44px;
+  padding: 8px 12px;
+  font-size: 0.9375rem;
+}
+
+.btn-ancho {
+  inline-size: 100%;
+}
+
+.btn-grande {
+  min-block-size: 56px;
+  font-size: 1.125rem;
+}
+
+.girando {
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fila-botones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}

@@ -25,14 +25,30 @@ export interface RateLimiters {
   loginFailures: RequestHandler;
   /** GET /api/turnos/:id: seguimiento del turno (contra el barrido de ids). Cuentan todos los pedidos, también los 404. */
   seguimiento: RequestHandler;
-  /** GET de los PDF de presupuestos y comprobantes: cuesta CPU generarlos. */
+  /** GET de los PDF de presupuestos y comprobantes y de los CSV: cuesta CPU generarlos. */
   pdf: RequestHandler;
+  /** POST /api/admin/errores-cliente: por usuario de la sesión (detrás de requireSession). */
+  erroresCliente: RequestHandler;
+  /** POST /api/errores-cliente (sin sesión): por IP, estricto. */
+  erroresClientePublico: RequestHandler;
+  /** POST /api/admin/lavados/:id/fotos (pedir una URL de subida): por usuario de la sesión. */
+  fotos: RequestHandler;
+  /** POST /api/admin/perfil/avatar (pedir una URL de subida de la foto de perfil): por usuario de la sesión. */
+  avatar: RequestHandler;
+  /** POST /api/admin/perfil/clave: por usuario de la sesión; cuentan todos los intentos. */
+  clave: RequestHandler;
 }
 
 /**
  * Los contadores viven en memoria del proceso (alcanza para una sola instancia; si el backend se escala a
  * varias instancias hay que pasar a un store compartido). La IP sale de `req.ip`, que depende de TRUST_PROXY.
  */
+/** Clave por persona: el usuario que dejó requireSession en res.locals (un id de perfil, no una IP). */
+const porUsuario: Options['keyGenerator'] = (_req, res) => {
+  const usuario = (res.locals as { usuario?: { id?: unknown } }).usuario;
+  return typeof usuario?.id === 'string' ? `usuario:${usuario.id}` : 'usuario:desconocido';
+};
+
 export function createRateLimiters(rules: AppConfig['rateLimits']): RateLimiters {
   return {
     api: createLimiter(rules.api, 'Hiciste demasiados pedidos seguidos. Esperá un momento y probá de nuevo.'),
@@ -51,5 +67,18 @@ export function createRateLimiters(rules: AppConfig['rateLimits']): RateLimiters
       'Consultaste tu turno demasiadas veces seguidas. Esperá unos minutos y probá de nuevo.',
     ),
     pdf: createLimiter(rules.pdf, 'Pediste demasiados PDF seguidos. Esperá un momento y probá de nuevo.'),
+    erroresCliente: createLimiter(rules.erroresCliente, 'El panel mandó demasiados errores seguidos.', {
+      keyGenerator: porUsuario,
+    }),
+    fotos: createLimiter(rules.fotos, 'Pediste demasiadas subidas de fotos seguidas. Esperá unos minutos.', {
+      keyGenerator: porUsuario,
+    }),
+    avatar: createLimiter(rules.avatar, 'Pediste demasiadas subidas de foto de perfil seguidas. Esperá unos minutos.', {
+      keyGenerator: porUsuario,
+    }),
+    clave: createLimiter(rules.clave, 'Hiciste demasiados intentos de cambiar la contraseña. Esperá unos minutos.', {
+      keyGenerator: porUsuario,
+    }),
+    erroresClientePublico: createLimiter(rules.erroresClientePublico, 'El panel mandó demasiados errores seguidos.'),
   };
 }

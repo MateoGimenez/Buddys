@@ -10,6 +10,8 @@ import {
   type PushSender,
   esEndpointPermitido,
 } from '../domain/push.js';
+import { ROLES } from '../domain/perfil.js';
+import { recibeAvisosDeEquipo } from '../domain/permisos.js';
 import type { Logger } from '../lib/logger.js';
 import { descripcionTurno } from '../notifications/message.js';
 
@@ -65,7 +67,7 @@ export class PushService implements BookingPushNotifier {
 
   /** Nunca se rechaza. Con el push apagado no hace nada (ni siquiera consulta la base). */
   async avisarTurnoNuevo(booking: Booking, servicioNombre: string): Promise<void> {
-    const { repo, sender, logger, now } = this.deps;
+    const { repo, sender, logger } = this.deps;
     if (!this.disponible || sender === undefined) return;
     try {
       const destinos = await repo.destinosActivos();
@@ -77,24 +79,47 @@ export class PushService implements BookingPushNotifier {
         pendientes,
         url: '/admin',
       };
-      const texto = JSON.stringify(payload);
-
-      const resultados = await Promise.all(destinos.map((destino) => this.enviar(sender, destino, texto)));
-      const idsDe = (resultado: Resultado): string[] =>
-        destinos.filter((_, i) => resultados[i] === resultado).map((destino) => destino.id);
-      const caducados = idsDe('caducado');
-      const enviados = idsDe('enviado');
-      const fallidos = resultados.length - caducados.length - enviados.length;
-
-      // El mantenimiento de la tabla no puede tirar el resumen: cada paso se atrapa por separado.
-      await repo.borrarPorIds(caducados).catch(() => undefined);
-      await repo.marcarAvisados(enviados, now()).catch(() => undefined);
-      logger.info(
-        `Aviso push: enviados=${String(enviados.length)} caducados=${String(caducados.length)} fallidos=${String(fallidos)}`,
-      );
+      await this.enviarATodos(sender, destinos, payload, 'Aviso push');
     } catch {
       logger.warn('Aviso push falló (error al leer los dispositivos)');
     }
+  }
+
+  /**
+   * Aviso a los encargados (función 7): a los dispositivos de las personas activas con un rol que recibe los avisos
+   * del equipo (domain/permisos.ts, recibeAvisosDeEquipo: admin y superadmin), menos a quien lo provocó. Nunca se
+   * rechaza; con el push apagado no hace nada (ni consulta la base). El aviso no lleva datos del cliente ni importes.
+   */
+  async avisarEquipo(aviso: { titulo: string; cuerpo: string; url: string }, excluirPerfilId: string | null): Promise<void> {
+    const { repo, sender, logger } = this.deps;
+    if (!this.disponible || sender === undefined) return;
+    try {
+      const destinos = await repo.destinosDeRoles(ROLES.filter(recibeAvisosDeEquipo), excluirPerfilId);
+      if (destinos.length === 0) return;
+      const pendientes = await repo.contarPendientes();
+      await this.enviarATodos(sender, destinos, { ...aviso, pendientes }, 'Aviso push al equipo');
+    } catch {
+      logger.warn('Aviso push al equipo falló (error al leer los dispositivos)');
+    }
+  }
+
+  /** Manda el mismo aviso a todos, borra los caducados y deja un resumen en el log (solo cantidades). */
+  private async enviarATodos(sender: PushSender, destinos: DestinoPush[], payload: PayloadPush, etiqueta: string): Promise<void> {
+    const { repo, logger, now } = this.deps;
+    const texto = JSON.stringify(payload);
+    const resultados = await Promise.all(destinos.map((destino) => this.enviar(sender, destino, texto)));
+    const idsDe = (resultado: Resultado): string[] =>
+      destinos.filter((_, i) => resultados[i] === resultado).map((destino) => destino.id);
+    const caducados = idsDe('caducado');
+    const enviados = idsDe('enviado');
+    const fallidos = resultados.length - caducados.length - enviados.length;
+
+    // El mantenimiento de la tabla no puede tirar el resumen: cada paso se atrapa por separado.
+    await repo.borrarPorIds(caducados).catch(() => undefined);
+    await repo.marcarAvisados(enviados, now()).catch(() => undefined);
+    logger.info(
+      `${etiqueta}: enviados=${String(enviados.length)} caducados=${String(caducados.length)} fallidos=${String(fallidos)}`,
+    );
   }
 
   /** Un envío con tope de tiempo. 404/410 = la suscripción ya no existe (se borra); el resto, solo se cuenta. */

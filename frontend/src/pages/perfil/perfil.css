@@ -1,0 +1,150 @@
+/* ------------------------------------------------------------------ Tu perfil (pages/perfil)
+   En el celular, una columna: la foto arriba, centrada, como la foto carnet abrochada a la primera hoja del talonario;
+   abajo el nombre, la cuenta, la contraseña y salir. Desde 720 px, la foto a la izquierda y las hojas a la derecha. */
+
+.perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perfil-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.perfil-foto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.perfil-foto-marco {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border-radius: 50%;
+  border: var(--grosor) dashed var(--linea-fuerte);
+}
+
+/* Mientras prepara o sube: el borde punteado gira despacio (con "reducir movimiento" queda quieto, ver movimiento.css). */
+.perfil-foto-marco[data-ocupado] {
+  border-color: var(--carbon);
+  animation: perfil-girar 2.4s linear infinite;
+}
+
+.perfil-foto-marco[data-ocupado] .avatar {
+  animation: perfil-contragirar 2.4s linear infinite;
+  opacity: 0.75;
+}
+
+@keyframes perfil-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes perfil-contragirar {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.avatar-esperando {
+  background: var(--esqueleto-1);
+  box-shadow: none;
+}
+
+.perfil-foto-estado {
+  min-block-size: 1.5em;
+  font-weight: 650;
+  color: var(--tinta-2);
+}
+
+.perfil-foto-nota {
+  color: var(--tinta-2);
+  max-inline-size: 32ch;
+}
+
+.perfil-foto .aviso {
+  align-self: stretch;
+  text-align: start;
+}
+
+.perfil-foto-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  inline-size: 100%;
+}
+
+.perfil-foto-acciones > * {
+  flex: 1 1 150px;
+  max-inline-size: 260px;
+}
+
+.perfil-elegir {
+  position: relative;
+  cursor: pointer;
+}
+
+.perfil-elegir:focus-within {
+  outline: 3px solid var(--carbon);
+  outline-offset: 2px;
+}
+
+.perfil-elegir[data-deshabilitado] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.perfil-cuenta {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 8px;
+}
+
+.perfil-cuenta div {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.perfil-cuenta dt {
+  font-weight: 650;
+  color: var(--tinta-2);
+}
+
+.perfil-cuenta dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.perfil-ver {
+  align-self: flex-start;
+}
+
+@media (min-width: 720px) {
+  .perfil {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .perfil-foto {
+    position: sticky;
+    top: calc(var(--barra-alto) + 16px);
+  }
+
+  .perfil-foto-acciones > * {
+    flex-basis: 100%;
+  }
+}

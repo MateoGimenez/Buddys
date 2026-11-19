@@ -1,0 +1,48 @@
+/* ------------------------------------------------------------------ Foto de perfil (components/Avatar.tsx)
+   Un círculo con la foto; sin foto, las iniciales en tinta sobre el azul claro del carbónico (como un sello de
+   iniciales en el talonario). En alto contraste, borde negro y fondo blanco. */
+
+.avatar {
+  --avatar-lado: 32px;
+
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  inline-size: var(--avatar-lado);
+  block-size: var(--avatar-lado);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--carbon-claro);
+  color: var(--tinta);
+  box-shadow: inset 0 0 0 var(--grosor-fino) var(--linea);
+  font-weight: 750;
+  font-stretch: 87.5%;
+  font-size: 0.8125rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.avatar[data-tamano='medio'] {
+  --avatar-lado: 40px;
+
+  font-size: 0.9375rem;
+}
+
+.avatar[data-tamano='grande'] {
+  --avatar-lado: 128px;
+
+  font-size: 2.75rem;
+  box-shadow: inset 0 0 0 var(--grosor) var(--linea-fuerte);
+}
+
+.avatar img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.avatar svg {
+  color: var(--tinta-2);
+}

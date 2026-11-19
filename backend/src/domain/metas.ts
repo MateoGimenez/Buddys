@@ -77,6 +77,11 @@ export interface MetaRepository {
   guardar(mes: string, cambios: Partial<ObjetivosMeta>): Promise<MetaMensual | null>;
   /** false si el mes no tenía meta. */
   borrar(mes: string): Promise<boolean>;
+  /**
+   * Marca que ya se avisó que la meta de `mes` (YYYY-MM) se cumplió. true solo si la marcó esta llamada (no estaba
+   * marcada): es la única que tiene que avisar. Cambiar la meta la desmarca.
+   */
+  marcarCumplidaAvisada(mes: string, now: Date): Promise<boolean>;
 }
 
 /** Primer y último día (YYYY-MM-DD) del mes `YYYY-MM`. */

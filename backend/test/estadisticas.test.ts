@@ -321,7 +321,7 @@ describe('GET /api/admin/trabajadores', () => {
         ['Super', 'superadmin'],
         ['zeta', 'empleado'],
       ]);
-      expect(Object.keys(response.body.trabajadores[0] as object).sort()).toEqual(['id', 'nombre', 'rol']);
+      expect(Object.keys(response.body.trabajadores[0] as object).sort()).toEqual(['avatarUrl', 'id', 'nombre', 'rol']);
     }
     expect((await empleado.get('/api/admin/trabajadores')).status).toBe(403);
     expect((await createTestContext().then(async (c) => (await import('supertest')).default(c.app).get('/api/admin/trabajadores'))).status).toBe(401);
@@ -367,6 +367,8 @@ describe('GET /api/admin/estadisticas', () => {
       cancelados: 1,
       ingresos: 80000,
       gastos: 0,
+      gastosFijos: 0,
+      descuentos: 0,
       gananciaNeta: 80000,
       margen: 1,
       ticketPromedio: 40000,

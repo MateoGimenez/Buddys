@@ -11,7 +11,7 @@ export const usuarioIdSchema = z.uuid();
 /** Contraseña que elige el superadmin: 8 a 72 caracteres y no más de 72 bytes (el tope de bcrypt en Supabase Auth). */
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX_BYTES = 72;
-const passwordSchema = z
+export const passwordSchema = z
   .string({ error: 'Ingresá una contraseña.' })
   .min(PASSWORD_MIN, { error: `La contraseña tiene que tener al menos ${String(PASSWORD_MIN)} caracteres.` })
   .refine((value) => Buffer.byteLength(value, 'utf8') <= PASSWORD_MAX_BYTES, {

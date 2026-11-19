@@ -411,4 +411,62 @@ export async function verifyPostgresSchema(client: SqlClient): Promise<void> {
       'Falta la función buddys_private.sesion_vigente (o el rol no tiene USAGE sobre buddys_private). Aplicá las migraciones.',
     );
   }
+
+  // Las mejoras del contrato 2026-11-15 (migraciones 20261115100000 a 20261115180000, salvo la del bucket de Storage).
+  const mejorasTablas = await client.query(
+    'SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 AND tablename = ANY($2::text[])',
+    [PG_SCHEMA, MEJORAS_TABLES],
+  );
+  const faltanMejoras: string[] = MEJORAS_TABLES.filter(
+    (table) => !mejorasTablas.rows.some((row) => row.tablename === table),
+  );
+  const mejorasColumnas = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'bookings' AND column_name = ANY($2::text[])`,
+    [PG_SCHEMA, MEJORAS_BOOKINGS_COLUMNS],
+  );
+  for (const column of MEJORAS_BOOKINGS_COLUMNS) {
+    if (!mejorasColumnas.rows.some((row) => row.column_name === column)) faltanMejoras.push(`bookings.${column}`);
+  }
+  const funciones = await client.query(
+    `SELECT to_regprocedure('buddys.sincronizar_insumos_turno(uuid,uuid,boolean)') IS NOT NULL AS insumos,
+            to_regprocedure('buddys.gastos_fijos_imputados(date,date)') IS NOT NULL AS fijos`,
+  );
+  if (funciones.rows[0]?.insumos !== true) faltanMejoras.push('función sincronizar_insumos_turno');
+  if (funciones.rows[0]?.fijos !== true) faltanMejoras.push('función gastos_fijos_imputados');
+  if (faltanMejoras.length > 0) {
+    throw new Error(
+      `Faltan objetos de las migraciones 20261115* en buddys (${faltanMejoras.join(', ')}). ` +
+        'Aplicalas en orden (ver README, "Migraciones").',
+    );
+  }
+
+  // La foto de perfil (migración 20261116100000_perfil_avatar): las columnas de perfiles y avatares_a_borrar.
+  const avatarColumnas = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'perfiles' AND column_name = ANY($2::text[])`,
+    [PG_SCHEMA, AVATAR_COLUMNS],
+  );
+  const faltanAvatar: string[] = AVATAR_COLUMNS.filter(
+    (column) => !avatarColumnas.rows.some((row) => row.column_name === column),
+  ).map((column) => `perfiles.${column}`);
+  const avatarTabla = await client.query(
+    "SELECT 1 FROM pg_catalog.pg_tables WHERE schemaname = $1 AND tablename = 'avatares_a_borrar'",
+    [PG_SCHEMA],
+  );
+  if (avatarTabla.rows.length === 0) faltanAvatar.push('avatares_a_borrar');
+  if (faltanAvatar.length > 0) {
+    throw new Error(
+      `Faltan objetos de la migración de la foto de perfil en buddys (${faltanAvatar.join(', ')}). ` +
+        'Aplicá 20261116100000_perfil_avatar.sql (ver README, "Migraciones").',
+    );
+  }
 }
+
+/** Columnas de perfiles de la migración perfil_avatar. */
+const AVATAR_COLUMNS = ['avatar_path', 'avatar_pendiente_path', 'avatar_subida_vence_at'] as const;
+
+/** Tablas de las migraciones 20261115* (caja, gastos fijos, fotos, tarjeta de sellos, recetas de insumos). */
+const MEJORAS_TABLES = ['gastos_fijos', 'cierres_caja', 'lavado_fotos', 'fotos_a_borrar', 'fidelizacion', 'servicio_insumos'] as const;
+/** Columnas de bookings de las migraciones lavados_etapa_descuento y turnos_panel_sena. */
+const MEJORAS_BOOKINGS_COLUMNS = ['etapa', 'etapa_at', 'descuento', 'descuento_motivo', 'sena_monto', 'sena_forma_pago', 'sena_fecha'] as const;

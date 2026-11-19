@@ -1,0 +1,259 @@
+/* Panel Buddys Wash Detail.
+   Mundo: el talonario de remitos con copia. Hoja blanca (original), copia canario (planilla), copia rosa (marca),
+   tinta azul carbónico para el texto y numeración roja de imprenta. Archivo variable para todo.
+
+   Temas (lib/tema.ts pone data-tema en <html>; sin atributo = "Automático", sigue al celular):
+   - claro (:root): el talonario de día.
+   - oscuro: el mismo talonario de noche (papel azul noche, copia canario tostada). Dos bloques iguales: uno para
+     "Automático" con el celular en oscuro y otro para "Oscuro" elegido a mano. Si cambiás uno, cambiá el otro
+     (src/test/contraste.test.ts lo controla).
+   - contraste ("Alto contraste, para el sol"): negro sobre blanco, bordes gruesos, sin grises; lo elegido en amarillo.
+   Todo color de la interfaz sale de acá: un componente nuevo usa estas variables, nunca un hex suelto. Cada par
+   texto/fondo está medido en src/test/contraste.test.ts (AA en claro y oscuro, AAA en alto contraste). */
+
+:root {
+  /* Tinta y papel */
+  --tinta: #17204d;
+  --tinta-2: #3a4372;
+  --tinta-3: #5a628c;
+  --papel: #ffffff;
+  --fondo: #eceef5;
+  /* Lo que se escribe sobre un fondo de tinta (opción elegida, fichas oscuras). */
+  --sobre-tinta: #ffffff;
+  --marca-sobre-tinta: #ec5fa4;
+  --carbon: #2742b8;
+  --carbon-claro: #e6eafb;
+  --rosa: #ec5fa4;
+  --rosa-fuerte: #cc3584;
+  --rosa-claro: #fde4f0;
+  --sobre-rosa: #17204d;
+  --sobre-rosa-fuerte: #ffffff;
+  --borde-primario: #17204d;
+  --canario: #fff3c2;
+  --canario-borde: #e8d68a;
+  --serie: #c41d2b;
+  --linea: #cdd1e2;
+  /* Borde de campos y casillas: 3:1 contra el papel (se tienen que ver al sol). */
+  --linea-fuerte: #7a82a8;
+  --ok: #146c35;
+  --ok-claro: #e2f4e8;
+  --sobre-ok: #ffffff;
+  --alerta: #8a4f00;
+  --alerta-claro: #fff0d6;
+  --peligro: #b3192a;
+  --peligro-claro: #fde7e9;
+  --peligro-hover: #8f1220;
+  --sobre-peligro: #ffffff;
+  /* Pistas de barras (ranking, metas), filas apagadas y esqueletos de carga. */
+  --pista: #e5e7f0;
+  --inactivo: #f6f7fa;
+  --apagado: #e3e4ea;
+  --esqueleto-1: #e2e5ef;
+  --esqueleto-2: #f3f4f9;
+  /* Barra de abajo y riel lateral. */
+  --nav-fondo: #17204d;
+  --nav-texto: #c9cdea;
+  --nav-activo: #ffffff;
+  --nav-marca: #ec5fa4;
+  --nav-hover: rgb(255 255 255 / 8%);
+  --nav-activo-fondo: #ec5fa4;
+  --nav-activo-texto: #17204d;
+  /* Velos y sombras */
+  --papel-velado: rgb(255 255 255 / 70%);
+  --papel-transparente: rgb(255 255 255 / 0%);
+  --plazo-pista: rgb(23 32 77 / 10%);
+  --velo: rgb(23 32 77 / 45%);
+  --sombra: 0 1px 2px rgb(23 32 77 / 8%), 0 4px 14px rgb(23 32 77 / 6%);
+  --sombra-copia: 0 1px 2px rgb(23 32 77 / 8%);
+  --sombra-dialogo: 0 12px 40px rgb(23 32 77 / 30%);
+  --sombra-login: 0 20px 50px rgb(0 0 0 / 30%);
+  --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2317204d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  /* Grosor de bordes: en alto contraste todo se engrosa. */
+  --grosor: 2px;
+  --grosor-fino: 1px;
+
+  --radio: 10px;
+  --radio-chico: 7px;
+  --tabs-alto: 64px;
+  --barra-alto: 56px;
+  /* Movimiento: arranca rápido y se asienta (nada de rebotes elásticos). Lo que sale, sale más rápido. */
+  --curva: cubic-bezier(0.16, 1, 0.3, 1);
+  --curva-salida: cubic-bezier(0.4, 0, 1, 1);
+  --t-toque: 110ms;
+  --t-estado: 200ms;
+  --fuente: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: light;
+}
+
+/* tema:oscuro (automático) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema]) {
+    --tinta: #e9ebf7;
+    --tinta-2: #c6cbe6;
+    --tinta-3: #a3aad0;
+    --papel: #1a1f38;
+    --fondo: #0f1325;
+    --sobre-tinta: #0f1325;
+    --marca-sobre-tinta: #b0175f;
+    --carbon: #a9b8ff;
+    --carbon-claro: #2a3260;
+    --rosa: #f27ab5;
+    --rosa-fuerte: #ff9ccb;
+    --rosa-claro: #45203a;
+    --sobre-rosa: #17204d;
+    --sobre-rosa-fuerte: #17204d;
+    --borde-primario: #f27ab5;
+    --canario: #2b2714;
+    --canario-borde: #5e5427;
+    --serie: #ff8f97;
+    --linea: #353c62;
+    --linea-fuerte: #7a82ad;
+    --ok: #7ad89c;
+    --ok-claro: #12301e;
+    --sobre-ok: #0f1325;
+    --alerta: #ffc46b;
+    --alerta-claro: #33270f;
+    --peligro: #ff9a9f;
+    --peligro-claro: #3d1519;
+    --peligro-hover: #ffb8bc;
+    --sobre-peligro: #0f1325;
+    --pista: #2c3357;
+    --inactivo: #151a30;
+    --apagado: #2c3357;
+    --esqueleto-1: #222846;
+    --esqueleto-2: #2c3357;
+    --nav-fondo: #080b18;
+    --nav-texto: #b9bfe0;
+    --nav-activo: #ffffff;
+    --nav-marca: #f27ab5;
+    --nav-hover: rgb(255 255 255 / 8%);
+    --nav-activo-fondo: #f27ab5;
+    --nav-activo-texto: #17204d;
+    --papel-velado: rgb(15 19 37 / 55%);
+    --papel-transparente: rgb(26 31 56 / 0%);
+    --plazo-pista: rgb(233 235 247 / 14%);
+    --velo: rgb(0 0 0 / 60%);
+    --sombra: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 14px rgb(0 0 0 / 25%);
+    --sombra-copia: 0 1px 2px rgb(0 0 0 / 40%);
+    --sombra-dialogo: 0 12px 40px rgb(0 0 0 / 55%);
+    --sombra-login: 0 20px 50px rgb(0 0 0 / 50%);
+    --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23e9ebf7' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+    color-scheme: dark;
+  }
+}
+
+/* tema:oscuro (elegido) */
+:root[data-tema='oscuro'] {
+  --tinta: #e9ebf7;
+  --tinta-2: #c6cbe6;
+  --tinta-3: #a3aad0;
+  --papel: #1a1f38;
+  --fondo: #0f1325;
+  --sobre-tinta: #0f1325;
+  --marca-sobre-tinta: #b0175f;
+  --carbon: #a9b8ff;
+  --carbon-claro: #2a3260;
+  --rosa: #f27ab5;
+  --rosa-fuerte: #ff9ccb;
+  --rosa-claro: #45203a;
+  --sobre-rosa: #17204d;
+  --sobre-rosa-fuerte: #17204d;
+  --borde-primario: #f27ab5;
+  --canario: #2b2714;
+  --canario-borde: #5e5427;
+  --serie: #ff8f97;
+  --linea: #353c62;
+  --linea-fuerte: #7a82ad;
+  --ok: #7ad89c;
+  --ok-claro: #12301e;
+  --sobre-ok: #0f1325;
+  --alerta: #ffc46b;
+  --alerta-claro: #33270f;
+  --peligro: #ff9a9f;
+  --peligro-claro: #3d1519;
+  --peligro-hover: #ffb8bc;
+  --sobre-peligro: #0f1325;
+  --pista: #2c3357;
+  --inactivo: #151a30;
+  --apagado: #2c3357;
+  --esqueleto-1: #222846;
+  --esqueleto-2: #2c3357;
+  --nav-fondo: #080b18;
+  --nav-texto: #b9bfe0;
+  --nav-activo: #ffffff;
+  --nav-marca: #f27ab5;
+  --nav-hover: rgb(255 255 255 / 8%);
+  --nav-activo-fondo: #f27ab5;
+  --nav-activo-texto: #17204d;
+  --papel-velado: rgb(15 19 37 / 55%);
+  --papel-transparente: rgb(26 31 56 / 0%);
+  --plazo-pista: rgb(233 235 247 / 14%);
+  --velo: rgb(0 0 0 / 60%);
+  --sombra: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 14px rgb(0 0 0 / 25%);
+  --sombra-copia: 0 1px 2px rgb(0 0 0 / 40%);
+  --sombra-dialogo: 0 12px 40px rgb(0 0 0 / 55%);
+  --sombra-login: 0 20px 50px rgb(0 0 0 / 50%);
+  --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23e9ebf7' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  color-scheme: dark;
+}
+
+/* tema:contraste — para leer a pleno sol. */
+:root[data-tema='contraste'] {
+  --tinta: #000000;
+  --tinta-2: #000000;
+  --tinta-3: #000000;
+  --papel: #ffffff;
+  --fondo: #ffffff;
+  --sobre-tinta: #ffffff;
+  --marca-sobre-tinta: #ffe600;
+  --carbon: #0010a0;
+  --carbon-claro: #e3e6ff;
+  --rosa: #000000;
+  --rosa-fuerte: #000000;
+  --rosa-claro: #ffe600;
+  --sobre-rosa: #ffffff;
+  --sobre-rosa-fuerte: #ffffff;
+  --borde-primario: #000000;
+  --canario: #ffffff;
+  --canario-borde: #000000;
+  --serie: #9e0000;
+  --linea: #000000;
+  --linea-fuerte: #000000;
+  --ok: #00531c;
+  --ok-claro: #ffffff;
+  --sobre-ok: #ffffff;
+  --alerta: #5c3200;
+  --alerta-claro: #ffffff;
+  --peligro: #9e0000;
+  --peligro-claro: #ffffff;
+  --peligro-hover: #6b0000;
+  --sobre-peligro: #ffffff;
+  --pista: #ffffff;
+  --inactivo: #ffffff;
+  --apagado: #ffffff;
+  --esqueleto-1: #d0d0d0;
+  --esqueleto-2: #ffffff;
+  --nav-fondo: #000000;
+  --nav-texto: #ffffff;
+  --nav-activo: #ffe600;
+  --nav-marca: #ffe600;
+  --nav-hover: rgb(255 255 255 / 18%);
+  --nav-activo-fondo: #ffe600;
+  --nav-activo-texto: #000000;
+  --papel-velado: #ffffff;
+  --papel-transparente: rgb(255 255 255 / 0%);
+  --plazo-pista: #ffffff;
+  --velo: rgb(0 0 0 / 70%);
+  --sombra: none;
+  --sombra-copia: none;
+  --sombra-dialogo: none;
+  --sombra-login: none;
+  --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --grosor: 3px;
+  --grosor-fino: 2px;
+
+  color-scheme: light;
+}

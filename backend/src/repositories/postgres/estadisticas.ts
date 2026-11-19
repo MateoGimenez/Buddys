@@ -59,7 +59,8 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
               (count(*) FILTER (WHERE b.estado = 'completado'))::int AS completados,
               (count(*) FILTER (WHERE b.estado = 'cancelado'))::int AS cancelados,
               coalesce(sum(b.monto) FILTER (WHERE b.estado = 'completado'), 0)::float8 AS ingresos,
-              (count(b.monto) FILTER (WHERE b.estado = 'completado'))::int AS completados_con_monto
+              (count(b.monto) FILTER (WHERE b.estado = 'completado'))::int AS completados_con_monto,
+              coalesce(sum(b.descuento) FILTER (WHERE b.estado = 'completado'), 0)::float8 AS descuentos
        FROM buddys.bookings b
        WHERE coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date`,
       [desde, hasta],
@@ -74,6 +75,7 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
       cancelados: int(row, 'cancelados'),
       ingresos: int(row, 'ingresos'),
       completadosConMonto: int(row, 'completados_con_monto'),
+      descuentos: int(row, 'descuentos'),
     };
   }
 
@@ -106,12 +108,13 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
   }
 
   async gastosPorRango(rangos: readonly RangoNombrado[]): Promise<Record<string, number>> {
-    // Igual que totales(): un rango sin gastos igual devuelve su fila, con cero. Los gastos se agrupan por su fecha.
+    // Igual que totales(): un rango sin gastos igual devuelve su fila, con cero. Los gastos se agrupan por su fecha;
+    // los fijos (migración gastos_fijos), el día 1 de cada mes de vigencia que cae en el rango.
     const { rows } = await this.sql.query(
-      `SELECT r.clave, coalesce(sum(g.monto), 0)::float8 AS gastos
-       FROM unnest($1::text[], $2::date[], $3::date[]) AS r(clave, desde, hasta)
-       LEFT JOIN buddys.gastos g ON g.fecha BETWEEN r.desde AND r.hasta
-       GROUP BY r.clave`,
+      `SELECT r.clave,
+              (coalesce((SELECT sum(g.monto) FROM buddys.gastos g WHERE g.fecha BETWEEN r.desde AND r.hasta), 0)
+               + coalesce((SELECT sum(f.monto) FROM buddys.gastos_fijos_imputados(r.desde, r.hasta) f), 0))::float8 AS gastos
+       FROM unnest($1::text[], $2::date[], $3::date[]) AS r(clave, desde, hasta)`,
       [rangos.map((r) => r.clave), rangos.map((r) => r.desde), rangos.map((r) => r.hasta)],
     );
     const resultado: Record<string, number> = {};
@@ -123,16 +126,18 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
     const { rows } =
       granularidad === 'dia'
         ? await this.sql.query(
-            `SELECT to_char(g.fecha, 'YYYY-MM-DD') AS clave, sum(g.monto)::float8 AS gastos
-             FROM buddys.gastos g
-             WHERE g.fecha BETWEEN $1::date AND $2::date
+            `SELECT to_char(x.fecha, 'YYYY-MM-DD') AS clave, sum(x.monto)::float8 AS gastos
+             FROM (SELECT g.fecha, g.monto FROM buddys.gastos g WHERE g.fecha BETWEEN $1::date AND $2::date
+                   UNION ALL
+                   SELECT f.fecha, f.monto FROM buddys.gastos_fijos_imputados($1::date, $2::date) f) x
              GROUP BY 1 ORDER BY 1`,
             [desde, hasta],
           )
         : await this.sql.query(
-            `SELECT to_char(g.fecha, 'YYYY-MM') AS clave, sum(g.monto)::float8 AS gastos
-             FROM buddys.gastos g
-             WHERE g.fecha BETWEEN $1::date AND $2::date
+            `SELECT to_char(x.fecha, 'YYYY-MM') AS clave, sum(x.monto)::float8 AS gastos
+             FROM (SELECT g.fecha, g.monto FROM buddys.gastos g WHERE g.fecha BETWEEN $1::date AND $2::date
+                   UNION ALL
+                   SELECT f.fecha, f.monto FROM buddys.gastos_fijos_imputados($1::date, $2::date) f) x
              GROUP BY 1 ORDER BY 1`,
             [desde, hasta],
           );
@@ -141,15 +146,25 @@ export class PostgresEstadisticasRepository implements EstadisticasRepository {
 
   async gastosPorCategoria({ desde, hasta }: Rango): Promise<FilaGastoCategoria[]> {
     const { rows } = await this.sql.query(
-      `SELECT g.categoria, sum(g.monto)::float8 AS monto
-       FROM buddys.gastos g
-       WHERE g.fecha BETWEEN $1::date AND $2::date
-       GROUP BY g.categoria
-       HAVING sum(g.monto) > 0
-       ORDER BY monto DESC, g.categoria`,
+      `SELECT x.categoria, sum(x.monto)::float8 AS monto
+       FROM (SELECT g.categoria, g.monto FROM buddys.gastos g WHERE g.fecha BETWEEN $1::date AND $2::date
+             UNION ALL
+             SELECT f.categoria, f.monto FROM buddys.gastos_fijos_imputados($1::date, $2::date) f) x
+       GROUP BY x.categoria
+       HAVING sum(x.monto) > 0
+       ORDER BY monto DESC, x.categoria`,
       [desde, hasta],
     );
     return rows.map((row) => ({ categoria: str(row, 'categoria'), monto: int(row, 'monto') }));
+  }
+
+  async gastosFijos({ desde, hasta }: Rango): Promise<number> {
+    const { rows } = await this.sql.query(
+      'SELECT coalesce(sum(f.monto), 0)::float8 AS monto FROM buddys.gastos_fijos_imputados($1::date, $2::date) f',
+      [desde, hasta],
+    );
+    const row = rows[0];
+    return row ? int(row, 'monto') : 0;
   }
 
   async porServicio({ desde, hasta }: Rango): Promise<FilaServicio[]> {

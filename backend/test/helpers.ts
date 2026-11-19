@@ -48,7 +48,18 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     trustProxy: false,
     // Los tests de siempre usan el alta pública de turnos; test/turnos-online.test.ts prueba el sistema sin ella.
     turnosOnline: true,
-    rateLimits: { api: NO_LIMIT, bookings: NO_LIMIT, loginFailures: NO_LIMIT, seguimiento: NO_LIMIT, pdf: NO_LIMIT },
+    rateLimits: {
+      api: NO_LIMIT,
+      bookings: NO_LIMIT,
+      loginFailures: NO_LIMIT,
+      seguimiento: NO_LIMIT,
+      pdf: NO_LIMIT,
+      erroresCliente: NO_LIMIT,
+      erroresClientePublico: NO_LIMIT,
+      fotos: NO_LIMIT,
+      avatar: NO_LIMIT,
+      clave: NO_LIMIT,
+    },
     whatsapp: { provider: 'none' },
     recordatorios: { cronSecret: undefined, email: undefined, whatsapp: undefined },
     push: undefined,
@@ -116,6 +127,8 @@ export async function createTestContext(
     fetch?: typeof fetch;
     /** Cliente de envío push (los tests nunca tocan la red). */
     pushSender?: PushSender;
+    /** fetch de Supabase Storage (fotos): los tests usan uno falso. */
+    storageFetch?: typeof fetch;
   } = {},
 ): Promise<TestContext> {
   const db = await createPgliteDatabase();
@@ -139,6 +152,7 @@ export async function createTestContext(
     ...(options.notifier && { notifier: options.notifier }),
     ...(options.fetch && { fetch: options.fetch }),
     ...(options.pushSender && { pushSender: options.pushSender }),
+    ...(options.storageFetch && { storageFetch: options.storageFetch }),
   });
   } catch (error) {
     await db.close();

@@ -18,7 +18,8 @@ Hace esto:
 5. Arma la **agenda** del panel: qué turnos hay cada día y franja (`GET /api/admin/agenda`), con la **fecha y franja confirmadas** por el taller cuando difieren de las que pidió el cliente.
 6. Guarda **notas internas** por turno (el cliente nunca las ve), **busca** turnos por nombre, email, vehículo o teléfono y arma el **historial del cliente** (sus turnos, por teléfono normalizado).
 7. Maneja la **disponibilidad real** (horario semanal, días especiales y cupos por franja: el formulario solo acepta días y franjas con lugar), el **seguimiento** público del turno (`/turno/<id>`) y los **recordatorios** del día anterior por email (Resend) y/o WhatsApp Cloud, que dispara un cron. Contrato: `reportes/2026-10-23_11_disponibilidad-seguimiento-recordatorios.md`.
-8. Manda **avisos push** al celular de quienes los activaron en el panel cuando entra un turno nuevo (sin datos personales en el aviso). Contrato: `reportes/2026-10-26_13_panel-pulido-y-app.md`, bloque A.
+8. Manda **avisos push** al celular de quienes los activaron en el panel cuando entra un turno nuevo (sin datos personales en el aviso). Contrato: `reportes/2026-10-26_13_panel-pulido-y-app.md`, bloque A. A los encargados, además, cuando se registra un lavado sin monto y cuando se cumple la meta del mes.
+9. **Mejoras del panel** (contrato `reportes/2026-11-15_03_contrato-mejoras.md`): etapas del auto en el lavadero con link de WhatsApp "ya está listo", descuentos, turnos con seña, historial por teléfono o patente, tarjeta de sellos y clientes inactivos, gastos fijos (sueldos), cierre de caja con arqueo, fotos antes/después en Supabase Storage, insumos que se descuentan solos, exportar a CSV y registro de errores del panel. Ver [Mejoras del panel](#mejoras-del-panel-contrato-2026-11-15).
 
 Stack: Node 24 + TypeScript (strict, ESM) + Express 5, **Postgres en Supabase** (driver `pg`) como único motor, **Supabase Auth** (API REST de GoTrue, sin `supabase-js`), zod, helmet, cors, express-rate-limit, jose (verificación de los JWT contra el JWKS del proyecto). Los tests usan PGlite (Postgres en memoria).
 
@@ -31,6 +32,7 @@ Stack: Node 24 + TypeScript (strict, ESM) + Express 5, **Postgres en Supabase** 
 - [Conectar Supabase](#conectar-supabase)
 - [Endpoints con ejemplos curl](#endpoints-con-ejemplos-curl)
 - [Contrato de la API](#contrato-de-la-api)
+- [Mejoras del panel (contrato 2026-11-15)](#mejoras-del-panel-contrato-2026-11-15)
 - [Avisos por WhatsApp](#avisos-por-whatsapp)
 - [Recordatorios](#recordatorios)
 - [Avisos push](#avisos-push)
@@ -73,7 +75,7 @@ Copiá `.env.example` a `.env` (está ignorado por git; nunca subas uno con secr
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Origen(es) permitidos por CORS y por el chequeo de Origin (CSRF). Esquema + host + puerto, sin barra final. **Admite una lista separada por comas**, por ejemplo para probar desde el celular: `http://localhost:5173,http://192.168.0.10:5173`. Sin comodines. Obligatoria en producción. |
 | `SUPABASE_URL` | (obligatoria) | URL del proyecto, sin barra final: `https://TU-PROYECTO.supabase.co`. De ahí se derivan `/auth/v1` (endpoints de Auth y `iss` exacto de los tokens) y el JWKS (`/auth/v1/.well-known/jwks.json`). |
 | `SUPABASE_PUBLISHABLE_KEY` | (obligatoria) | Clave **publishable** (`sb_publishable_...`), del panel: *Project Settings > API Keys*. La usa solo el backend (cabecera `apikey`). **Una secret key (`sb_secret_...`) en esta variable se rechaza.** |
-| `SUPABASE_SECRET_KEY` | (opcional) | Clave **secret** (`sb_secret_...`), de *Project Settings > API Keys > Secret keys*. **Secreto: salta RLS en todo el proyecto.** La usa solo el backend, solo para la API admin de Auth: que el superadmin cree y elimine usuarios y les cambie email o contraseña desde el panel. Va únicamente en la cabecera `apikey`, nunca se loguea ni llega al navegador. Sin ella el panel funciona, pero esas acciones responden `503` (y se avisa al arrancar). Las claves viejas `service_role` no se aceptan. |
+| `SUPABASE_SECRET_KEY` | (opcional) | Clave **secret** (`sb_secret_...`), de *Project Settings > API Keys > Secret keys*. **Secreto: salta RLS en todo el proyecto.** La usa solo el backend, para la API admin de Auth (que el superadmin cree y elimine usuarios y les cambie email o contraseña desde el panel) y para firmar las URLs cortas de las **fotos** en los buckets privados `lavados-fotos` y `perfiles-avatares` de Storage. Sin ella, las fotos quedan apagadas sin errores (el listado dice `disponible: false`, `avatarUrl` sale `null`, subir/borrar responde `503`; cambiar la contraseña propia también responde `503`). Va únicamente en la cabecera `apikey`, nunca se loguea ni llega al navegador. Sin ella el panel funciona, pero esas acciones responden `503` (y se avisa al arrancar). Las claves viejas `service_role` no se aceptan. |
 | `DATABASE_URL` | (obligatoria) | Cadena de conexión de Supabase (Session pooler) con el rol `buddys_app`: `postgresql://usuario:contraseña@host:5432/postgres`. **Secreto.** Se valida al arrancar y nunca se muestra en logs ni errores. Ver [Conectar Supabase](#conectar-supabase). |
 | `DATABASE_SSL_CA_FILE` | (obligatoria con Postgres remoto) | Certificado raíz de Supabase para verificar al servidor (TLS verify-full). Ruta relativa a `backend/` o absoluta. Solo un Postgres local (`localhost`/`127.x`) se tolera sin ella fuera de producción, con un aviso. |
 | `DB_DRIVER`, `DB_PATH`, `JWT_SECRET` | | **Ya no se usan.** `DB_DRIVER=postgres` se sigue aceptando (cualquier otro valor se rechaza); `DB_PATH` y `JWT_SECRET` solo generan un aviso al arrancar: borralos del `.env`. |
@@ -138,14 +140,22 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 |---|---|---|---|---|
 | Lavados | Registrar un lavado de mostrador (servicio, vehículo, cobro, forma de pago y quién lavó) | sí | sí | parcial: solo a su nombre; carga el monto al registrarlo, pero después no lo ve ni lo corrige |
 | Lavados | Deshacer (borrar) un lavado de mostrador | sí | sí | parcial: solo uno que registró él, hasta 5 minutos después de registrarlo y si no tiene comprobante |
+| Lavados | Mover un lavado de etapa y avisarle al cliente que está listo | sí | sí | parcial: solo sus lavados (los lavó o registró él) |
+| Lavados | Subir y ver las fotos antes/después | sí | sí | sí |
+| Lavados | Borrar una foto | sí | sí | parcial: una que subió él, hasta 5 minutos |
 | Turnos | Ver los turnos y la agenda | sí | sí | sí |
+| Turnos | Crear turnos desde el panel para trabajos largos y cargarles la seña | sí | sí | no |
 | Turnos | Cambiar el estado de un turno | sí | sí | parcial: solo a Completado |
 | Turnos | Cambiar la fecha y la franja de un turno | sí | sí | no |
 | Turnos | Borrar turnos | sí | sí | no |
 | Turnos | Escribir notas internas | sí | sí | sí |
-| Turnos | Buscar turnos y ver el historial de un cliente | sí | sí | sí |
+| Turnos | Buscar turnos y ver el historial de un cliente | sí | sí | sí (sin importes) |
+| Turnos | Ver los clientes inactivos con su link de WhatsApp | sí | sí | no |
+| Turnos | Configurar la tarjeta de sellos y los días de inactividad | sí | no | no |
 | Cobro | Registrar cuánto se cobró por un trabajo y quién lo hizo | sí | sí | parcial: al completar queda como quien lo hizo, sin cargar el monto |
-| Cobro | Corregir el monto, el trabajador, la forma de pago y los servicios de un turno | sí | sí | no |
+| Cobro | Corregir el monto, el descuento, el trabajador, la forma de pago y los servicios de un turno | sí | sí | no |
+| Cobro | Ver la caja del día y cerrarla con el arqueo | sí | sí | no |
+| Cobro | Corregir o reabrir un cierre de caja ya hecho | sí | no | no |
 | Catálogo | Ver los servicios | sí | sí | sí |
 | Catálogo | Crear, editar y ordenar servicios | sí | sí | no |
 | Disponibilidad | Ver horario, días especiales y cupos | sí | sí | sí |
@@ -153,7 +163,9 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 | Estadísticas | Estadísticas del taller, con importes y de todo el equipo | sí | sí | no |
 | Estadísticas | Ver los trabajos que uno mismo completó (sin importes) | sí | sí | sí |
 | Finanzas | Ver y cargar los gastos del taller | sí | sí | no |
+| Finanzas | Cargar los gastos fijos de cada mes (sueldos, alquiler, servicios) | sí | parcial: solo los ve | no |
 | Finanzas | Fijar y seguir las metas mensuales | sí | sí | no |
+| Finanzas | Exportar a Excel (CSV) la planilla, los gastos y las estadísticas | sí | sí | no |
 | Documentos | Armar presupuestos y descargarlos en PDF | sí | sí | no |
 | Documentos | Emitir comprobantes de pago en PDF | sí | sí | no |
 | Documentos | Editar los datos del taller que salen en los PDF | sí | sí | no |
@@ -161,11 +173,15 @@ La lista `CAPACIDADES` de `src/domain/permisos.ts` es la única fuente: de ahí 
 | Inventario | Registrar el uso de insumos | sí | sí | sí |
 | Inventario | Crear insumos, cargar compras y ajustar el stock | sí | sí | no |
 | Usuarios | Crear, editar y desactivar usuarios | sí | no | no |
+| Usuarios | Ver y editar su propio perfil: nombre, foto de perfil y contraseña | sí | sí | sí |
 | Avisos | Activar los avisos de turnos nuevos en su dispositivo | sí | sí | sí |
+| Avisos | Recibir los avisos del encargado (lavado sin monto, meta cumplida) | sí | sí | no |
 
 Funciones: `puedeRegistrarLavados`, `puedeAnotarLavadoDeOtro`, `puedeDeshacerCualquierLavado` y `puedeDeshacerLavado(rol, actorId, lavado, now)` (`'si' | 'no' | 'vencido'`; plazo `PLAZO_DESHACER_LAVADO_MINUTOS` = 5), `puedeCambiarEstado(rol, estado)`, `puedeReprogramar`, `puedeBorrarTurnos`, `puedeGestionarUsuarios`, `puedeEditarCatalogo`, `puedeEditarDisponibilidad`, `puedeVerEstadisticas` (también decide quién ve importes: `puedeVerImportes`), `puedeRegistrarCobro` (monto y elegir trabajador) y `puedeCorregirCobro`. Objetivo 10: `puedeGestionarGastos`, `puedeGestionarMetas`, `puedeArmarPresupuestos`, `puedeEmitirComprobantes`, `puedeEditarTaller`, `puedeVerInventario`, `puedeRegistrarUsoInsumos`, `puedeGestionarInventario` y `puedeVerCostosInventario` (el empleado nunca recibe costos ni valores en pesos del inventario). Los textos de `buddys.roles.descripcion` los actualiza la migración `estadisticas_cobro_trabajador` para que digan lo mismo.
 
-**El empleado nunca recibe importes**: `monto` es siempre `null` en cualquier respuesta con turnos (listado, agenda, PATCH; función `vistaDeTurno`), no puede pedir las estadísticas completas (`403`) y "mis trabajos" no lleva ningún importe (la consulta ni siquiera lee la columna). El seguimiento público tampoco devuelve `monto` ni `trabajador`.
+Funciones del contrato 2026-11-15: `puedeCambiarEtapa`, `puedeCrearTurnos`, `puedeVerInactivos`, `puedeConfigurarFidelizacion`, `puedeVerGastosFijos`, `puedeEditarGastosFijos`, `puedeCerrarCaja`, `puedeReabrirCaja`, `puedeSubirFotos`, `puedeBorrarFoto` (plazo `PLAZO_BORRAR_FOTO_MINUTOS` = 5), `puedeExportar` y `recibeAvisosDeEquipo`. Contrato 2026-11-16_04 (perfil): `puedeEditarPerfilPropio` (capacidad `perfil.propio`).
+
+**El empleado nunca recibe importes**: `monto`, `descuento`, `descuentoMotivo`, `sena.monto` y `saldo` son siempre `null` para él; `monto` es siempre `null` en cualquier respuesta con turnos (listado, agenda, PATCH; función `vistaDeTurno`), no puede pedir las estadísticas completas (`403`) y "mis trabajos" no lleva ningún importe (la consulta ni siquiera lee la columna). El seguimiento público tampoco devuelve `monto` ni `trabajador`.
 
 Lo que no está permitido responde `403 FORBIDDEN` con un mensaje en español. Reglas de usuarios: nadie puede cambiarse su propio rol, ni desactivarse ni eliminarse a sí mismo (`409 CONFLICT`), y **nunca puede quedar el sistema sin un superadmin activo** (lo garantiza un trigger en la base, también ante dos cambios simultáneos; `409 CONFLICT`).
 
@@ -316,6 +332,16 @@ erDiagram
 
 | Tabla | Para qué | Restricciones e índices |
 |---|---|---|
+| `bookings` (columnas del 2026-11-15) | `etapa`/`etapa_at` (lavados de mostrador: espera, lavando, listo, entregado), `descuento`/`descuento_motivo`, `sena_monto`/`sena_forma_pago`/`sena_fecha`; `origen` suma `panel` | CHECK etapa solo en mostrador (los viejos quedan `entregado`; trigger `bookings_etapa_por_defecto`), descuento 0 a 99.999.999 con motivo si > 0 y solo en completados, seña completa o nada y nunca en mostrador. Índices parciales `bookings_mostrador_en_curso_idx` y `bookings_sena_fecha_idx`. Descuento y seña no mueven `updated_at`. |
+| `gastos_fijos` | Sueldos, alquiler, servicios: concepto, monto mensual, categoría, `perfil_id` (el empleado del sueldo), vigencia `desde_mes`/`hasta_mes` | Monto 1 a 99.999.999, meses = día 1, `hasta_mes >= desde_mes`. Función `gastos_fijos_imputados(desde, hasta)`: cada ítem cuenta su monto el día 1 de cada mes de vigencia. |
+| `cierres_caja` | Un cierre por día (`fecha` PK): contado por forma de pago, foto de lo esperado, diferencia, nota, `cerrado_por` | Importes 0 a 999.999.999 (diferencia con signo), nota hasta 300. |
+| `lavado_fotos` | Fotos antes/después: `booking_id` (CASCADE), tipo, `path` del objeto en el bucket, tipo de contenido, tamaño, `estado` (pendiente/lista), `subida_vence_at`, `creado_por` | jpeg/webp, hasta 1.572.864 bytes, path único con formato fijo, máximo 6 por turno con las pendientes (bloqueo en el backend + trigger `lavado_fotos_maximo`); trigger `lavado_fotos_a_borrar` (AFTER DELETE). |
+| `fotos_a_borrar` | Objetos del bucket de fotos ya borradas, para volver a borrarlos cuando vence su token de subida (`borrar_desde`) | La conciliación los borra de Storage y los saca. |
+| `perfiles` (columnas del 2026-11-16) | `avatar_path` (foto de perfil vigente), `avatar_pendiente_path` (subida pedida sin confirmar) y `avatar_subida_vence_at` (hasta cuándo vale el token de la última subida) | CHECK de formato `<perfil_id>/<uuid>.(jpg\|webp)` con la carpeta igual al propio perfil; una pendiente exige su vencimiento. Índice parcial `perfiles_avatar_pendiente_idx`. Trigger `perfiles_avatar_a_borrar` (SECURITY DEFINER en `buddys_private`: también corre en la cascada desde Supabase Auth). `buddys_app`: UPDATE de esas tres columnas. |
+| `avatares_a_borrar` | Fotos de perfil reemplazadas, borradas, descartadas o de usuarios eliminados, para borrarlas del bucket `perfiles-avatares` desde `borrar_desde` | Análoga a `fotos_a_borrar` pero de OTRO bucket (por eso es otra tabla). Solo inserta el trigger; `buddys_app`: SELECT y DELETE. |
+| `fidelizacion` | Una fila: `sellos_cada`, `premio` (gratis/descuento), `premio_porcentaje`, `inactivos_dias` | 2 a 50 sellos, 1 a 99 %, 7 a 365 días. |
+| `servicio_insumos` | Receta de cada servicio: insumo y cantidad (por auto; `cantidad_suv`/`_pickup`/`_moto` null = usa la de auto) | PK (servicio, insumo); `movimientos_stock.automatico`; función `sincronizar_insumos_turno`. |
+| `metas_mensuales.cumplida_avisada_at` | Cuándo se avisó por push que la meta del mes se cumplió (una vez por mes; se limpia al cambiar la meta) | |
 | `servicios` | **Catálogo del taller, fuente de verdad** (editable desde el panel; ver [Catálogo editable](#catálogo-editable)). Sembrado con los 5 servicios y los textos que tenía `frontend/src/data/servicios.ts` (propuesta inicial, sin confirmar). Un servicio que se deja de ofrecer se **desactiva** (`activo = false`), no se borra: lo referencian turnos. | PK `id` (slug validado por CHECK, inmutable: `buddys_app` no tiene `UPDATE` sobre él). CHECK de largos de `nombre`/`resumen`/`descripcion`/`duracion_estimada` (no vacía), `precio_desde`, `precio_desde_suv`, `precio_desde_pickup` y `precio_desde_moto` enteros de 0 a 99.999.999, `vehiculos` (`text[]`, función `buddys.servicio_vehiculos_valido`), `incluye` y `glosario` validados ítem por ítem (funciones `buddys.servicio_incluye_valido` / `servicio_glosario_valido`). `duracion_suv`, `duracion_pickup` y `duracion_estimada_moto` (1 a 60 caracteres cuando no son null); `categoria` (1 a 40). Desde `catalogo_buddys`, los 14 servicios de Buddys (los heredados de MgDetailing quedan inactivos; `restauracion-opticas` se reutilizó). Puede haber varios destacados (el índice `servicios_un_destacado` se eliminó); el CHECK `servicios_destacado_activo` impide destacar un inactivo. Trigger `updated_at`. |
 | `bookings` | Solicitudes de turno. | PK `seq` (bigint identity: inserciones ordenadas, índice compacto y orden estable aunque dos turnos tengan el mismo `created_at`); `id` UUID **único**, el único que sale por la API (un id secuencial revelaría cuántos turnos hay). FK `servicio_id -> servicios` (`RESTRICT`). CHECK de `vehiculo_tipo`, `franja`, `franja_confirmada`, `estado` y de los largos de zod; CHECK `bookings_confirmada_juntas`: `fecha_confirmada` y `franja_confirmada` las dos null o las dos con valor. Índices: `(estado, seq DESC)` para el listado filtrado y su `COUNT`; la PK sirve al listado sin filtro; `(servicio_id)` para la FK; `bookings_agenda_idx`, de expresión y parcial, `(coalesce(fecha_confirmada, fecha_preferida), coalesce(franja_confirmada, franja), seq) WHERE estado <> 'cancelado'`, para la agenda; `bookings_telefono_whatsapp_idx`, parcial, `(telefono_whatsapp, seq) WHERE telefono_whatsapp IS NOT NULL`, para `turnosDelCliente` y el historial. CHECK `bookings_notas_internas_largo` (≤ 1000) y `bookings_telefono_whatsapp_formato` (`^[0-9]{8,15}$`). |
 | `lavado_servicios` | Los servicios de cada turno o lavado (1 a 10), en el orden elegido (migración `lavado_varios_servicios`). `orden 0` = el principal, el mismo que `bookings.servicio_id`. `precio_lista` = foto del precio de lista del servicio para el vehículo del turno al registrarlo (`null` = "Consultá" o turno anterior a la tabla). Las estadísticas por servicio cuentan desde acá. | PK `(booking_id, servicio_id)`; UNIQUE `(booking_id, orden)`; CHECK `orden` 0 a 9 y `precio_lista` 0 a 99.999.999; FK `booking_id` ON DELETE CASCADE y `servicio_id` RESTRICT; índice `lavado_servicios_servicio_idx`. Trigger `bookings_servicio_principal` (AFTER INSERT en `bookings`): todo turno nuevo nace con su fila principal y la foto de su precio (`buddys.precio_de_lista(servicio, vehiculo)`, STABLE). `buddys_app`: SELECT, INSERT y DELETE (la lista se reemplaza entera, nunca UPDATE). |
@@ -379,6 +405,20 @@ Decisiones:
 - **`20261113110000_vehiculos_suv_pickup` (2026-11-13): PENDIENTE de aplicar en Supabase.** Decisión del dueño: `camioneta` se reemplaza por `suv` y `pickup` (orden canónico auto, suv, pickup, moto). Agrega `servicios.precio_desde_suv` (copia de `precio_desde_camioneta`), `precio_desde_pickup`, `duracion_suv` (copia de `duracion_estimada_camioneta`), `duracion_pickup` y `categoria` (CHECK de rango/largo como las demás); pasa los datos `camioneta` → `suv` en `bookings.vehiculo_tipo` y `servicios.vehiculos` **sin mover `updated_at`** (apaga los triggers de `updated_at` solo mientras corren esos UPDATE, dentro de la transacción); cambia los CHECK (`bookings_vehiculo_tipo_valido` y la función `servicio_vehiculos_valido`: 1 a 4 de los tipos nuevos) y el default de `vehiculos`; y **borra** las dos columnas de camioneta. `presupuestos.vehiculo` y `comprobantes.vehiculo` son texto libre / foto del momento: no se tocan. GRANT por columna de INSERT/UPDATE a `buddys_app` y REVOKE a los roles de la API. **No es compatible con el backend anterior** (lee las columnas de camioneta): aplicarla y desplegar el backend nuevo juntos. Idempotente.
 - **`20261113120000_lavado_varios_servicios` (2026-11-13): PENDIENTE de aplicar en Supabase, DESPUÉS de `vehiculos_suv_pickup`.** Tabla `buddys.lavado_servicios` (ver el modelo de datos), función `buddys.precio_de_lista(text, text)` (EXECUTE solo para `buddys_app`), trigger `bookings_servicio_principal` (AFTER INSERT en `bookings`: todo turno nuevo, también uno a mano, nace con su fila principal), backfill (cada turno existente con su `servicio_id`, `orden 0`, `precio_lista null`), RLS + REVOKE + GRANT SELECT/INSERT/DELETE con sus policies para `buddys_app`, y `GRANT UPDATE (servicio_id)` sobre `bookings` (corregir los servicios cambia el principal). El backend nuevo **no arranca** sin ella. Idempotente.
 - **`20261113130000_catalogo_buddys` (2026-11-13): PENDIENTE de aplicar en Supabase, DESPUÉS de las dos anteriores.** Solo datos: upsert por `id` de los 14 servicios de Buddys (precios auto / suv / pickup en ARS enteros, motos solo para `moto` con `precio_desde_moto`, categoría, `incluye` en ítems, `descripcion` = el texto completo, destacados Limpieza Nivel I, II y III, `orden` 10 a 140, duraciones en `null`, glosario vacío) y desactiva (y desmarca) todo servicio que no esté en la lista. Idempotente (una segunda corrida deja lo mismo; solo vuelve a mover `updated_at` de los 14). La base de los tests **no** la aplica (`MIGRACIONES_SOLO_DATOS` en `test/pglite.ts`: casi todos los tests usan los servicios heredados); la prueba `test/migracion-catalogo-buddys.test.ts`. Orden en Supabase: las tres seguidas, el push del backend y después los advisors.
+- **Migraciones del contrato 2026-11-15 (PENDIENTES de aplicar en Supabase, en este orden, con aprobación del dueño; nunca en el proyecto de MgDetail).** Todas idempotentes, con RLS, `REVOKE` a los roles de la API y `GRANT` mínimo a `buddys_app`; ninguna reescribe tablas. El backend nuevo **no arranca** sin las de esquema ("Faltan objetos de las migraciones 20261115*"):
+  1. `20261115100000_lavados_etapa_descuento`: `bookings.etapa`, `etapa_at`, `descuento`, `descuento_motivo` (los lavados ya registrados quedan `entregado`), trigger `bookings_etapa_por_defecto`, índice de "en curso" y el trigger de `updated_at` con el descuento.
+  2. `20261115110000_turnos_panel_sena`: `origen = 'panel'`, `sena_monto`, `sena_forma_pago`, `sena_fecha` e índice por fecha de seña. Recrea el trigger de `updated_at` de la 1.
+  3. `20261115120000_gastos_fijos`: tabla `gastos_fijos` y función `gastos_fijos_imputados`.
+  4. `20261115130000_cierres_caja`: tabla `cierres_caja`.
+  5. `20261115140000_lavado_fotos`: tablas `lavado_fotos` (con `estado` pendiente/lista y `subida_vence_at`) y `fotos_a_borrar`, y sus triggers (solo el esquema `buddys`).
+  6. **`20261115150000_storage_bucket_fotos` (la de Storage, separada)**: crea el bucket **privado** `lavados-fotos` (1,5 MB, image/jpeg y image/webp) y una policy **restrictiva** en `storage.objects` que deja a `anon` y `authenticated` sin acceso a ese bucket. Fuera de Supabase (PGlite) no hace nada. Revisar después en *Storage > Buckets* y *Storage > Policies*.
+  7. `20261115160000_fidelizacion`: tabla `fidelizacion` (una fila: cada 10 lavados, el siguiente gratis; inactivos a los 30 días).
+  8. `20261115170000_insumos_por_servicio`: tabla `servicio_insumos`, `movimientos_stock.automatico` y función `sincronizar_insumos_turno`.
+  9. `20261115180000_avisos_meta`: `metas_mensuales.cumplida_avisada_at`.
+  Después: el push del backend y los advisors.
+- **Migraciones del contrato 2026-11-16_04 (foto de perfil): PENDIENTES de aplicar en Supabase, en este orden, después de las 20261115*.** Idempotentes. El backend nuevo **no arranca** sin la primera ("Faltan objetos de la migración de la foto de perfil") y lee `perfiles.avatar_path` en cada request: aplicarla antes de reiniciar el backend.
+  1. `20261116100000_perfil_avatar`: columnas `avatar_path`, `avatar_pendiente_path` y `avatar_subida_vence_at` en `perfiles` (null, sin reescribir), tabla `avatares_a_borrar` y el trigger `perfiles_avatar_a_borrar`.
+  2. **`20261116110000_storage_bucket_avatares` (la de Storage, separada)**: bucket **privado** `perfiles-avatares` (512 KB, image/jpeg y image/webp) y la policy **restrictiva** `perfiles_avatares_sin_acceso_api` para `anon` y `authenticated`. Fuera de Supabase no hace nada.
 - Los servicios ya **no** se agregan por migración ni en el código: se crean desde el panel.
 
 ### Backups (Supabase)
@@ -512,7 +552,7 @@ curl -X POST http://localhost:4000/api/bookings \
 curl -c cookies.txt -X POST http://localhost:4000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"dueno@ejemplo.com","password":"una clave larga y unica"}'
-# -> 200 {"usuario":{"id":"<uuid>","email":"dueno@ejemplo.com","nombre":null,"rol":"superadmin"}}
+# -> 200 {"usuario":{"id":"<uuid>","email":"dueno@ejemplo.com","nombre":null,"rol":"superadmin","avatarUrl":null,"avatarVenceEl":null}}
 
 # Quién soy (si el access token venció, se refresca solo y reescribe las cookies)
 curl -b cookies.txt -c cookies.txt http://localhost:4000/api/auth/me
@@ -698,7 +738,9 @@ Error de validación `400` (ejemplo):
 **Cambio de contrato:** antes `/api/auth/login` y `/api/auth/me` devolvían `{ "admin": { "email": "..." } }`. Ahora devuelven:
 
 ```json
-{ "usuario": { "id": "5f0c2a3e-9b1d-4c7e-8a55-2d3f1e6b7a90", "email": "dueno@ejemplo.com", "nombre": "Mateo", "rol": "superadmin" } }
+{ "usuario": { "id": "5f0c2a3e-9b1d-4c7e-8a55-2d3f1e6b7a90", "email": "dueno@ejemplo.com", "nombre": "Mateo", "rol": "superadmin",
+               "avatarUrl": "https://<proyecto>.supabase.co/storage/v1/object/sign/perfiles-avatares/<uuid>/<uuid>.webp?token=...",
+               "avatarVenceEl": "2026-10-16T16:00:00.000Z" } }
 ```
 
 | Campo | Tipo | Notas |
@@ -707,10 +749,12 @@ Error de validación `400` (ejemplo):
 | `email` | `string \| null` | En minúsculas. |
 | `nombre` | `string \| null` | Lo pone un superadmin; `null` si no tiene. |
 | `rol` | `"superadmin" \| "admin" \| "empleado"` | Para mostrar u ocultar botones; la API igual valida cada acción. |
+| `avatarUrl` | `string \| null` | URL **firmada** de lectura de su foto de perfil (vence en 1 hora; el backend la reusa mientras le queden más de 10 minutos). `null` sin foto, con las fotos apagadas o si Storage no respondió. |
+| `avatarVenceEl` | `string \| null` | Cuándo vence `avatarUrl` (ISO 8601 UTC). |
 
 ### `POST /api/auth/login`
 
-Body `{ "email": string, "password": string }` (estricto; `password` hasta 128 caracteres). `200 { "usuario": { id, email, nombre, rol } }` y las cookies de sesión. Errores: `401 INVALID_CREDENTIALS` con un único mensaje genérico (*"El email o la contraseña no son correctos, o tu usuario todavía no está habilitado para el panel."*) para contraseña incorrecta, email inexistente o sin confirmar **y también para un usuario sin perfil o inactivo**: así el login no confirma que la contraseña de un usuario inactivo es correcta (la sesión que Supabase abrió se cierra en segundo plano), `400 VALIDATION_ERROR`, `429 RATE_LIMITED`, `503 SERVICE_UNAVAILABLE` (Supabase Auth no responde). Límite: **5 intentos fallidos por IP cada 15 minutos** (`429`; los logins correctos no cuentan).
+Body `{ "email": string, "password": string }` (estricto; `password` hasta 128 caracteres). `200 { "usuario": { id, email, nombre, rol, avatarUrl, avatarVenceEl } }` y las cookies de sesión. Errores: `401 INVALID_CREDENTIALS` con un único mensaje genérico (*"El email o la contraseña no son correctos, o tu usuario todavía no está habilitado para el panel."*) para contraseña incorrecta, email inexistente o sin confirmar **y también para un usuario sin perfil o inactivo**: así el login no confirma que la contraseña de un usuario inactivo es correcta (la sesión que Supabase abrió se cierra en segundo plano), `400 VALIDATION_ERROR`, `429 RATE_LIMITED`, `503 SERVICE_UNAVAILABLE` (Supabase Auth no responde). Límite: **5 intentos fallidos por IP cada 15 minutos** (`429`; los logins correctos no cuentan).
 
 Cookies (el JS de la página no puede leerlas: para saber si hay sesión, llamar a `GET /api/auth/me`):
 
@@ -729,7 +773,23 @@ Sin body (pero con `Content-Type: application/json`). Canjea el refresh token: `
 
 ### `GET /api/auth/me`
 
-`200 { "usuario": { id, email, nombre, rol } }`, `401 UNAUTHORIZED` o `403 NO_ACCESS`. Si el access token venció, refresca solo (acá sí viaja el refresh token) y reescribe las cookies.
+`200 { "usuario": { id, email, nombre, rol, avatarUrl, avatarVenceEl } }`, `401 UNAUTHORIZED` o `403 NO_ACCESS`. Si el access token venció, refresca solo (acá sí viaja el refresh token) y reescribe las cookies.
+
+### Perfil propio y foto de perfil (`/api/admin/perfil`, todos los roles)
+
+Contrato completo: [`reportes/2026-11-16_04_contrato-perfil.md`](../reportes/2026-11-16_04_contrato-perfil.md). Siempre es el usuario de la sesión (no hay id en la URL).
+
+| Ruta | Respuesta |
+|---|---|
+| `GET /api/admin/perfil` | `{ perfil: { id, email, nombre, rol, avatarUrl, avatarVenceEl, creadoEl } }` |
+| `PATCH /api/admin/perfil { nombre }` | `{ perfil }`. Nombre de una línea, 2 a 60 caracteres. |
+| `POST /api/admin/perfil/avatar { contentType, tamano }` | `201 { subida: { url, metodo: 'PUT', headers: { 'Content-Type' }, venceEl } }`. `image/jpeg` o `image/webp`, 1 a 524.288 bytes. Rate limit: 10 cada 10 min por usuario. |
+| (el panel hace `PUT subida.url`) | |
+| `POST /api/admin/perfil/avatar/confirmar` | `{ perfil }`. HEAD en Storage (existe, tipo y tamaño). `409` sin subir, vencida o sin pendiente; `400` archivo inválido (se borra). La anterior se borra. |
+| `DELETE /api/admin/perfil/avatar` | `204` (también sin foto). |
+| `POST /api/admin/perfil/clave { actual, nueva }` | `204`. Verifica `actual` con un login a Supabase Auth (la sesión se cierra enseguida) y cambia la clave con la API admin. `400` si `actual` no coincide (`fields.actual`), si `nueva` tiene menos de 8 o es igual. Rate limit estricto: 5 cada 15 min por usuario (cuentan todos). Nunca se loguean contraseñas. |
+
+Sin `SUPABASE_SECRET_KEY`: `avatarUrl` siempre `null` y las rutas de la foto y de la clave responden `503`. La foto vive en el bucket privado `perfiles-avatares` (`<perfil_id>/<uuid>.<ext>`); la ruta nunca sale por la API. Lo que deja de usarse queda en `avatares_a_borrar` y la conciliación horaria (la misma de las fotos) lo borra, descarta las subidas pendientes vencidas y borra los objetos huérfanos de más de 2 horas. `GET /api/admin/trabajadores` y `GET /api/admin/usuarios` suman `avatarUrl` por persona (firmadas en lote, 1 hora); el ranking de estadísticas no la trae: el panel la cruza por `id` con `/trabajadores`.
 
 ### Registrar lavado (`POST` y `GET /api/admin/lavados`)
 
@@ -909,7 +969,7 @@ Body estricto con **al menos uno** de: `estado`, la pareja `fechaConfirmada` + `
 
 ### `GET /api/admin/trabajadores` (solo `admin` y `superadmin`)
 
-`200 { "trabajadores": [{ "id", "nombre", "rol" }] }`: las personas **activas** de cualquier rol, ordenadas por nombre (sin distinguir mayúsculas; `nombre` = el nombre o, si no tiene, el email). Para el selector "¿Quién lo hizo?". `empleado` => `403`.
+`200 { "trabajadores": [{ "id", "nombre", "rol", "avatarUrl" }] }` (`avatarUrl`: URL firmada de su foto de perfil, vence en 1 hora, o `null`): las personas **activas** de cualquier rol, ordenadas por nombre (sin distinguir mayúsculas; `nombre` = el nombre o, si no tiene, el email). Para el selector "¿Quién lo hizo?". `empleado` => `403`.
 
 ### `GET /api/admin/estadisticas?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` (solo `admin` y `superadmin`)
 
@@ -1001,7 +1061,7 @@ Body `{ "endpoint" }` => `204`, también si no existía (y también con los avis
 
 ### `GET /api/admin/usuarios` (solo `superadmin`)
 
-`200`, los más viejos primero. `403 FORBIDDEN` (*"Solo un superadmin puede gestionar usuarios."*) para los otros roles.
+`200`, los más viejos primero. Cada usuario suma `avatarUrl` (URL firmada de su foto de perfil, vence en 1 hora, o `null`; también en el `PATCH`). `403 FORBIDDEN` (*"Solo un superadmin puede gestionar usuarios."*) para los otros roles.
 
 ```json
 {
@@ -1111,6 +1171,68 @@ PATCH acepta cualquiera de esos campos (al menos uno; `proveedor: null` lo borra
 #### `GET /api/admin/taller` y `PUT /api/admin/taller`
 
 `200 { "taller": { nombre, telefono, direccion, instagram, cuit, leyendaPdf } }` (los cinco últimos pueden ser `null`). `PUT` **reemplaza** los seis campos (`nombre` obligatorio, 1 a 80; los otros aceptan `null`, texto en blanco o no mandarse para vaciarlos): `telefono` solo dígitos con código de país (8 a 15, ej. `5493804781737`), `instagram` sin `@` (letras, números, `.`, `_`; hasta 30), `cuit` 11 dígitos o `NN-NNNNNNNN-N` (no se verifica el dígito verificador), `direccion` hasta 160, `leyendaPdf` hasta 300 (una línea). Sembrado con el nombre, teléfono y dirección de la web. **Para el PDF:** `TallerService.obtener()` (`src/services/taller.ts`) devuelve esos datos.
+
+## Mejoras del panel (contrato 2026-11-15)
+
+Contrato completo (formas JSON, errores y permisos): `reportes/2026-11-15_03_contrato-mejoras.md`. Respuestas reales: claves nuevas de `test/fixtures/respuestas-api.json` (`lavadoCreaEnEspera`, `cajaCierra`, `fotoSubida`, ...). El objeto **Turno** suma `etapa`, `etapaDesde`, `descuento`, `descuentoMotivo`, `sena`, `saldo` y `whatsappListo` (para el empleado, los importes en `null`).
+
+```bash
+# 9. Etapas: registrar un auto que espera, moverlo a "listo" y ver los que siguen en el taller
+curl -b cookies.txt -H "Origin: $O" -H 'Content-Type: application/json' -X POST $API/api/admin/lavados \
+  -d '{"servicioId":"lavado-basico","vehiculoTipo":"auto","etapa":"espera","telefono":"3804123456","vehiculoModelo":"Gol AB123CD"}'
+curl -b cookies.txt -H "Origin: $O" -H 'Content-Type: application/json' -X PATCH $API/api/admin/lavados/<id>/etapa -d '{"etapa":"listo"}'
+# -> 200 { "lavado": { ..., "etapa": "listo", "whatsappListo": "https://wa.me/5493804123456?text=Hola!%20Tu%20Gol..." } }
+curl -b cookies.txt -H "Origin: $O" $API/api/admin/lavados/en-curso      # -> { fecha, lavados, resumen: { espera, lavando, listo } }
+
+# 12. Descuento (monto = lo cobrado; descuento = lo rebajado, con motivo). Admin y superadmin.
+curl ... -X POST $API/api/admin/lavados -d '{"servicioId":"lavado-basico","vehiculoTipo":"auto","monto":8000,"descuento":2000,"descuentoMotivo":"Cliente frecuente"}'
+
+# 8. Turno con seña (admin y superadmin). Al completarlo, monto = total y la respuesta trae el saldo.
+curl ... -X POST $API/api/admin/turnos -d '{"nombre":"Juan","telefono":"3804123456","vehiculoTipo":"auto","servicioIds":["pulido"],"fecha":"2026-11-20","franja":"manana","sena":{"monto":20000,"formaPago":"transferencia"}}'
+curl ... -X PUT $API/api/admin/turnos/<id>/sena -d '{"monto":25000,"formaPago":"efectivo"}'    # DELETE .../sena la quita
+
+# 6 y 14. Historial por teléfono o patente (con tarjeta de sellos), inactivos y configuración
+curl -b cookies.txt -H "Origin: $O" "$API/api/admin/clientes/historial?patente=AB123CD"
+curl -b cookies.txt -H "Origin: $O" "$API/api/admin/clientes/inactivos?dias=30"
+curl ... -X PUT $API/api/admin/fidelizacion -d '{"sellosCada":10,"premio":"gratis","inactivosDias":30}'   # solo superadmin
+
+# 10. Gastos fijos (ver: admin y superadmin; cargar: superadmin)
+curl ... -X POST $API/api/admin/gastos-fijos -d '{"concepto":"Sueldo de Beto","monto":300000,"categoria":"sueldos","perfilId":"<uuid>"}'
+curl ... -X PATCH $API/api/admin/gastos-fijos/<id> -d '{"activo":false}'   # deja de contar después de este mes
+
+# 11. Caja: lo esperado del día, cerrar con el arqueo, listado (corregir o reabrir: superadmin)
+curl -b cookies.txt -H "Origin: $O" "$API/api/admin/caja?fecha=2026-11-15"
+curl ... -X PUT $API/api/admin/caja/2026-11-15 -d '{"contado":{"efectivo":24500,"transferencia":5000},"nota":"Faltan 500"}'
+curl -b cookies.txt -H "Origin: $O" "$API/api/admin/caja/cierres?desde=2026-11-01&hasta=2026-11-30"
+
+# 13. Fotos: 1) pedir la URL de subida (la foto nace "pendiente"), 2) subir el archivo directo a Storage, 3) confirmar
+curl ... -X POST $API/api/admin/lavados/<id>/fotos -d '{"tipo":"antes","contentType":"image/webp","tamano":523000}'
+curl -X PUT -H 'Content-Type: image/webp' --data-binary @foto.webp '<subida.url>'
+curl ... -X POST $API/api/admin/lavados/<id>/fotos/<fotoId>/confirmar     # -> { foto: { ..., estado: "lista" } }
+curl -b cookies.txt -H "Origin: $O" $API/api/admin/lavados/<id>/fotos
+
+# 15. Receta de insumos de un servicio (se descuentan solos al completar)
+curl ... -X PUT $API/api/admin/servicios/lavado-basico/insumos -d '{"insumos":[{"insumoId":"<uuid>","cantidad":0.25,"cantidadSuv":0.4}]}'
+
+# 16. CSV para Excel (admin y superadmin)
+curl -b cookies.txt -H "Origin: $O" -o planilla.csv "$API/api/admin/exportar/planilla.csv?desde=2026-11-01&hasta=2026-11-30"
+
+# 26. Error del panel (con sesión; sin sesión: POST /api/errores-cliente) -> 204
+curl ... -X POST $API/api/admin/errores-cliente -d '{"mensaje":"TypeError: x","url":"/admin/planilla","userAgent":"Mozilla/5.0","version":"1.0.0"}'
+```
+
+Notas de diseño:
+
+- **Etapas** (solo lavados de mostrador; los ya registrados y los que se registran sin `etapa` quedan `entregado`). El link `whatsappListo` lo arma `domain/mensajes.ts` con el `telefonoWhatsapp` ya normalizado; `null` sin teléfono. La misma etapa no escribe nada.
+- **Descuentos**: informativos (`monto` ya es lo cobrado), suman en `estadisticas.periodo.descuentos`. **Combos**: no hay entidad nueva; se arman como servicios de categoría `"Combos"` en el catálogo (con su precio).
+- **Seña**: entra en la caja el día que se cobró; el saldo (`monto - seña`), el día del turno. En estadísticas cuenta el total del trabajo en la fecha del turno. Si el turno se cancela, la seña queda registrada hasta que se la quita.
+- **Gastos fijos**: cada ítem cuenta su monto entero el día 1 de cada mes de vigencia, en `gastos`, `ganancia`, la serie y `gastosPorCategoria` (y aparte en `periodo.gastosFijos`). No se crean filas en `gastos`: el listado de gastos sueltos no cambia y nada se duplica (los sueldos van solo acá). Editar el `monto` cambia todos los meses: para un aumento, cerrar el ítem y crear otro.
+- **Caja**: lo esperado = lavados de mostrador del día + saldos de turnos completados ese día + señas cobradas ese día, por forma de pago (lo cobrado sin forma va en `sinIndicar`). Al cerrar se guarda la foto; `cambiosDespues` avisa si después se tocó algo. El alta es `INSERT ... ON CONFLICT DO NOTHING`: de dos cierres simultáneos del mismo día entra uno y el otro es `409` (solo el superadmin, al corregir, reemplaza el cierre).
+- **Links de WhatsApp**: el nombre entra en el saludo solo si es una palabra de letras (sin `:`, `/`, `.` ni dígitos) y el modelo se recorta a 30 caracteres de letras, números, espacios y guiones (`domain/mensajes.ts`); en inactivos, nombre y vehículo salen solo de trabajos completados.
+- **Fotos**: el backend firma con `SUPABASE_SECRET_KEY` (solo en la cabecera `apikey`, nunca sale del servidor ni se loguea). Flujo: pedir la URL (la foto nace `pendiente`) → `PUT` del archivo a Storage → `POST .../fotos/:fotoId/confirmar` (el backend verifica con un HEAD a Storage que el objeto exista, sea del tipo pedido y pese hasta 1,5 MB, y la pasa a `lista`). Solo se listan las `lista`; las pendientes cuentan para el tope de 6. Pedir URLs tiene rate limit propio (20 cada 10 minutos por usuario). La URL de subida vale 2 horas (lo fija Supabase) aunque se borre la foto: por eso todo borrado (también en cascada) anota el objeto en `fotos_a_borrar` y la **conciliación** (`FotoService.conciliar`, al arrancar y cada hora con un timer `unref`) borra los objetos anotados cuando vence su token, las pendientes vencidas y los objetos del bucket sin fila de más de 2 horas. La de lectura vence a los 5 minutos. El bucket es privado: no hay URLs públicas.
+- **Insumos**: la función `buddys.sincronizar_insumos_turno` deja los movimientos automáticos del turno en lo que pide su receta (salida al completar, devolución si sale de completado, cambia de servicios o se borra). Nunca deja el stock negativo ni frena el lavado. Poco stock: lo existente (`stockMinimo`, `bajoStock`, `GET /api/admin/insumos?bajoStock=true`).
+- **CSV**: UTF-8 con BOM, `;`, coma decimal, `\r\n`; los textos que empiezan con `= + - @` llevan un `'` (anti inyección de fórmulas).
+- **Errores del panel**: no se guardan en la base; una línea `WARN Error del panel ...` sin emails, tokens, ids ni números largos, con solo el path de la URL y el stack recortado a 3 renglones. Rate limit: 30 cada 10 minutos por usuario; 5 cada 15 minutos por IP sin sesión.
 
 ## Avisos por WhatsApp
 
@@ -1235,6 +1357,13 @@ Cuando entra un turno nuevo por el formulario público, las personas del panel q
 - **Envío** (`src/services/push.ts`, cliente en `src/notifications/push.ts` con la librería `web-push`): después de guardar el turno, sin esperar (nunca demora ni rompe la respuesta al cliente). Todos los dispositivos en paralelo, con tope de 5 s cada uno. Un `404`/`410` del servicio de push borra esa suscripción; cualquier otro error solo se cuenta. El honeypot y los pedidos rechazados no disparan avisos. El cliente de envío se inyecta (`createApp({ pushSender })`): los tests nunca tocan la red.
 - **Seguridad**: el endpoint se valida contra una lista de servicios de push **al guardar y otra vez antes de enviar** (anti SSRF); `web-push` no sigue redirecciones. Los logs llevan solo cantidades (`Aviso push: enviados=2 caducados=1 fallidos=0`), nunca endpoints, claves de la suscripción ni VAPID. `GET /api/admin/push/estado` publica solo la clave pública. La clave privada VAPID no sale del servidor.
 - **Apagado sin errores**: sin las tres variables VAPID no se manda nada, `estado` dice `disponible: false` y `POST /suscripciones` responde `404`.
+
+### Avisos al encargado (contrato 2026-11-15, función 7)
+
+Van solo a los dispositivos de **admin y superadmin** activos (capacidad `push.equipo`), nunca al empleado, sin datos del cliente ni importes (`src/services/avisos.ts`). Sin claves VAPID no hacen nada (ni consultan la base). Nunca demoran ni rompen la respuesta.
+
+- **Lavado sin monto** — decisión: **al registrarlo** (no a fin del día: no hace falta un cron y el encargado se entera con el cliente todavía en el taller). `POST /api/admin/lavados` sin `monto` (no en un reintento del mismo `idLocal`) manda "Lavado sin monto · Se registró un lavado sin monto: completalo desde la planilla." (`url: /admin/lavados`) a todos menos a quien lo registró.
+- **Meta del mes cumplida**: después de registrar un lavado o completar/cobrar un turno, si la meta del mes en curso queda cumplida, "¡Meta cumplida! · Llegaron a la meta de <mes>." (`url: /admin/metas`). **Una sola vez por mes** (`metas_mensuales.cumplida_avisada_at`, marcada con un UPDATE condicional: si dos lavados llegan juntos avisa uno); si se cambia la meta, se puede volver a avisar.
 
 ### Activarlos (lo que necesita el dueño)
 

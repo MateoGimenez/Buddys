@@ -13,6 +13,8 @@ export interface UsuarioSesion {
   rol: Rol;
   /** session_id de Supabase Auth. */
   sessionId: string;
+  /** Ruta de su foto de perfil en el bucket (null = sin foto). No sale por la API: se firma (services/perfil.ts). */
+  avatarPath: string | null;
 }
 
 export type SessionResult =
@@ -37,7 +39,7 @@ const AUTH_UNAVAILABLE_MESSAGE =
   'No pudimos conectarnos con el servicio de inicio de sesión. Probá de nuevo en unos minutos.';
 
 function toUsuario(perfil: Perfil, sessionId: string): UsuarioSesion {
-  return { id: perfil.id, email: perfil.email, nombre: perfil.nombre, rol: perfil.rol, sessionId };
+  return { id: perfil.id, email: perfil.email, nombre: perfil.nombre, rol: perfil.rol, sessionId, avatarPath: perfil.avatarPath };
 }
 
 /**
@@ -117,6 +119,18 @@ export class AuthService {
     const claims = await this.verifyFresh(renewed.accessToken);
     const result = await this.resolve(claims, renewed.accessToken);
     return result.status === 'ok' ? { ...result, renewed } : result;
+  }
+
+  /**
+   * ¿Es `password` la contraseña de ese email? Se pregunta a Supabase Auth con un login (no hay otra forma) y la sesión
+   * que abre se cierra enseguida: no queda ninguna sesión nueva. Lanza AppError 429/503 si Supabase no responde.
+   * Nunca loguea la contraseña ni el email.
+   */
+  async verificarClave(email: string, password: string): Promise<boolean> {
+    const tokens = await this.guard(() => this.deps.supabase.signInWithPassword(email, password));
+    if (tokens === null) return false;
+    await this.revokeQuietly(tokens.accessToken);
+    return true;
   }
 
   /** Cierra la sesión en Supabase (revoca el refresh token y borra la sesión). Nunca lanza. */

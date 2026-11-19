@@ -3,14 +3,15 @@
 //  - ./respuestas-reales.json: lo que ese contrato no trae (login, /me, refresh, logout, lavados, planilla, 401, 415,
 //    403 de origen). Se generó con la app de test del backend (createTestContext sobre PGlite, "ahora" fijo el
 //    2026-10-16 12:00 en La Rioja) y los ids de Ana (superadmin) y Beto (empleado) se fijaron a ANA_ID y BETO_ID.
-//    Si cambia el backend, hay que regenerarlo igual (no escribir respuestas a mano).
+//    Si cambia el contrato del backend: `npm run respuestas` lo pone al día (scripts/actualizar-respuestas.ts; lo que
+//    el contrato no trae se sigue generando con la app de test del backend). No escribir respuestas a mano.
 //    Excepción: los servicios múltiples (`servicios` en cada lavado) se sumaron a mano siguiendo el contrato nuevo,
 //    mientras el backend los implementa en paralelo; al regenerar, tienen que salir igual.
 //  - El catálogo del contrato del backend puede venir todavía con camioneta (precioDesdeCamioneta, duracionCamioneta):
 //    `normalizarServicio` lo pasa a la forma nueva (SUV y pick-up, categoría) para que los tests no dependan de cuándo
 //    se regenere ese archivo.
-import contrato from '../../../backend/test/fixtures/respuestas-api.json';
-import reales from './respuestas-reales.json';
+import contrato from '../../../backend/test/fixtures/respuestas-api.json' with { type: 'json' };
+import reales from './respuestas-reales.json' with { type: 'json' };
 import type { Permisos, PlanillaDelDia, Servicio, Trabajador, Turno, Usuario, VehiculoTipo } from '../api/types';
 
 export interface RespuestaFalsa {

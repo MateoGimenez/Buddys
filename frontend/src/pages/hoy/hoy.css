@@ -1,0 +1,143 @@
+/* ------------------------------------------------------------------ Hoy (inicio del encargado)
+   Se lee al sol de un vistazo: lo cobrado en grande, la meta como una sola barra, y los autos en el lavadero como
+   copias del talonario con su etapa. */
+
+.hoy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hoy-caja {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hoy-etiqueta {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--tinta-2);
+}
+
+.hoy-cifra {
+  font-size: clamp(2.5rem, 12vw, 3.5rem);
+  font-weight: 800;
+  font-stretch: 82%;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hoy-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hoy-meta-texto {
+  font-size: 1rem;
+}
+
+.hoy-meta-ok {
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.hoy-cuentas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: var(--grosor-fino) dashed var(--linea-fuerte);
+}
+
+.hoy-cuentas div {
+  display: flex;
+  flex-direction: column;
+}
+
+.hoy-cuentas dt {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--tinta-3);
+}
+
+.hoy-cuentas dd {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  line-height: 1.1;
+}
+
+.hoy-sin-monto dd {
+  font-size: 1rem;
+}
+
+.hoy-enlace-alerta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 44px;
+  color: var(--alerta);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hoy-etapas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hoy-etapas li {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 650;
+  background: var(--apagado);
+  color: var(--tinta-2);
+}
+
+.hoy-etapas li[data-etapa='espera'] {
+  background: var(--alerta-claro);
+  color: var(--alerta);
+}
+
+.hoy-etapas li[data-etapa='lavando'] {
+  background: var(--carbon-claro);
+  color: var(--carbon);
+}
+
+.hoy-etapas li[data-etapa='listo'] {
+  background: var(--ok-claro);
+  color: var(--ok);
+}
+
+.hoy-etapas-n {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.hoy-autos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hoy-auto {
+  gap: 8px;
+}
+
+.hoy .bloque-cabeza {
+  flex-wrap: wrap;
+}

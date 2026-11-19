@@ -1,0 +1,169 @@
+/* ------------------------------------------------------------------ Clientes (historial, sellos, inactivos) */
+
+.clientes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cliente-datos {
+  color: var(--tinta-2);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.cliente-cifras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+}
+
+.cliente-cifras div {
+  display: flex;
+  flex-direction: column;
+}
+
+.cliente-cifras dt {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--tinta-3);
+}
+
+.cliente-cifras dd {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cliente-cifras .cliente-cifra-chica {
+  font-size: 1.25rem;
+}
+
+.cliente-subtitulo {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.cliente-servicios {
+  margin: 0;
+  padding-inline-start: 20px;
+}
+
+.cliente-veces {
+  color: var(--tinta-2);
+  font-weight: 650;
+}
+
+.cliente-visitas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cliente-visita {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+}
+
+.cliente-visita + .cliente-visita {
+  border-top: var(--grosor-fino) dashed var(--linea-fuerte);
+}
+
+.cliente-visita[data-estado='cancelado'] .cliente-visita-servicio {
+  text-decoration: line-through;
+  color: var(--tinta-2);
+}
+
+.cliente-visita-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.cliente-visita-fecha {
+  font-weight: 750;
+  font-stretch: 85%;
+  font-variant-numeric: tabular-nums;
+}
+
+.cliente-visita-monto {
+  margin-inline-start: auto;
+  font-weight: 750;
+}
+
+.cliente-visita-servicio {
+  font-weight: 650;
+}
+
+.cliente-visita-detalle {
+  color: var(--tinta-2);
+  font-size: 0.9375rem;
+}
+
+/* Tarjeta de sellos: casillas de cartón; la sellada lleva la tilde en tinta, la del premio una estrella. */
+.sellos-casillas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 6px;
+}
+
+.sellos-casilla {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: var(--grosor) dashed var(--linea-fuerte);
+  color: var(--tinta-3);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.sellos-casilla[data-sellada] {
+  border-style: solid;
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: var(--sobre-tinta);
+}
+
+.sellos-casilla[data-sellada] .tilde path {
+  stroke-dashoffset: 0;
+  stroke: currentcolor;
+}
+
+.sellos-premio {
+  border-style: solid;
+  border-color: var(--rosa-fuerte);
+  color: var(--tinta);
+  background: var(--rosa-claro);
+}
+
+.sellos-premio[data-listo] {
+  border-color: var(--tinta);
+}
+
+.sellos-texto {
+  font-size: 1rem;
+}
+
+.tarjeta-regla {
+  font-size: 1.0625rem;
+}
+
+.inactivo-dias {
+  margin-inline-start: auto;
+  font-weight: 700;
+  color: var(--alerta);
+}

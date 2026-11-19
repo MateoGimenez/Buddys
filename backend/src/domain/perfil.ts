@@ -13,6 +13,11 @@ export interface Perfil {
   activo: boolean;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Ruta de la foto de perfil en el bucket privado perfiles-avatares (null = sin foto). NUNCA sale por la API: se
+   * convierte en una URL firmada (services/perfil.ts).
+   */
+  avatarPath: string | null;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { alTerminarLaSesion, ApiError } from '../api/client';
 import * as ep from '../api/endpoints';
+import { desactivarAvisos } from '../lib/push';
 import type { Permisos, Usuario } from '../api/types';
 
 type Estado =
@@ -14,6 +15,8 @@ interface Sesion {
   salir: () => Promise<void>;
   /** true si el rol tiene la capacidad (sí o parcial). Sin la tabla de permisos, cae a las reglas por rol. */
   puede: (capacidad: string) => boolean;
+  /** Pone al día los datos del usuario logueado (nombre o foto cambiados desde Perfil). */
+  actualizarUsuario: (cambio: Partial<Usuario>) => void;
 }
 
 const SesionContext = createContext<Sesion | null>(null);
@@ -32,10 +35,39 @@ const SOLO_ENCARGADOS = new Set([
   'documentos.comprobantes',
   'documentos.taller',
   'inventario.gestionar',
+  // Mejoras (contrato 2026-11-15, permisosAdminMejoras).
+  'caja.cerrar',
+  'finanzas.gastos_fijos',
+  'finanzas.exportar',
+  'turnos.crear',
 ]);
 
+/** La foto de perfil es una URL firmada que vence: /me se vuelve a pedir este tiempo antes. */
+const ANTES_DE_VENCER_MS = 5 * 60_000;
+/** Nunca antes de esto (si el reloj del celular anda mal o ya venció). */
+const REFRESCO_MINIMO_MS = 30_000;
+
+/** Espera máxima para desuscribir los avisos al cerrar sesión: salir nunca se traba por esto. */
+const ESPERA_AVISOS_MS = 3000;
+
+async function desactivarAvisosAlSalir(): Promise<void> {
+  let reloj: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      desactivarAvisos(),
+      new Promise<void>((listo) => {
+        reloj = setTimeout(listo, ESPERA_AVISOS_MS);
+      }),
+    ]);
+  } catch {
+    // Sin service worker, sin red o sin sesión: se sale igual.
+  } finally {
+    clearTimeout(reloj);
+  }
+}
+
 function puedePorRol(usuario: Usuario, capacidad: string): boolean {
-  if (capacidad === 'usuarios.gestionar') return usuario.rol === 'superadmin';
+  if (capacidad === 'usuarios.gestionar' || capacidad === 'caja.reabrir') return usuario.rol === 'superadmin';
   if (SOLO_ENCARGADOS.has(capacidad)) return usuario.rol !== 'empleado';
   return true;
 }
@@ -92,11 +124,39 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const salir = useCallback(async () => {
     try {
+      // Los avisos de este celular son de esta persona: se sacan antes de cerrar (el DELETE necesita la sesión). Si
+      // falla o tarda, se sale igual.
+      await desactivarAvisosAlSalir();
       await ep.cerrarSesion();
     } finally {
       setEstado({ tipo: 'afuera' });
     }
   }, []);
+
+  const actualizarUsuario = useCallback((cambio: Partial<Usuario>) => {
+    setEstado((prev) => (prev.tipo === 'adentro' ? { ...prev, usuario: { ...prev.usuario, ...cambio } } : prev));
+  }, []);
+
+  // La URL de la foto vence (~1 h): si el panel queda abierto, se pide /me de nuevo un rato antes.
+  const venceAvatar = estado.tipo === 'adentro' ? (estado.usuario.avatarVenceEl ?? null) : null;
+  useEffect(() => {
+    if (!venceAvatar) return;
+    const vence = Date.parse(venceAvatar);
+    if (Number.isNaN(vence)) return;
+    const espera = Math.max(REFRESCO_MINIMO_MS, vence - Date.now() - ANTES_DE_VENCER_MS);
+    const reloj = setTimeout(() => {
+      ep.quienSoy()
+        .then(({ usuario }) => {
+          setEstado((prev) => (prev.tipo === 'adentro' && prev.usuario.id === usuario.id ? { ...prev, usuario } : prev));
+        })
+        .catch(() => {
+          // Sin red: la foto deja de verse y quedan las iniciales; la sesión la maneja el cliente.
+        });
+    }, espera);
+    return () => {
+      clearTimeout(reloj);
+    };
+  }, [venceAvatar]);
 
   const puede = useCallback(
     (capacidad: string) => {
@@ -108,7 +168,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [estado],
   );
 
-  const valor = useMemo(() => ({ estado, ingresar, salir, puede }), [estado, ingresar, salir, puede]);
+  const valor = useMemo(() => ({ estado, ingresar, salir, puede, actualizarUsuario }), [estado, ingresar, salir, puede, actualizarUsuario]);
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }
 

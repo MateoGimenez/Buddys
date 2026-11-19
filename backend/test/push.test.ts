@@ -543,6 +543,7 @@ describe('envío al crear un turno público', () => {
       guardar: () => Promise.resolve(),
       borrarPorEndpoint: () => Promise.resolve(false),
       destinosActivos: () => Promise.resolve(guardados),
+      destinosDeRoles: () => Promise.resolve(guardados),
       borrarPorIds: () => Promise.resolve(0),
       marcarAvisados: (ids) => {
         marcados.push(...ids);

@@ -43,7 +43,7 @@ describe('POST /api/auth/login (Supabase Auth, BFF)', () => {
     const response = await rawPost(context.app, '/api/auth/login').send(credentials);
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ usuario: { id: userId, email: ADMIN_EMAIL, nombre: null, rol: 'admin' } });
+    expect(response.body).toEqual({ usuario: { id: userId, email: ADMIN_EMAIL, nombre: null, rol: 'admin', avatarUrl: null, avatarVenceEl: null } });
     expect(JSON.stringify(response.body)).not.toMatch(/token|eyJ/);
 
     const access = setCookieFor(response, 'bd_at') ?? '';
@@ -140,7 +140,7 @@ describe('POST /api/auth/login: rate limit de intentos fallidos', () => {
 });
 
 describe('GET /api/auth/me', () => {
-  it('sin sesión => 401 UNAUTHORIZED; con sesión => { usuario: { id, email, nombre, rol } }', async () => {
+  it('sin sesión => 401 UNAUTHORIZED; con sesión => { usuario: { id, email, nombre, rol, avatarUrl, avatarVenceEl } }', async () => {
     const { context, userId } = await contextWithAdmin();
     const anonymous = await request(context.app).get('/api/auth/me');
     expect(anonymous.status).toBe(401);
@@ -150,7 +150,7 @@ describe('GET /api/auth/me', () => {
     const client = await loginClient(context);
     const me = await client.get('/api/auth/me');
     expect(me.status).toBe(200);
-    expect(me.body).toEqual({ usuario: { id: userId, email: ADMIN_EMAIL, nombre: 'Mateo', rol: 'admin' } });
+    expect(me.body).toEqual({ usuario: { id: userId, email: ADMIN_EMAIL, nombre: 'Mateo', rol: 'admin', avatarUrl: null, avatarVenceEl: null } });
   });
 });
 

@@ -6,10 +6,12 @@ import { getUsuario, requirePermiso } from '../middleware/require-session.js';
 import { parseOrThrow } from '../schemas/common.js';
 import { createUsuarioSchema, updateUsuarioSchema, usuarioIdSchema } from '../schemas/usuarios.js';
 import type { UsuarioService } from '../services/usuarios.js';
+import type { PerfilService } from '../services/perfil.js';
 
 const NOT_FOUND_MESSAGE = 'No encontramos ese usuario.';
 
-function toJson(perfil: Perfil) {
+/** Un usuario tal como sale por la API. `avatarUrl`: URL firmada de su foto de perfil (vence en 1 hora) o null. */
+function toJson(perfil: Perfil, avatarUrl: string | null) {
   return {
     id: perfil.id,
     email: perfil.email,
@@ -18,6 +20,7 @@ function toJson(perfil: Perfil) {
     activo: perfil.activo,
     createdAt: perfil.createdAt,
     updatedAt: perfil.updatedAt,
+    avatarUrl,
   };
 }
 
@@ -28,23 +31,27 @@ function parseId(value: string | undefined): string {
 }
 
 /** Gestión de usuarios del panel. Detrás de requireSession; todas las rutas exigen rol superadmin. */
-export function adminUsuariosRouter(deps: { usuarios: UsuarioService }): Router {
-  const { usuarios } = deps;
+export function adminUsuariosRouter(deps: { usuarios: UsuarioService; perfil: PerfilService }): Router {
+  const { usuarios, perfil } = deps;
   const router = Router();
 
   router.use(requirePermiso(puedeGestionarUsuarios, 'Solo un superadmin puede gestionar usuarios.'));
 
-  // GET /api/admin/usuarios => { usuarios: [...], gestionCuentas } (los más viejos primero).
+  // GET /api/admin/usuarios => { usuarios: [...], gestionCuentas } (los más viejos primero). avatarUrl de cada uno:
+  // URL firmada de su foto de perfil (vence en 1 hora) o null.
   // gestionCuentas = false: falta SUPABASE_SECRET_KEY (no hay alta, baja ni cambio de email o contraseña).
   router.get('/', async (_req, res) => {
-    res.json({ usuarios: (await usuarios.list()).map(toJson), gestionCuentas: usuarios.gestionCuentas });
+    const lista = await usuarios.list();
+    const avatares = await perfil.avataresDe(lista);
+    res.json({ usuarios: lista.map((p) => toJson(p, avatares.get(p.id) ?? null)), gestionCuentas: usuarios.gestionCuentas });
   });
 
   // POST /api/admin/usuarios { email, password, nombre?, rol, activo } => 201 { usuario }
   router.post('/', async (req, res) => {
     const nuevo = parseOrThrow(createUsuarioSchema, req.body ?? {});
     const created = await usuarios.create(getUsuario(res), nuevo);
-    res.status(201).json({ usuario: toJson(created) });
+    // Un usuario recién creado todavía no tiene foto.
+    res.status(201).json({ usuario: toJson(created, null) });
   });
 
   // PATCH /api/admin/usuarios/:id { rol?, activo?, nombre?, email?, password? } => { usuario }
@@ -56,7 +63,7 @@ export function adminUsuariosRouter(deps: { usuarios: UsuarioService }): Router 
       throw AppError.validation(undefined, 'Indicá al menos un cambio: rol, activo, nombre, email o contraseña.');
     }
     const updated = await usuarios.update(getUsuario(res), id, cambios);
-    res.json({ usuario: toJson(updated) });
+    res.json({ usuario: toJson(updated, (await perfil.avatar(updated.avatarPath)).avatarUrl) });
   });
 
   // DELETE /api/admin/usuarios/:id => 204

@@ -1,0 +1,18 @@
+/* Ajustes del tema "Alto contraste" que no son solo colores (ver tokens.css). */
+
+:root[data-tema='contraste'] .hoja,
+:root[data-tema='contraste'] .menu,
+:root[data-tema='contraste'] .esqueleto-formulario {
+  border: var(--grosor) solid var(--tinta);
+}
+
+:root[data-tema='contraste'] .ranking-barra,
+:root[data-tema='contraste'] .progreso-pista,
+:root[data-tema='contraste'] .talon-plazo {
+  outline: var(--grosor-fino) solid var(--tinta);
+}
+
+:root[data-tema='contraste'] .barra,
+:root[data-tema='contraste'] .plegable {
+  border-style: solid;
+}

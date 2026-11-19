@@ -24,6 +24,7 @@ function toPerfil(row: Row): Perfil {
     activo: bool(row, 'activo'),
     createdAt: isoTimestamp(row, 'created_at'),
     updatedAt: isoTimestamp(row, 'updated_at'),
+    avatarPath: strOrNull(row, 'avatar_path'),
   };
 }
 
@@ -43,7 +44,7 @@ export class PostgresPerfilRepository implements PerfilRepository {
   ): Promise<{ perfil: Perfil; sesionVigente: boolean } | undefined> {
     if (!isUuid(userId) || !isUuid(sessionId)) return undefined;
     const { rows } = await this.sql.query(
-      `SELECT p.id::text AS id, p.email, p.nombre, p.rol_id, p.activo, p.created_at, p.updated_at,
+      `SELECT p.id::text AS id, p.email, p.nombre, p.rol_id, p.activo, p.created_at, p.updated_at, p.avatar_path,
               buddys_private.sesion_vigente($2::uuid, p.id, $3::integer) AS sesion_vigente
        FROM buddys.perfiles AS p
        WHERE p.id = $1::uuid`,
@@ -55,7 +56,7 @@ export class PostgresPerfilRepository implements PerfilRepository {
 
   async list(): Promise<Perfil[]> {
     const { rows } = await this.sql.query(
-      `SELECT id::text AS id, email, nombre, rol_id, activo, created_at, updated_at
+      `SELECT id::text AS id, email, nombre, rol_id, activo, created_at, updated_at, avatar_path
        FROM buddys.perfiles
        ORDER BY created_at, id`,
     );
@@ -85,7 +86,7 @@ export class PostgresPerfilRepository implements PerfilRepository {
   async findById(id: string): Promise<Perfil | undefined> {
     if (!isUuid(id)) return undefined;
     const { rows } = await this.sql.query(
-      `SELECT id::text AS id, email, nombre, rol_id, activo, created_at, updated_at
+      `SELECT id::text AS id, email, nombre, rol_id, activo, created_at, updated_at, avatar_path
        FROM buddys.perfiles
        WHERE id = $1::uuid`,
       [id],
@@ -104,7 +105,7 @@ export class PostgresPerfilRepository implements PerfilRepository {
              nombre = CASE WHEN $4::boolean THEN $5::text ELSE nombre END,
              updated_at = $6::timestamptz
          WHERE id = $1::uuid
-         RETURNING id::text AS id, email, nombre, rol_id, activo, created_at, updated_at`,
+         RETURNING id::text AS id, email, nombre, rol_id, activo, created_at, updated_at, avatar_path`,
         [
           id,
           cambios.rol ?? null,

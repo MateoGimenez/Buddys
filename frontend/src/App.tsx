@@ -1,16 +1,21 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout, SECCIONES } from './components/Layout';
 import { Cargando } from './components/ui';
-import { Equipo } from './pages/Equipo';
-import { Gastos } from './pages/Gastos';
-import { Insumos } from './pages/Insumos';
-import { Login } from './pages/Login';
-import { Mas } from './pages/Mas';
-import { Numeros } from './pages/Numeros';
-import { Planilla } from './pages/Planilla';
-import { Presupuestos } from './pages/Presupuestos';
-import { Registrar } from './pages/Registrar';
-import { Servicios } from './pages/Servicios';
+import { Agenda } from './pages/agenda/Agenda';
+import { PantallaCaja } from './pages/caja/Caja';
+import { Clientes } from './pages/clientes/Clientes';
+import { Equipo } from './pages/equipo/Equipo';
+import { Gastos } from './pages/gastos/Gastos';
+import { Hoy } from './pages/hoy/Hoy';
+import { Insumos } from './pages/insumos/Insumos';
+import { Login } from './pages/login/Login';
+import { Mas } from './pages/mas/Mas';
+import { Numeros } from './pages/numeros/Numeros';
+import { Perfil } from './pages/perfil/Perfil';
+import { Planilla } from './pages/planilla/Planilla';
+import { Presupuestos } from './pages/presupuestos/Presupuestos';
+import { Registrar } from './pages/registrar/Registrar';
+import { Servicios } from './pages/servicios/Servicios';
 import { useSesion } from './session/SessionContext';
 import type { ReactElement } from 'react';
 
@@ -23,6 +28,10 @@ const PAGINAS: Record<string, ReactElement> = {
   '/gastos': <Gastos />,
   '/presupuestos': <Presupuestos />,
   '/equipo': <Equipo />,
+  '/agenda': <Agenda />,
+  '/caja': <PantallaCaja />,
+  '/hoy': <Hoy />,
+  '/clientes': <Clientes />,
 };
 
 export function App() {
@@ -39,15 +48,19 @@ export function App() {
 
   if (estado.tipo === 'afuera') return <Login {...(estado.aviso ? { aviso: estado.aviso } : {})} />;
 
+  // El encargado arranca en Hoy; el empleado, en Registrar.
+  const inicio = puede('estadisticas.completas') ? '/hoy' : '/registrar';
+
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Navigate to="/registrar" replace />} />
+        <Route index element={<Navigate to={inicio} replace />} />
         {SECCIONES.filter((s) => puede(s.capacidad)).map((s) => (
           <Route key={s.ruta} path={s.ruta} element={PAGINAS[s.ruta]} />
         ))}
         <Route path="/mas" element={<Mas />} />
-        <Route path="*" element={<Navigate to="/registrar" replace />} />
+        <Route path="/perfil" element={<Perfil />} />
+        <Route path="*" element={<Navigate to={inicio} replace />} />
       </Route>
     </Routes>
   );

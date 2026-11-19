@@ -77,3 +77,8 @@ export function isoTimestamp(row: Row, key: string): string {
   }
   return date.toISOString();
 }
+
+/** Como isoTimestamp, pero null si la columna es null. */
+export function isoTimestampOrNull(row: Row, key: string): string | null {
+  return row[key] === null ? null : isoTimestamp(row, key);
+}

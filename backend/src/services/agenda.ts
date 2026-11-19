@@ -2,6 +2,7 @@ import {
   type Booking,
   type BookingRepository,
   ESTADOS_CERRADOS,
+  MONTO_MAX,
   type Reprogramacion,
   TurnoCerradoError,
 } from '../domain/booking.js';
@@ -12,6 +13,7 @@ import { puedeCambiarEstado, puedeCorregirCobro, puedeRegistrarCobro, puedeRepro
 import { AppError } from '../lib/errors.js';
 import type { Logger } from '../lib/logger.js';
 import type { CambiosTurno } from '../schemas/admin.js';
+import type { AvisoService } from './avisos.js';
 import type { UsuarioSesion } from './auth.js';
 import { serviciosDelLavado } from './servicios.js';
 
@@ -23,6 +25,8 @@ export interface AgendaServiceDeps {
   perfiles: PerfilRepository;
   logger: Logger;
   now: () => Date;
+  /** Avisos push al encargado (meta del mes cumplida). Opcional: sin él no se avisa. */
+  avisos?: AvisoService;
 }
 
 export const NOT_FOUND_MESSAGE = 'No encontramos ese turno.';
@@ -36,15 +40,20 @@ export const EMPLEADO_COBRO_COMPLETADO_MESSAGE = 'Con tu rol no podés cambiar e
 export const TRABAJADOR_INVALIDO_MESSAGE = 'Elegí una persona activa del panel.';
 export const EMPLEADO_FORMA_PAGO_MESSAGE = 'Con tu rol no podés cambiar la forma de pago: la corrige un administrador.';
 export const EMPLEADO_SERVICIOS_MESSAGE = 'Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador.';
+export const EMPLEADO_DESCUENTO_MESSAGE = 'Con tu rol no podés cargar descuentos: lo carga un administrador.';
+export const MONTO_MENOR_SENA_MESSAGE = 'El total no puede ser menor que la seña que ya se cobró.';
+const DESCUENTO_TOPE_MESSAGE = `El monto más el descuento no puede pasar de ${MONTO_MAX.toLocaleString('es-AR')}.`;
 
 /** Errores por campo cuando se manda cobro (con valor) para un turno que no queda completado. */
 function erroresCobroSinCompletar(
   monto: number | null | undefined,
   trabajadorId: string | null | undefined,
+  descuento?: { monto: number },
 ): Record<string, string> {
   return {
     ...(monto != null && { monto: COBRO_SOLO_COMPLETADO_MESSAGE }),
     ...(trabajadorId != null && { trabajadorId: COBRO_SOLO_COMPLETADO_MESSAGE }),
+    ...(descuento !== undefined && descuento.monto > 0 && { descuento: COBRO_SOLO_COMPLETADO_MESSAGE }),
   };
 }
 
@@ -81,8 +90,9 @@ export class AgendaService {
    * Cargar o corregir solo el cobro no mueve updated_at (es el "actualizado el" que ve el cliente).
    */
   async modificar(actor: UsuarioSesion, id: string, cambios: CambiosTurno): Promise<Booking> {
-    const { estado, confirmada, notasInternas, monto, trabajadorId, formaPago, servicioIds } = cambios;
+    const { estado, confirmada, notasInternas, monto, trabajadorId, formaPago, servicioIds, descuento } = cambios;
     if (formaPago !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_FORMA_PAGO_MESSAGE);
+    if (descuento !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_DESCUENTO_MESSAGE);
     if (servicioIds !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_SERVICIOS_MESSAGE);
     // Los servicios se validan antes de escribir nada (o se guarda todo o nada).
     const servicios = servicioIds === undefined ? undefined : await this.serviciosNuevos(id, servicioIds);
@@ -95,9 +105,9 @@ export class AgendaService {
 
     // Con fecha/franja: reprogramar. Un turno que se reprograma no está (ni queda) completado: no admite cobro.
     if (confirmada !== undefined) {
-      if (monto != null || trabajadorId != null) {
+      if (monto != null || trabajadorId != null || (descuento !== undefined && descuento.monto > 0)) {
         if (!puedeReprogramar(actor.rol)) throw AppError.forbidden(SIN_PERMISO_REPROGRAMAR_MESSAGE);
-        throw AppError.validation(erroresCobroSinCompletar(monto, trabajadorId));
+        throw AppError.validation(erroresCobroSinCompletar(monto, trabajadorId, descuento));
       }
       return this.reprogramar(actor, id, { confirmada, ...(estado !== undefined && { estado }), ...nota });
     }
@@ -105,7 +115,7 @@ export class AgendaService {
     if (estado !== undefined && !puedeCambiarEstado(actor.rol, estado)) throw AppError.forbidden(SOLO_COMPLETAR_MESSAGE);
 
     const completaTodo = puedeRegistrarCobro(actor.rol);
-    const tocaCobro = monto !== undefined || trabajadorId !== undefined;
+    const tocaCobro = monto !== undefined || trabajadorId !== undefined || descuento !== undefined;
     const empleadoCompleta = !completaTodo && estado === 'completado';
     const now = this.deps.now();
 
@@ -135,16 +145,34 @@ export class AgendaService {
     const yaCompletado = actual.estado === 'completado';
     if (!completaTodo && tocaCobro && yaCompletado) throw AppError.forbidden(EMPLEADO_COBRO_COMPLETADO_MESSAGE);
 
-    let cobro: { monto?: number | null; trabajadorId?: string | null } = {};
+    let cobro: {
+      monto?: number | null;
+      trabajadorId?: string | null;
+      descuento?: { monto: number; motivo: string | null };
+    } = {};
     if ((estado ?? actual.estado) !== 'completado') {
-      const errores = erroresCobroSinCompletar(monto, trabajadorId);
+      const errores = erroresCobroSinCompletar(monto, trabajadorId, descuento);
       if (Object.keys(errores).length > 0) throw AppError.validation(errores);
     } else if (completaTodo) {
       if (trabajadorId != null) {
         const persona = await this.deps.perfiles.findById(trabajadorId);
         if (persona?.activo !== true) throw AppError.validation({ trabajadorId: TRABAJADOR_INVALIDO_MESSAGE });
       }
-      cobro = { ...(monto !== undefined && { monto }), ...(trabajadorId !== undefined && { trabajadorId }) };
+      // Con los valores que van a quedar: el total no puede ser menor que la seña ni pasar el tope con el descuento.
+      const montoFinal = monto !== undefined ? monto : actual.monto;
+      const descuentoFinal = descuento?.monto ?? actual.descuento ?? 0;
+      const sena = actual.sena?.monto ?? null;
+      if (monto !== undefined && montoFinal !== null && sena !== null && montoFinal < sena) {
+        throw AppError.validation({ monto: MONTO_MENOR_SENA_MESSAGE });
+      }
+      if (montoFinal !== null && montoFinal + descuentoFinal > MONTO_MAX) {
+        throw AppError.validation({ descuento: DESCUENTO_TOPE_MESSAGE });
+      }
+      cobro = {
+        ...(monto !== undefined && { monto }),
+        ...(trabajadorId !== undefined && { trabajadorId }),
+        ...(descuento !== undefined && { descuento }),
+      };
     } else if (!yaCompletado) {
       cobro = { trabajadorId: actor.id }; // el empleado que completa un turno queda como quien lo hizo
     }
@@ -155,13 +183,20 @@ export class AgendaService {
       (cobro.monto === undefined || cobro.monto === actual.monto) &&
       (cobro.trabajadorId === undefined || cobro.trabajadorId === (actual.trabajador?.id ?? null));
     const igualForma = formaPago === undefined || formaPago === actual.formaPago;
-    if (igualEstado && notasInternas === undefined && igualCobro && igualForma && servicios === undefined) return actual;
+    const igualDescuento =
+      cobro.descuento === undefined ||
+      (cobro.descuento.monto === actual.descuento && cobro.descuento.motivo === actual.descuentoMotivo);
+    if (igualEstado && notasInternas === undefined && igualCobro && igualForma && igualDescuento && servicios === undefined) {
+      return actual;
+    }
 
     const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota, ...cobro }, now);
     if (booking === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
-    if (cobro.monto !== undefined || cobro.trabajadorId !== undefined) {
+    if (cobro.monto !== undefined || cobro.trabajadorId !== undefined || cobro.descuento !== undefined) {
       this.deps.logger.info(`Cobro de turno actualizado id=${booking.id} por=${actor.id}`); // sin el importe
     }
+    // Completar o cobrar mueve los ingresos y los trabajos del mes: puede cumplir la meta (aviso push, una vez).
+    if (booking.estado === 'completado') this.deps.avisos?.revisarMeta();
     return booking;
   }
 

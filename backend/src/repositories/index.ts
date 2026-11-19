@@ -11,6 +11,20 @@ import type { PresupuestoRepository } from '../domain/presupuestos.js';
 import type { PushRepository } from '../domain/push.js';
 import type { ServicioRepository } from '../domain/servicios.js';
 import type { TallerRepository } from '../domain/taller.js';
+import type { CajaRepository } from '../domain/caja.js';
+import type { ClienteRepository } from '../domain/clientes.js';
+import type { ExportRepository } from '../domain/exportar.js';
+import type { FotoRepository } from '../domain/fotos.js';
+import type { AvatarRepository } from '../domain/avatar.js';
+import { PostgresAvatarRepository } from './postgres/avatares.js';
+import type { GastoFijoRepository } from '../domain/gastos-fijos.js';
+import type { RecetaRepository } from '../domain/recetas.js';
+import { PostgresCajaRepository } from './postgres/caja.js';
+import { PostgresClienteRepository } from './postgres/clientes.js';
+import { PostgresExportRepository } from './postgres/exportar.js';
+import { PostgresFotoRepository } from './postgres/fotos.js';
+import { PostgresGastoFijoRepository } from './postgres/gastos-fijos.js';
+import { PostgresRecetaRepository } from './postgres/recetas.js';
 import { PostgresBookingRepository } from './postgres/bookings.js';
 import { PostgresComprobanteRepository } from './postgres/comprobantes.js';
 import { PostgresDisponibilidadRepository } from './postgres/disponibilidad.js';
@@ -37,6 +51,13 @@ export interface Repositories {
   inventario: InventarioRepository;
   presupuestos: PresupuestoRepository;
   comprobantes: ComprobanteRepository;
+  clientes: ClienteRepository;
+  fotos: FotoRepository;
+  avatares: AvatarRepository;
+  gastosFijos: GastoFijoRepository;
+  caja: CajaRepository;
+  recetas: RecetaRepository;
+  exportar: ExportRepository;
 }
 
 /** Los repositorios sobre Postgres (esquema buddys ya migrado; ver supabase/migrations/). */
@@ -54,5 +75,12 @@ export function createPostgresRepositories(sql: SqlClient): Repositories {
     inventario: new PostgresInventarioRepository(sql),
     presupuestos: new PostgresPresupuestoRepository(sql),
     comprobantes: new PostgresComprobanteRepository(sql),
+    clientes: new PostgresClienteRepository(sql),
+    fotos: new PostgresFotoRepository(sql),
+    avatares: new PostgresAvatarRepository(sql),
+    gastosFijos: new PostgresGastoFijoRepository(sql),
+    caja: new PostgresCajaRepository(sql),
+    recetas: new PostgresRecetaRepository(sql),
+    exportar: new PostgresExportRepository(sql),
   };
 }
