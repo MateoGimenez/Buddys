@@ -68,7 +68,7 @@
   gap: 10px 12px;
   padding: 14px 16px;
   background: var(--canario);
-  border: 2px solid var(--canario-borde);
+  border: var(--grosor) solid var(--canario-borde);
   border-top: 3px dashed var(--tinta-3);
   border-radius: 0 0 var(--radio) var(--radio);
   animation: arrancar 460ms var(--curva);
@@ -87,8 +87,8 @@
   gap: 4px;
   padding: 12px 14px 10px;
   background: var(--canario);
-  border: 1px solid var(--canario-borde);
-  border-top: 2px dashed var(--tinta-3);
+  border: var(--grosor-fino) solid var(--canario-borde);
+  border-top: var(--grosor) dashed var(--tinta-3);
   border-radius: 2px 2px var(--radio) var(--radio);
   box-shadow: var(--sombra-copia);
 }
@@ -105,7 +105,7 @@
 .fila-hoja[data-baja] {
   background: transparent;
   box-shadow: none;
-  border: 2px dashed var(--linea-fuerte);
+  border: var(--grosor) dashed var(--linea-fuerte);
 }
 
 .fila-hoja[data-baja] .fila-hoja-titulo {
@@ -159,7 +159,7 @@
 .fila-hoja > .receta {
   margin-top: 6px;
   padding-top: 14px;
-  border-top: 2px dashed var(--linea-fuerte);
+  border-top: var(--grosor) dashed var(--linea-fuerte);
 }
 
 .receta-cabeza {
@@ -178,7 +178,7 @@
   gap: 2px;
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 2px solid var(--linea);
+  border-bottom: var(--grosor) solid var(--linea);
 }
 
 .receta-tab {
@@ -275,7 +275,7 @@
   align-items: baseline;
   gap: 12px;
   padding: 8px 0;
-  border-bottom: 1px dashed var(--linea);
+  border-bottom: var(--grosor-fino) dashed var(--linea);
 }
 
 .receta-lista li:last-child {
@@ -302,7 +302,7 @@
   align-items: end;
   gap: 8px;
   padding-bottom: 12px;
-  border-bottom: 1px dashed var(--linea);
+  border-bottom: var(--grosor-fino) dashed var(--linea);
 }
 
 .receta-insumo {
@@ -357,7 +357,7 @@
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 2px solid var(--linea);
+  border-bottom: var(--grosor) solid var(--linea);
   margin-top: -4px;
 }
 
@@ -469,7 +469,7 @@
   margin: 0 0 14px;
   padding: 12px 14px;
   background: var(--canario);
-  border: 1px solid var(--canario-borde);
+  border: var(--grosor-fino) solid var(--canario-borde);
   border-radius: var(--radio-chico);
   font: inherit;
   font-size: 0.9375rem;
@@ -492,7 +492,7 @@
   border-radius: 50%;
   overflow: hidden;
   background: var(--avatar-fondo, var(--avatar-7));
-  color: #fff;
+  color: var(--sobre-avatar);
   font-weight: 700;
   font-stretch: 88%;
   font-size: calc(var(--avatar-tam) * 0.4);
@@ -575,9 +575,9 @@
   display: inline-grid;
   place-items: center;
   border-radius: 999px;
-  border: 2px solid var(--papel);
+  border: var(--grosor) solid var(--papel);
   background: var(--serie);
-  color: #fff;
+  color: var(--sobre-serie);
   font-size: 0.75rem;
   font-weight: 750;
   font-stretch: 88%;
@@ -604,7 +604,7 @@
   min-block-size: 44px;
   min-inline-size: 44px;
   padding: 4px;
-  border: 2px solid transparent;
+  border: var(--grosor) solid transparent;
   border-radius: 999px;
   background: none;
   color: var(--tinta);
@@ -631,9 +631,6 @@
 
 .cuenta-boton[aria-expanded='true'] {
   background: var(--carbon-claro);
-}
-
-.cuenta-boton[aria-expanded='true'] {
   border-color: var(--carbon);
 }
 
@@ -707,7 +704,8 @@
   max-inline-size: min(320px, calc(100vw - 32px));
   padding: 6px;
   background: var(--papel);
-  border: 1px solid var(--linea);
+  /* --linea-fuerte: en oscuro, --linea no se distingue del fondo y el menú quedaba sostenido solo por la sombra. */
+  border: var(--grosor-fino) solid var(--linea-fuerte);
   border-radius: var(--radio);
   box-shadow: var(--sombra-dialogo);
 }
@@ -731,7 +729,7 @@
   flex-direction: column;
   padding: 8px 10px 10px;
   margin-block-end: 4px;
-  border-block-end: 1px dashed var(--linea-fuerte);
+  border-block-end: var(--grosor-fino) dashed var(--linea-fuerte);
   line-height: 1.3;
 }
 
@@ -777,6 +775,52 @@
   color: var(--tinta-2);
 }
 
+/* Tema (tanda 07): grupo de menuitemradio entre "Mi perfil" y "Cerrar sesión", separado por el troquel. */
+.cuenta-grupo {
+  margin-block: 6px;
+  padding-block: 6px;
+  border-block: var(--grosor-fino) dashed var(--linea-fuerte);
+}
+
+.cuenta-grupo-titulo {
+  display: block;
+  padding: 4px 12px 2px;
+  color: var(--tinta-3);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.cuenta-tema-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.cuenta-tema-detalle {
+  color: var(--tinta-2);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Lo elegido: el mismo rosa claro que un servicio elegido, con su tilde (nunca solo el color). */
+.cuenta-tema[aria-checked='true'] {
+  background: var(--rosa-claro);
+  font-weight: 750;
+}
+
+.cuenta-tema-marca {
+  flex: none;
+  color: var(--tinta);
+}
+
+.cuenta-tema-aviso {
+  margin: 4px 12px 2px;
+  color: var(--tinta-2);
+  font-size: 0.8125rem;
+}
+
 .perfil-foto {
   display: flex;
   flex-wrap: wrap;
@@ -788,7 +832,7 @@
   flex: none;
   margin: 6px;
   border-radius: 50%;
-  outline: 2px dashed var(--linea-fuerte);
+  outline: var(--grosor) dashed var(--linea-fuerte);
   outline-offset: 4px;
 }
 

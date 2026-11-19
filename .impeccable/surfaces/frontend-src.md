@@ -46,8 +46,10 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 ## Temas
 
-Automático (sigue al celular) / Claro / Oscuro / Alto contraste (para el sol), elegibles en Más; `data-tema` en `<html>`,
-guardado en localStorage (`buddys.tema.v1`, con try/catch). Alto contraste: negro sobre blanco, bordes de 3 px, sin
+Automático (sigue al celular) / Claro / Oscuro / Alto contraste (para el sol), elegibles en el menú de la cuenta del
+header y en Más; `data-tema` en `<html>`, guardado en localStorage (`buddys.tema.v1`, con try/catch) y aplicado antes
+de pintar por `public/tema-inicial.js`. Colores con `light-dark(claro, oscuro)` en un solo `:root` (lightningcss los
+traduce para Chrome 80 / Safari 15); claro/oscuro solo fuerzan `color-scheme`. Alto contraste: negro sobre blanco, bordes de 3 px, sin
 grises, lo elegido en amarillo. Contraste verificado por test: AA en claro y oscuro, AAA en alto contraste.
 
 ## Compatibilidad (celulares viejos)

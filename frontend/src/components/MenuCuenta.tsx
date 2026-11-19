@@ -1,12 +1,37 @@
-import { ChevronDown, Loader2, LogOut, UserRound } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { Check, ChevronDown, Contrast, Loader2, LogOut, Moon, Sun, SunMoon, UserRound, type LucideIcon } from 'lucide-react';
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { NOMBRE_ROL } from '../lib/format';
+import { elegirTema, useTema, type Tema } from '../lib/tema';
 import { useSesion, useUsuario } from '../session/SessionContext';
 import { Avatar } from './Avatar';
 
+const OPCIONES_TEMA: { valor: Tema; etiqueta: string; icono: LucideIcon }[] = [
+  { valor: 'auto', etiqueta: 'Automático', icono: SunMoon },
+  { valor: 'claro', etiqueta: 'Claro', icono: Sun },
+  { valor: 'oscuro', etiqueta: 'Oscuro', icono: Moon },
+  { valor: 'contraste', etiqueta: 'Alto contraste', icono: Contrast },
+];
+
+/** true si el celular (o la compu) está en modo oscuro: para decir en qué quedó "Automático". */
+function useSistemaOscuro(): boolean {
+  return useSyncExternalStore(
+    (avisar) => {
+      if (typeof window.matchMedia !== 'function') return () => undefined;
+      const consulta = window.matchMedia('(prefers-color-scheme: dark)');
+      consulta.addEventListener('change', avisar);
+      return () => {
+        consulta.removeEventListener('change', avisar);
+      };
+    },
+    () => typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches,
+    () => false,
+  );
+}
+
 /**
- * Menú de la cuenta en la barra: el botón (avatar, nombre y rol; en el celular, solo el avatar) abre Mi perfil y
+ * Menú de la cuenta en la barra: el botón (avatar, nombre y rol; en el celular, solo el avatar) abre Mi perfil, el tema
+ * de la pantalla (Automático / Claro / Oscuro / Alto contraste, como menuitemradio: elegir no cierra el menú) y
  * Cerrar sesión. Patrón de menú (APG): flechas, Inicio/Fin, Escape vuelve al botón, Tab sale y lo cierra, un toque
  * afuera lo cierra. Abre siempre hacia abajo desde la esquina de la barra, así que no necesita anchor positioning.
  */
@@ -25,9 +50,12 @@ export function MenuCuenta() {
   const botonId = `${id}-boton`;
   const menuId = `${id}-menu`;
   const nombre = usuario.nombre ?? usuario.email ?? 'Sin nombre';
+  const tema = useTema();
+  const sistemaOscuro = useSistemaOscuro();
+  const [noGuarda, setNoGuarda] = useState(false);
   const rol = NOMBRE_ROL[usuario.rol];
 
-  const items = () => Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([aria-disabled="true"])') ?? []);
+  const items = () => Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([aria-disabled="true"])') ?? []);
 
   useEffect(() => {
     if (!abierto) return;
@@ -161,11 +189,45 @@ export function MenuCuenta() {
                 Mi perfil
               </Link>
             ) : null}
+            <div role="group" aria-labelledby={`${id}-tema`} className="cuenta-grupo">
+              <span id={`${id}-tema`} className="cuenta-grupo-titulo">
+                Cómo se ve
+              </span>
+              {OPCIONES_TEMA.map(({ valor, etiqueta, icono: Icono }) => (
+                <button
+                  key={valor}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={tema === valor}
+                  tabIndex={-1}
+                  className="cuenta-item cuenta-tema"
+                  onClick={() => {
+                    setNoGuarda(!elegirTema(valor));
+                  }}
+                >
+                  <Icono aria-hidden size={20} />
+                  <span className="cuenta-tema-texto">
+                    {etiqueta}
+                    {valor === 'auto' ? (
+                      <span className="cuenta-tema-detalle">Como el celular · ahora {sistemaOscuro ? 'oscuro' : 'claro'}</span>
+                    ) : valor === 'contraste' ? (
+                      <span className="cuenta-tema-detalle">Para leer al sol</span>
+                    ) : null}
+                  </span>
+                  {tema === valor ? <Check aria-hidden size={18} className="cuenta-tema-marca" /> : null}
+                </button>
+              ))}
+              {noGuarda ? (
+                <p className="cuenta-tema-aviso" role="status">
+                  Este celular no deja guardarlo: queda así hasta que cierres el panel.
+                </p>
+              ) : null}
+            </div>
             <button
               type="button"
               role="menuitem"
               tabIndex={-1}
-              className="cuenta-item"
+              className="cuenta-item cuenta-salir"
               aria-disabled={saliendo || undefined}
               onClick={() => {
                 if (!saliendo) cerrarSesion();

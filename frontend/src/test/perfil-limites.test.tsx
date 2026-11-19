@@ -86,7 +86,7 @@ describe('menú de la cuenta: el foco con el teclado', () => {
     expect(boton).toHaveFocus();
   });
 
-  it('con un solo ítem (el rol no edita su perfil), las flechas, Inicio y Fin se quedan en él', async () => {
+  it('sin Mi perfil (el rol no edita su perfil), el menú arranca en el tema y las flechas dan la vuelta', async () => {
     const tabla: Permisos = permisosAdmin();
     tabla.capacidades = tabla.capacidades.map<Permisos['capacidades'][number]>((c) =>
       c.id === 'perfil.editar' ? { ...c, roles: { ...c.roles, superadmin: 'no' } } : c,
@@ -97,9 +97,14 @@ describe('menú de la cuenta: el foco con el teclado', () => {
     boton.focus();
     await user.keyboard('{ArrowDown}');
     const salir = screen.getByRole('menuitem', { name: 'Cerrar sesión' });
+    const automatico = screen.getByRole('menuitemradio', { name: /Automático/ });
     expect(screen.queryByRole('menuitem', { name: 'Mi perfil' })).toBeNull();
+    expect(automatico).toHaveFocus();
+    await user.keyboard('{End}');
     expect(salir).toHaveFocus();
-    await user.keyboard('{ArrowDown}{ArrowUp}{Home}{End}');
+    await user.keyboard('{ArrowDown}');
+    expect(automatico).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
     expect(salir).toHaveFocus();
     await user.keyboard('{Escape}');
     expect(boton).toHaveFocus();

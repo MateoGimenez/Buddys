@@ -14,21 +14,39 @@ const tokens = readFileSync(resolve(process.cwd(), 'src/styles/tokens.css'), 'ut
 
 type Tema = Record<string, string>;
 
-/** Las variables `--nombre: #hex;` de un bloque del archivo (desde el marcador hasta la primera llave que cierra). */
-function bloque(marcador: string): Tema {
+/** El texto de un bloque del archivo (desde el marcador hasta la primera llave que cierra). */
+function cuerpo(marcador: string): string {
   const inicio = tokens.indexOf(marcador);
   if (inicio < 0) throw new Error(`Falta el bloque ${marcador} en tokens.css`);
   const apertura = tokens.indexOf('{', inicio);
-  const cuerpoTexto = tokens.slice(apertura + 1, tokens.indexOf('}', apertura));
+  return tokens.slice(apertura + 1, tokens.indexOf('}', apertura));
+}
+
+/**
+ * Los colores de :root en un tema. `--x: light-dark(#claro, #oscuro);` da el primero en claro y el segundo en oscuro;
+ * `--x: #hex;` vale igual en los dos.
+ */
+function raiz(cual: 'claro' | 'oscuro'): Tema {
+  const texto = cuerpo(':root {');
   const vars: Tema = {};
-  for (const m of cuerpoTexto.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})\s*;/gi)) vars[m[1] ?? ''] = (m[2] ?? '').toLowerCase();
+  for (const m of texto.matchAll(/--([a-z0-9-]+):\s*light-dark\((#[0-9a-f]{6}),\s*(#[0-9a-f]{6})\)\s*;/gi)) {
+    vars[m[1] ?? ''] = (cual === 'claro' ? (m[2] ?? '') : (m[3] ?? '')).toLowerCase();
+  }
+  for (const m of texto.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})\s*;/gi)) vars[m[1] ?? ''] = (m[2] ?? '').toLowerCase();
   return vars;
 }
 
-const claro = bloque(':root {');
+/** Las variables `--nombre: #hex;` de un bloque que pisa colores (alto contraste). */
+function bloque(marcador: string): Tema {
+  const vars: Tema = {};
+  for (const m of cuerpo(marcador).matchAll(/--([a-z0-9-]+):\s*(#[0-9a-f]{6})\s*;/gi)) vars[m[1] ?? ''] = (m[2] ?? '').toLowerCase();
+  return vars;
+}
+
+const claro = raiz('claro');
 const TEMAS: Record<string, { colores: Tema; aaa: boolean }> = {
   claro: { colores: claro, aaa: false },
-  oscuro: { colores: { ...claro, ...bloque('/* tema:oscuro (elegido) */') }, aaa: false },
+  oscuro: { colores: raiz('oscuro'), aaa: false },
   contraste: { colores: { ...claro, ...bloque('/* tema:contraste') }, aaa: true },
 };
 
@@ -107,6 +125,10 @@ const PARES: [string, string, Tipo, string][] = [
   ['tinta', 'carbon-claro', 'texto', 'iniciales de quien no tiene foto'],
   ['tinta-2', 'carbon-claro', 'borde', 'ícono de persona sin foto (botón Tu perfil)'],
   ['borde-primario', 'papel', 'borde', 'aro de la foto en el encabezado (en Perfil o con el dedo encima)'],
+  // Tanda 07: campanita, menú de la cuenta y selector de tema.
+  ['sobre-serie', 'serie', 'texto', 'número de la campanita (insumos con poco stock)'],
+  ['linea-fuerte', 'papel', 'borde', 'borde del menú de la cuenta'],
+  ['linea-fuerte', 'fondo', 'borde', 'borde del menú de la cuenta sobre el fondo'],
   ['linea-fuerte', 'papel', 'borde', 'borde de la foto grande del perfil'],
 ];
 
@@ -135,9 +157,21 @@ describe('contraste de los temas (styles/tokens.css)', () => {
     });
   }
 
-  it('el oscuro automático y el elegido a mano son el mismo', () => {
-    const auto = bloque('/* tema:oscuro (automático) */');
-    expect(Object.keys(auto).length).toBeGreaterThan(20);
-    expect(auto).toEqual(bloque('/* tema:oscuro (elegido) */'));
+  it('cada color de :root tiene su par oscuro (light-dark), salvo los que son iguales en los dos temas', () => {
+    // Iguales a propósito: los avatares llevan siempre letra blanca; el texto del botón principal y de la sección
+    // actual va sobre rosa en los dos temas; la pestaña actual es blanca sobre la barra en los dos.
+    const iguales = new Set(['sobre-rosa', 'sobre-avatar', 'nav-activo', 'nav-activo-texto', ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) => `avatar-${String(i)}`)]);
+    const sueltos = [...cuerpo(':root {').matchAll(/--([a-z0-9-]+):\s*#[0-9a-f]{3,8}\s*;/gi)]
+      .map((m) => m[1] ?? '')
+      .filter((n) => !iguales.has(n));
+    expect(sueltos).toEqual([]);
+    expect(Object.keys(raiz('oscuro')).length).toBeGreaterThan(30);
+  });
+
+  it('elegir Claro u Oscuro solo fuerza color-scheme; Automático lo deja al celular', () => {
+    expect(cuerpo(':root {')).toMatch(/color-scheme:\s*light dark;/);
+    expect(cuerpo(":root[data-tema='claro'] {")).toMatch(/color-scheme:\s*light;/);
+    expect(cuerpo(":root[data-tema='oscuro'] {")).toMatch(/color-scheme:\s*dark;/);
+    expect(cuerpo("/* tema:contraste")).toMatch(/color-scheme:\s*light;/);
   });
 });

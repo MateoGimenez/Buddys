@@ -7,6 +7,17 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* El fondo del tema ya desde html: con el tema puesto antes de pintar (public/tema-inicial.js), nada destella. */
+  background: var(--fondo);
+  caret-color: var(--carbon);
+  accent-color: var(--carbon);
+}
+
+/* Mientras cambia el tema (lib/tema.ts), sin transiciones: todo pasa de un tema al otro de una, sin mezclas. */
+.cambiando-tema *,
+.cambiando-tema *::before,
+.cambiando-tema *::after {
+  transition: none !important;
 }
 
 body {

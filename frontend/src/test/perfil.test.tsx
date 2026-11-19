@@ -49,11 +49,17 @@ describe('header: menú de la cuenta', () => {
     const salir = within(menu).getByRole('menuitem', { name: 'Cerrar sesión' });
     expect(perfil).toHaveFocus();
 
+    // Entre Mi perfil y Cerrar sesión está el tema (4 opciones de radio).
+    const automatico = within(menu).getByRole('menuitemradio', { name: /Automático/ });
     await user.keyboard('{ArrowDown}');
+    expect(automatico).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(perfil).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
     expect(salir).toHaveFocus();
     await user.keyboard('{ArrowDown}');
     expect(perfil).toHaveFocus();
-    await user.keyboard('{ArrowUp}');
+    await user.keyboard('{End}');
     expect(salir).toHaveFocus();
     await user.keyboard('{Home}');
     expect(perfil).toHaveFocus();
