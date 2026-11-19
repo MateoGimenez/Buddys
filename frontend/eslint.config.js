@@ -46,6 +46,12 @@ export default defineConfig(
     },
   },
   {
+    // public/push-sw.js: script clásico que importa el service worker (importScripts). Sin tipos ni módulos.
+    files: ['public/**/*.js'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker } },
+  },
+  {
     files: ['eslint.config.js'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: { ...globals.node } },

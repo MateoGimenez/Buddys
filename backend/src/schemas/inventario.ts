@@ -7,7 +7,7 @@ import {
   INSUMO_NOMBRE_MAX,
   MOVIMIENTO_NOTA_MAX,
   MOVIMIENTO_PROVEEDOR_MAX,
-  TIPOS_MOVIMIENTO,
+  TIPOS_MOVIMIENTO_MANUAL,
   UNIDADES,
   type CambiosInsumo,
   type NuevoInsumo,
@@ -126,7 +126,7 @@ const cantidadMovimiento = cantidadSchema(CANTIDAD_MSG, true);
 const turnoIdSchema = z.uuid({ error: TURNO_MSG }).nullable();
 const proveedorSchema = textoOpcionalDeUnaLinea(MOVIMIENTO_PROVEEDOR_MAX, PROVEEDOR_MSG).nullable();
 
-const TIPO_MSG = `El tipo tiene que ser uno de: ${TIPOS_MOVIMIENTO.join(', ')}.`;
+const TIPO_MSG = `El tipo tiene que ser uno de: ${TIPOS_MOVIMIENTO_MANUAL.join(', ')}.`;
 
 /** POST /api/admin/insumos/:id/movimientos: según `tipo` (uso, compra o ajuste). Quién puede cada uno lo ve la ruta. */
 export const movimientoSchema = z

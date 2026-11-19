@@ -68,7 +68,7 @@ export const MAX_MOTIVO = 80;
 const MOTIVO_MSG = `El motivo tiene que ser un texto de una línea de hasta ${String(MAX_MOTIVO)} caracteres, o null.`;
 /** Controles bidireccionales: se quitan (como en el resto de los textos). Controles C0/C1: se rechazan. */
 const BIDI_CONTROLS = /\p{Bidi_Control}/gu;
-const CONTROL_CHARS = /\p{Cc}/u;
+const CONTROL_CHARS = /[\p{Cc}\p{Zl}\p{Zp}]/u; // también U+2028 y U+2029 (separadores de línea)
 
 /** motivo: trim, una línea, hasta 80 caracteres (code points, como char_length); vacío o null => null. */
 const motivoSchema = z

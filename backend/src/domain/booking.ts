@@ -1,4 +1,5 @@
 import type { FormaDePago } from './comprobantes.js';
+import type { InsumoBajo } from './inventario.js';
 
 /** Tipos de vehículo, en orden canónico. 'suv' y 'pickup' reemplazaron a 'camioneta' (migración vehiculos_suv_pickup). */
 export const VEHICULO_TIPOS = ['auto', 'suv', 'pickup', 'moto'] as const;
@@ -222,6 +223,22 @@ export interface NuevoLavado {
   idLocal: string | null;
 }
 
+/** Un lavado recién guardado y los insumos que su receta dejó por debajo del mínimo (se avisa después del COMMIT). */
+export interface LavadoGuardado {
+  lavado: Booking;
+  stockBajo: InsumoBajo[];
+}
+
+/**
+ * Quién corrige los servicios de un lavado de mostrador (PATCH con servicioIds): con él, actualizar() recalcula el
+ * descuento de la receta en la misma transacción (regla 5). Después del COMMIT, `stockBajo` queda con los insumos que
+ * cruzaron su mínimo (para avisar); si la transacción falla, queda como estaba.
+ */
+export interface CorreccionDeStock {
+  perfilId: string;
+  stockBajo: InsumoBajo[];
+}
+
 /** Lo que hace falta para decidir si un lavado de mostrador se puede deshacer (DELETE /api/admin/lavados/:id). */
 export interface RegistroDeLavado {
   /** Quién lo registró; null en los lavados anteriores a la columna o si la persona se borró. */
@@ -284,10 +301,12 @@ export interface BookingRepository {
    */
   reservar(input: NewBooking, now: Date): Promise<Booking>;
   /**
-   * Guarda un lavado de mostrador ya completado, con su cobro. No mira ni ocupa cupos de la agenda. undefined si ya
-   * existe un lavado con ese idLocal (no guarda nada: ON CONFLICT DO NOTHING; se busca con lavadoPorIdLocal).
+   * Guarda un lavado de mostrador ya completado, con su cobro. No mira ni ocupa cupos de la agenda. En la MISMA
+   * transacción descuenta el stock según la receta de sus servicios (reportes/2026-11-17_06_recetas-stock-avisos.md,
+   * reglas 1 a 3). undefined si ya existe un lavado con ese idLocal (no guarda nada: ON CONFLICT DO NOTHING; se busca
+   * con lavadoPorIdLocal).
    */
-  registrarLavado(input: NuevoLavado, now: Date): Promise<Booking | undefined>;
+  registrarLavado(input: NuevoLavado, now: Date): Promise<LavadoGuardado | undefined>;
   /** El lavado con ese id del panel (idLocal); quién lo registró va en `registradoPor`. undefined si no hay. */
   lavadoPorIdLocal(idLocal: string): Promise<Booking | undefined>;
   /** Los lavados de mostrador con fecha `fecha`, en el orden en que se registraron. */
@@ -318,7 +337,7 @@ export interface BookingRepository {
    * null. updated_at solo cambia si cambia el estado o la nota: cargar o corregir el cobro no es un cambio para el
    * cliente. undefined si el turno no existe.
    */
-  actualizar(id: string, cambios: ActualizacionTurno, now: Date): Promise<Booking | undefined>;
+  actualizar(id: string, cambios: ActualizacionTurno, now: Date, stock?: CorreccionDeStock): Promise<Booking | undefined>;
   /** undefined si el turno no existe. */
   updateEstado(id: string, estado: Estado, now: Date): Promise<Booking | undefined>;
   /**
@@ -333,6 +352,9 @@ export interface BookingRepository {
    * ambos inclusive. Orden: fecha de agenda, franja de agenda (mañana antes que tarde) y orden de llegada.
    */
   agenda(desde: string, hasta: string): Promise<Booking[]>;
-  /** true si existía y se borró. */
-  delete(id: string): Promise<boolean>;
+  /**
+   * true si existía y se borró. Si es un lavado de mostrador, antes del DELETE y en la misma transacción devuelve al
+   * stock lo que descontó (movimientos `devolucion` a nombre de `perfilId`, regla 4).
+   */
+  delete(id: string, perfilId?: string): Promise<boolean>;
 }

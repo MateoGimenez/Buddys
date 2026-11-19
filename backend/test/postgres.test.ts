@@ -41,6 +41,7 @@ const TABLES = [
   'perfiles',
   'presupuestos',
   'push_suscripciones',
+  'recetas',
   'roles',
   'servicios',
   'taller',
@@ -58,7 +59,7 @@ describe('esquema Postgres (migraciones de supabase/migrations/ aplicadas en PGl
 
     const grants = await pg.query<{ grants: number }>(
       `SELECT count(*)::int AS grants FROM unnest(ARRAY['anon', 'authenticated', 'service_role']) AS r(role)
-       CROSS JOIN unnest(ARRAY['servicios', 'bookings', 'roles', 'perfiles', 'horario_semanal', 'dias_especiales', 'push_suscripciones', 'lavado_servicios']) AS t(name)
+       CROSS JOIN unnest(ARRAY['servicios', 'bookings', 'roles', 'perfiles', 'horario_semanal', 'dias_especiales', 'push_suscripciones', 'lavado_servicios', 'recetas']) AS t(name)
        WHERE has_table_privilege(r.role, 'buddys.' || t.name, 'SELECT, INSERT, UPDATE, DELETE')
           OR has_schema_privilege(r.role, 'buddys', 'USAGE')
           OR has_schema_privilege(r.role, 'buddys_private', 'USAGE')

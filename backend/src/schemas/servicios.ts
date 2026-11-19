@@ -14,7 +14,8 @@ import {
  * RECHAZAN; la descripción admite saltos de línea y tabulaciones. Es validación de entrada, no escape de salida.
  */
 const BIDI_CONTROLS = /\p{Bidi_Control}/gu;
-const CONTROL_CHARS = /\p{Cc}/u;
+/** Una línea: controles y separadores de línea y de párrafo de Unicode (U+2028, U+2029). */
+const CONTROL_CHARS = /[\p{Cc}\p{Zl}\p{Zp}]/u;
 /** Controles Cc salvo tab, LF y CR (para la descripción). */
 const CONTROL_CHARS_EXCEPT_NEWLINES = /[^\P{Cc}\t\n\r]/u;
 

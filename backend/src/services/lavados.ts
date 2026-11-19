@@ -1,6 +1,7 @@
 import type { Booking, BookingRepository, Franja, NuevoLavado } from '../domain/booking.js';
 import { type FormaDePago, FORMAS_DE_PAGO, TurnoConComprobanteError } from '../domain/comprobantes.js';
 import type { PerfilRepository } from '../domain/perfil.js';
+import type { StockPushNotifier } from '../domain/push.js';
 import {
   deshacerLavadoHasta,
   puedeAnotarLavadoDeOtro,
@@ -16,6 +17,7 @@ import type { Logger } from '../lib/logger.js';
 import { LAVADO_DIAS_ATRAS } from '../schemas/lavados.js';
 import { EMPLEADO_OTRO_TRABAJADOR_MESSAGE, TRABAJADOR_INVALIDO_MESSAGE } from './agenda.js';
 import type { UsuarioSesion } from './auth.js';
+import { avisarStockBajo } from './inventario.js';
 import { serviciosDelLavado } from './servicios.js';
 
 /** Nombre que queda cuando el lavado se registra sin nombre de cliente. */
@@ -91,6 +93,8 @@ export interface LavadoServiceDeps {
   perfiles: PerfilRepository;
   logger: Logger;
   now: () => Date;
+  /** Aviso push de stock bajo cuando la receta deja un insumo bajo el mínimo (después del COMMIT). */
+  avisos?: StockPushNotifier | undefined;
 }
 
 /** Rango de fechas permitido para registrar un lavado: de hoy - LAVADO_DIAS_ATRAS a hoy (La Rioja). */
@@ -135,7 +139,7 @@ export class LavadoService {
     // Cada servicio: activo y ofrecido para el vehículo (400 en fields.servicioIds).
     const elegidos = await serviciosDelLavado(servicios, datos.servicioIds, datos.vehiculoTipo);
 
-    const lavado = await bookings.registrarLavado(
+    const guardado = await bookings.registrarLavado(
       {
         nombre: datos.nombre ?? NOMBRE_MOSTRADOR,
         telefono: datos.telefono,
@@ -153,14 +157,17 @@ export class LavadoService {
       },
       now,
     );
-    if (lavado === undefined) {
+    if (guardado === undefined) {
       // Otro pedido con el mismo idLocal entró entre la búsqueda y el INSERT: el índice único lo frenó.
       const previo = idLocal === null ? undefined : await this.yaRegistrado(actor, idLocal);
       if (previo === undefined) throw new Error('El lavado con ese idLocal no se encontró');
       return previo;
     }
+    const { lavado, stockBajo } = guardado;
     // Sin importe ni datos del cliente en el log.
     logger.info(`Lavado registrado id=${lavado.id} servicios=${elegidos.map((s) => s.id).join(',')} por=${actor.id}`);
+    // El stock lo descontó la misma transacción (receta); el aviso sale ahora, después del COMMIT, y nunca falla.
+    avisarStockBajo(this.deps.avisos, logger, stockBajo);
     return { lavado: vistaDeTurno(actor.rol, lavado), deshacerHasta: deshacerLavadoHasta(lavado.createdAt), creado: true };
   }
 
@@ -188,7 +195,8 @@ export class LavadoService {
     if (permiso === 'vencido') throw AppError.plazoDeshacerVencido();
 
     try {
-      if (!(await bookings.delete(id))) throw AppError.notFound(LAVADO_NOT_FOUND);
+      // Devuelve al stock lo que descontó su receta, en la misma transacción que el borrado (regla 4).
+      if (!(await bookings.delete(id, actor.id))) throw AppError.notFound(LAVADO_NOT_FOUND);
     } catch (error) {
       if (error instanceof TurnoConComprobanteError) throw AppError.turnoConComprobante(LAVADO_CON_COMPROBANTE_MESSAGE);
       throw error;

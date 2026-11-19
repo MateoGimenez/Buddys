@@ -3,7 +3,8 @@ import { DOMINIO_DE_BAJA, ROLES } from '../domain/perfil.js';
 import { emailSchema } from './auth.js';
 
 const BIDI_CONTROLS = /\p{Bidi_Control}/gu;
-const CONTROL_CHARS = /\p{Cc}/u;
+/** Controles y separadores de línea y de párrafo de Unicode (U+2028, U+2029): el nombre es de una sola línea. */
+const CONTROL_CHARS = /[\p{Cc}\p{Zl}\p{Zp}]/u;
 
 /** Los ids de usuario son los UUID de auth.users. Cualquier otra cosa no puede existir => 404. */
 export const usuarioIdSchema = z.uuid();

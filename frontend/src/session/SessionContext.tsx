@@ -36,6 +36,8 @@ const SOLO_ENCARGADOS = new Set([
   'documentos.comprobantes',
   'documentos.taller',
   'inventario.gestionar',
+  'inventario.recetas',
+  'inventario.consumo',
 ]);
 
 function nivelPorRol(usuario: Usuario, capacidad: string): NivelPermiso {

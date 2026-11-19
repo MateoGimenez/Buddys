@@ -52,6 +52,8 @@ const COBRO_COLUMNS = ['monto', 'trabajador_id'] as const;
 const NOTAS_COLUMNS = ['notas_internas', 'telefono_whatsapp'] as const;
 /** Columna que agrega la migración perfil_foto (la versión de la foto de perfil; la lee el repositorio de perfiles). */
 const PERFIL_FOTO_COLUMNS = ['foto_actualizada_at'] as const;
+/** Lo que agrega la migración recetas_stock: la tabla de recetas, la marca del aviso de stock bajo y el tipo devolucion. */
+const RECETAS_TABLES = ['recetas'] as const;
 
 /**
  * Pool chico y con timeouts: un taller con un servidor Node de larga vida no necesita más, y el pooler de
@@ -409,6 +411,42 @@ export async function verifyPostgresSchema(client: SqlClient): Promise<void> {
     throw new Error(
       `Faltan columnas en buddys.perfiles (${missingFoto.join(', ')}). ` +
         'Aplicá la migración perfil_foto de backend/supabase/migrations/ (ver README, "Migraciones").',
+    );
+  }
+
+  // Recetas, descuento de stock y avisos (migración recetas_stock): la tabla, insumos.aviso_bajo_at, el origen y que el CHECK de
+  // movimientos_stock acepte `devolucion` (deshacer un lavado la inserta: sin ella, el deshacer daría 500).
+  const recetas = await client.query(
+    'SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 AND tablename = ANY($2::text[])',
+    [PG_SCHEMA, RECETAS_TABLES],
+  );
+  const missingRecetas: string[] = RECETAS_TABLES.filter((table) => !recetas.rows.some((row) => row.tablename === table));
+  const avisoBajo = await client.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'insumos' AND column_name = 'aviso_bajo_at'`,
+    [PG_SCHEMA],
+  );
+  if (avisoBajo.rows.length === 0) missingRecetas.push('insumos.aviso_bajo_at');
+  // movimientos_stock.origen: el descuento por receta lo graba y la corrección lo filtra (sin ella, darían 500).
+  const origen = await client.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'movimientos_stock' AND column_name = 'origen'`,
+    [PG_SCHEMA],
+  );
+  if (origen.rows.length === 0) missingRecetas.push('movimientos_stock.origen');
+  const devolucion = await client.query(
+    `SELECT 1 FROM pg_catalog.pg_constraint c
+     JOIN pg_catalog.pg_class t ON t.oid = c.conrelid
+     JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace
+     WHERE n.nspname = $1 AND t.relname = 'movimientos_stock' AND c.conname = 'movimientos_stock_tipo_valido'
+       AND pg_catalog.pg_get_constraintdef(c.oid) LIKE '%''devolucion''%'`,
+    [PG_SCHEMA],
+  );
+  if (devolucion.rows.length === 0) missingRecetas.push("tipo 'devolucion' en movimientos_stock");
+  if (missingRecetas.length > 0) {
+    throw new Error(
+      `Faltan objetos de la migración de recetas y stock en buddys (${missingRecetas.join(', ')}). ` +
+        'Aplicá la migración recetas_stock de backend/supabase/migrations/ (ver README, "Migraciones").',
     );
   }
 

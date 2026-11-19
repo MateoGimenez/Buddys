@@ -1781,6 +1781,347 @@ a {
   }
 }
 
+/* ------------------------------------------------------------------ Receta de un servicio (Servicios) */
+
+/* La receta es una copia canario pegada abajo de la hoja del servicio: se separa del formulario del servicio con el
+   troquel punteado, porque se guarda aparte. */
+.receta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fila-hoja > .receta {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 2px dashed var(--linea-fuerte);
+}
+
+.receta-cabeza {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.receta-titulo {
+  font-size: 1.0625rem;
+  font-weight: 750;
+}
+
+.receta-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 2px solid var(--linea);
+}
+
+.receta-tab {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 44px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--radio-chico) var(--radio-chico) 0 0;
+  background: none;
+  color: var(--tinta-2);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .receta-tab:hover:not([aria-selected='true']) {
+    background: var(--carbon-claro);
+    color: var(--tinta);
+  }
+}
+
+/* Elegida: tinta y subrayado (no solo color), dibujado con borde para que quede en colores forzados. */
+.receta-tab[aria-selected='true'] {
+  color: var(--tinta);
+}
+
+.receta-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  inset: auto 6px -2px;
+  border-block-end: 4px solid var(--rosa-fuerte);
+  border-radius: 4px 4px 0 0;
+}
+
+.receta-tab:focus-visible {
+  outline-offset: -3px;
+}
+
+.receta-tab-cuenta {
+  min-inline-size: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--carbon-claro);
+  color: var(--tinta);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Cambios sin guardar en esa pestaña: un punto rosa (el texto va para el lector de pantalla). */
+.receta-tab-pendiente {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--rosa-fuerte);
+}
+
+@media (forced-colors: active) {
+  .receta-tab-pendiente {
+    background: CanvasText;
+  }
+}
+
+.receta-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receta-panel[hidden] {
+  display: none;
+}
+
+.receta-vacia {
+  color: var(--tinta-2);
+  font-size: 0.9375rem;
+}
+
+.receta-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.receta-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--linea);
+}
+
+.receta-lista li:last-child {
+  border-bottom: 0;
+}
+
+.receta-lista strong {
+  white-space: nowrap;
+}
+
+.receta-renglones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A 360 px: el insumo a lo ancho; abajo la cantidad y el botón de quitar. Desde 560 px, todo en una fila. */
+.receta-renglon {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'insumo insumo' 'cantidad quitar';
+  align-items: end;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--linea);
+}
+
+.receta-insumo {
+  grid-area: insumo;
+}
+
+.receta-cantidad {
+  grid-area: cantidad;
+}
+
+.receta-quitar {
+  grid-area: quitar;
+  min-inline-size: 48px;
+  min-block-size: 48px;
+  color: var(--tinta-2);
+}
+
+@media (min-width: 560px) {
+  .receta-renglon {
+    grid-template-columns: minmax(0, 1fr) 150px auto;
+    grid-template-areas: 'insumo cantidad quitar';
+  }
+}
+
+.receta-agregar {
+  align-self: flex-start;
+}
+
+.receta-guardar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.receta-guardar .btn {
+  margin-inline-start: auto;
+}
+
+.receta-listo {
+  align-self: flex-end;
+}
+
+.plegable-receta .receta {
+  padding-bottom: 14px;
+}
+
+/* ------------------------------------------------------------------ Insumos: vistas, Para comprar y Consumo */
+
+/* Las vistas son enlaces (cambian la URL), no pestañas: la elegida lleva el subrayado rosa, igual que las pestañas de
+   abajo. Una sola fila; si no entrara, se desliza de costado. */
+.vistas {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 2px solid var(--linea);
+  margin-top: -4px;
+}
+
+.vista {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 48px;
+  padding: 8px 14px;
+  color: var(--tinta-2);
+  font-weight: 650;
+  text-decoration: none;
+  border-radius: var(--radio-chico) var(--radio-chico) 0 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .vista:hover:not([aria-current]) {
+    background: var(--carbon-claro);
+    color: var(--tinta);
+  }
+}
+
+.vista[aria-current] {
+  color: var(--tinta);
+}
+
+.vista[aria-current]::after {
+  content: '';
+  position: absolute;
+  inset: auto 8px -2px;
+  border-block-end: 4px solid var(--rosa-fuerte);
+  border-radius: 4px 4px 0 0;
+}
+
+.vista:focus-visible {
+  outline-offset: -3px;
+}
+
+.comprar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comprar-resumen {
+  color: var(--tinta-2);
+  font-size: 0.9375rem;
+}
+
+.comprar-fila-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+/* Lo que hay que comprar es lo que se lee primero: grande y alineado a la derecha, como el total de una hoja. */
+.comprar-sugerido {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+.comprar-sugerido strong {
+  font-size: 1.25rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  white-space: nowrap;
+}
+
+.comprar-etiqueta {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--tinta-2);
+}
+
+.comprar-costo {
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+  white-space: nowrap;
+}
+
+.comprar-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.comprar-total span {
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+}
+
+.comprar-total strong {
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
+/* Vacío no ocupa lugar (ni suma gap), pero sigue en el árbol de accesibilidad: así se anuncia al llenarse. */
+.comprar-resultado:empty {
+  position: absolute;
+}
+
+.comprar-mensaje {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: var(--canario);
+  border: 1px solid var(--canario-borde);
+  border-radius: var(--radio-chico);
+  font: inherit;
+  font-size: 0.9375rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sin-dato {
+  color: var(--tinta-3);
+  font-weight: 500;
+}
+
 /* ------------------------------------------------------------------ Números */
 
 .numeros {
@@ -2021,6 +2362,71 @@ a {
   block-size: 100%;
   max-inline-size: none;
   object-fit: cover;
+}
+
+/* ------------------------------------------------------------------ Campanita de stock bajo (barra) */
+
+.barra-acciones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* En reposo es tinta sobre papel, sin color de alerta. Con insumos bajos, el número va en rojo de imprenta (el de
+   la serie del talonario), con borde de papel para que se despegue del ícono. */
+.campanita {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 999px;
+  color: var(--tinta-2);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--t-toque) var(--curva);
+}
+
+.campanita[data-alerta] {
+  color: var(--tinta);
+}
+
+@media (hover: hover) {
+  .campanita:hover {
+    background: var(--carbon-claro);
+  }
+}
+
+.campanita:active {
+  background: var(--carbon-claro);
+}
+
+.campanita-numero {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 0;
+  min-inline-size: 22px;
+  block-size: 22px;
+  padding-inline: 5px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 2px solid var(--papel);
+  background: var(--serie);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (forced-colors: active) {
+  .campanita-numero {
+    border-color: CanvasText;
+  }
 }
 
 /* ------------------------------------------------------------------ Cuenta (menú de la barra) */
@@ -2830,4 +3236,13 @@ a {
   ::view-transition-new(*) {
     animation: none !important;
   }
+}
+
+/* Mi perfil: avisos en este celular. "Activados" se lee de un vistazo, con su ícono. */
+.push-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--ok);
 }

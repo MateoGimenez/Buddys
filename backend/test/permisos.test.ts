@@ -17,6 +17,8 @@ import {
   puedeGestionarInventario,
   puedeGestionarMetas,
   puedeRegistrarUsoInsumos,
+  puedeDefinirRecetas,
+  puedeVerConsumoInventario,
   puedeVerCostosInventario,
   puedeVerInventario,
   puedeEditarDisponibilidad,
@@ -79,6 +81,8 @@ describe('matriz de permisos (CAPACIDADES) y funciones puede*', () => {
       ['inventario.usar', puedeRegistrarUsoInsumos],
       ['inventario.gestionar', puedeGestionarInventario],
       ['inventario.gestionar', puedeVerCostosInventario],
+      ['inventario.recetas', puedeDefinirRecetas],
+      ['inventario.consumo', puedeVerConsumoInventario],
     ];
     for (const [id, funcion] of pares) {
       const capacidad = CAPACIDADES.find((c) => c.id === id);

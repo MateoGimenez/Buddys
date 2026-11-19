@@ -13,8 +13,15 @@ import { puedeVerCostosInventario } from './permisos.js';
 export const UNIDADES = ['unidad', 'litro', 'ml', 'kg', 'g', 'par', 'caja'] as const;
 export type Unidad = (typeof UNIDADES)[number];
 
-export const TIPOS_MOVIMIENTO = ['compra', 'uso', 'ajuste'] as const;
+/**
+ * Tipos de movimiento. `devolucion` (positivo) lo crea solo el sistema, al deshacer o corregir un lavado que descontó
+ * su receta (contrato: reportes/2026-11-17_06_recetas-stock-avisos.md, reglas 4 y 5): no se carga a mano.
+ */
+export const TIPOS_MOVIMIENTO = ['compra', 'uso', 'ajuste', 'devolucion'] as const;
 export type TipoMovimiento = (typeof TIPOS_MOVIMIENTO)[number];
+
+/** Los que se pueden cargar a mano (POST /api/admin/insumos/:id/movimientos). */
+export const TIPOS_MOVIMIENTO_MANUAL = ['compra', 'uso', 'ajuste'] as const satisfies readonly TipoMovimiento[];
 
 /** Mismos topes que los CHECK de las tablas insumos y movimientos_stock. */
 export const INSUMO_NOMBRE_MAX = 80;
@@ -45,7 +52,7 @@ export interface Insumo {
 export interface Movimiento {
   id: string;
   tipo: TipoMovimiento;
-  /** Con signo: compra +, uso -, ajuste +/-. */
+  /** Con signo: compra +, uso -, ajuste +/-, devolucion +. */
   cantidad: number;
   /** null si no tiene (y siempre null para el empleado). */
   costoTotal: number | null;
@@ -112,6 +119,72 @@ export interface ResultadoMovimiento {
   insumo: Insumo;
   /** null si un ajuste no cambió nada (el stock ya era el real). */
   movimiento: Movimiento | null;
+  /** El insumo si este movimiento lo hizo cruzar su mínimo (hay que avisar después del COMMIT); si no, null. */
+  aviso: InsumoBajo | null;
+}
+
+/**
+ * Un insumo que acaba de cruzar su stock mínimo (de stock > mínimo a stock <= mínimo, con mínimo > 0). Ya quedó
+ * marcado con aviso_bajo_at: el push sale después del COMMIT (regla 6).
+ */
+export interface InsumoBajo {
+  id: string;
+  nombre: string;
+  unidad: Unidad;
+  stock: number;
+  stockMinimo: number;
+}
+
+/** GET /api/admin/insumos/alertas: los insumos activos con stock bajo, los más lejos del mínimo primero. */
+export interface AlertasDeStock {
+  bajoStock: number;
+  insumos: InsumoBajo[];
+}
+
+/** Un renglón de "Para comprar" (regla 8). */
+export interface ItemParaComprar {
+  insumoId: string;
+  nombre: string;
+  categoria: string | null;
+  unidad: Unidad;
+  stock: number;
+  stockMinimo: number;
+  /** max(2 x mínimo - stock, 0): entero para unidad, par y caja; 2 decimales para el resto. */
+  sugerido: number;
+  /** round(sugerido x costo_unitario), o null sin costo cargado. */
+  costoEstimado: number | null;
+}
+
+export interface ParaComprar {
+  items: ItemParaComprar[];
+  /** Suma de los costoEstimado que no son null (0 si no hay ninguno). */
+  costoTotalEstimado: number;
+}
+
+/** Cómo se agrupa la serie de lavados del consumo: día hasta 62 días, semana (clave del lunes) hasta 200, mes. */
+export type AgrupadoConsumo = 'dia' | 'semana' | 'mes';
+export const MAX_DIAS_CONSUMO_POR_DIA = 62;
+export const MAX_DIAS_CONSUMO_POR_SEMANA = 200;
+
+export interface ConsumoDeInsumo {
+  insumoId: string;
+  nombre: string;
+  unidad: Unidad;
+  /** Usos (en positivo) menos devoluciones, por la fecha del movimiento en La Rioja. Siempre > 0. */
+  consumido: number;
+  /** round(consumido x costo_unitario de hoy), o null sin costo cargado. */
+  costo: number | null;
+}
+
+/** Lo que calcula la base para GET /api/admin/consumo. */
+export interface DatosDeConsumo {
+  /** Lavados de mostrador completados del rango. */
+  total: number;
+  /** Con ceros donde no hubo lavados. Clave YYYY-MM-DD (día o lunes de la semana) o YYYY-MM (mes). */
+  serie: { clave: string; cantidad: number }[];
+  porInsumo: ConsumoDeInsumo[];
+  /** Suma de los costos que no son null. */
+  costoInsumos: number;
 }
 
 /** Quién registra y cuándo, para el movimiento y el gasto de una compra. */
@@ -179,6 +252,12 @@ export interface InventarioRepository {
     pedido: PedidoMovimiento,
     contexto: ContextoMovimiento,
   ): Promise<ResultadoMovimiento | null>;
+  /** Insumos activos con stock bajo, ordenados por stock / mínimo ascendente. */
+  alertas(): Promise<AlertasDeStock>;
+  /** Los insumos activos con stock bajo y su cantidad sugerida, por categoría y nombre. */
+  paraComprar(): Promise<ParaComprar>;
+  /** Lavados y consumo de insumos entre `desde` y `hasta` (YYYY-MM-DD de La Rioja, inclusive). */
+  consumo(desde: string, hasta: string, agrupado: AgrupadoConsumo): Promise<DatosDeConsumo>;
 }
 
 /* ----------------------------------------------------------------------------------- reglas puras */
@@ -218,6 +297,55 @@ export function mensajeStockInsuficiente(disponible: number, unidad: Unidad): st
   if (disponible <= 0) return 'No queda stock de este insumo.';
   const verbo = disponible === 1 ? 'queda' : 'quedan';
   return `Solo ${verbo} ${formatearCantidad(disponible)} ${nombreDeUnidad(unidad, disponible)}.`;
+}
+
+/** "litro" si 0 < cantidad <= 1, "litros" si no: "Hay 0,5 litro (mínimo 1 litro)" (texto del aviso, regla 7). */
+function unidadDelAviso(unidad: Unidad, cantidad: number): string {
+  return cantidad > 0 && cantidad <= 1 ? unidad : PLURALES[unidad];
+}
+
+/** Lo que dice el push de stock bajo (regla 7), sin plata ni datos de personas. */
+export interface TextoAvisoStock {
+  titulo: string;
+  cuerpo: string;
+  url: string;
+}
+
+/** URL del panel a la que lleva el aviso: la lista para comprar. */
+export const URL_PARA_COMPRAR = '/insumos?ver=comprar';
+
+/**
+ * El texto del aviso de stock bajo. Uno: "Queda poco: Shampoo" / "Hay 0,5 litro (mínimo 1 litro). Mirá la lista para
+ * comprar.". Varios en el mismo pedido: un solo aviso, "Quedan poco 3 insumos", con los nombres en el cuerpo.
+ */
+export function textoAvisoStock(insumos: readonly InsumoBajo[]): TextoAvisoStock {
+  const [unico] = insumos;
+  if (insumos.length === 1 && unico !== undefined) {
+    const hay = `${formatearCantidad(unico.stock)} ${unidadDelAviso(unico.unidad, unico.stock)}`;
+    const minimo = `${formatearCantidad(unico.stockMinimo)} ${unidadDelAviso(unico.unidad, unico.stockMinimo)}`;
+    return {
+      titulo: `Queda poco: ${unico.nombre}`,
+      cuerpo: `Hay ${hay} (mínimo ${minimo}). Mirá la lista para comprar.`,
+      url: URL_PARA_COMPRAR,
+    };
+  }
+  const nombres = insumos.slice(0, 3).map((insumo) => insumo.nombre);
+  const resto = insumos.length - nombres.length;
+  const lista =
+    resto > 0
+      ? `${nombres.join(', ')} y ${String(resto)} más`
+      : `${nombres.slice(0, -1).join(', ')} y ${nombres.at(-1) ?? ''}`;
+  return {
+    titulo: `Quedan poco ${String(insumos.length)} insumos`,
+    cuerpo: `${lista}. Mirá la lista para comprar.`,
+    url: URL_PARA_COMPRAR,
+  };
+}
+
+/** La serie del consumo según el largo del rango (días contados inclusive). */
+export function agrupadoDeConsumo(dias: number): AgrupadoConsumo {
+  if (dias <= MAX_DIAS_CONSUMO_POR_DIA) return 'dia';
+  return dias <= MAX_DIAS_CONSUMO_POR_SEMANA ? 'semana' : 'mes';
 }
 
 /* ----------------------------------------------------------------------------------- vistas por rol */

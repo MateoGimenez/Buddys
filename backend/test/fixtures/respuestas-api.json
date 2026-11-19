@@ -2209,6 +2209,26 @@
           }
         },
         {
+          "id": "inventario.recetas",
+          "grupo": "Inventario",
+          "texto": "Definir qué insumos usa cada servicio",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "inventario.consumo",
+          "grupo": "Inventario",
+          "texto": "Ver el consumo de insumos, la lista para comprar y los avisos de stock bajo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
           "id": "usuarios.gestionar",
           "grupo": "Usuarios",
           "texto": "Crear, editar, desactivar y eliminar usuarios del panel",
@@ -2234,7 +2254,7 @@
         {
           "id": "push.activar",
           "grupo": "Avisos",
-          "texto": "Activar los avisos de turnos nuevos en su propio dispositivo",
+          "texto": "Activar los avisos en su propio dispositivo (turnos nuevos y, para admin y superadmin, stock bajo)",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -2519,6 +2539,26 @@
           }
         },
         {
+          "id": "inventario.recetas",
+          "grupo": "Inventario",
+          "texto": "Definir qué insumos usa cada servicio",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
+          "id": "inventario.consumo",
+          "grupo": "Inventario",
+          "texto": "Ver el consumo de insumos, la lista para comprar y los avisos de stock bajo",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "no"
+          }
+        },
+        {
           "id": "usuarios.gestionar",
           "grupo": "Usuarios",
           "texto": "Crear, editar, desactivar y eliminar usuarios del panel",
@@ -2544,7 +2584,7 @@
         {
           "id": "push.activar",
           "grupo": "Avisos",
-          "texto": "Activar los avisos de turnos nuevos en su propio dispositivo",
+          "texto": "Activar los avisos en su propio dispositivo (turnos nuevos y, para admin y superadmin, stock bajo)",
           "roles": {
             "superadmin": "si",
             "admin": "si",
@@ -5911,6 +5951,532 @@
         "nombre": "Ana",
         "rol": "admin",
         "fotoVersion": null
+      }
+    }
+  },
+  "recetaPut": {
+    "status": 200,
+    "body": {
+      "receta": {
+        "servicioId": "lavado-basico",
+        "general": [
+          {
+            "insumoId": "00000000-0000-4000-8000-000000000031",
+            "nombre": "Cera líquida",
+            "unidad": "ml",
+            "cantidad": 30
+          },
+          {
+            "insumoId": "00000000-0000-4000-8000-000000000032",
+            "nombre": "Shampoo",
+            "unidad": "litro",
+            "cantidad": 0.5
+          }
+        ],
+        "porVehiculo": {}
+      }
+    }
+  },
+  "recetaPutVehiculo": {
+    "status": 200,
+    "body": {
+      "receta": {
+        "servicioId": "lavado-basico",
+        "general": [
+          {
+            "insumoId": "00000000-0000-4000-8000-000000000031",
+            "nombre": "Cera líquida",
+            "unidad": "ml",
+            "cantidad": 30
+          },
+          {
+            "insumoId": "00000000-0000-4000-8000-000000000032",
+            "nombre": "Shampoo",
+            "unidad": "litro",
+            "cantidad": 0.5
+          }
+        ],
+        "porVehiculo": {
+          "pickup": [
+            {
+              "insumoId": "00000000-0000-4000-8000-000000000032",
+              "nombre": "Shampoo",
+              "unidad": "litro",
+              "cantidad": 0.8
+            }
+          ]
+        }
+      }
+    }
+  },
+  "error400RecetaInsumo": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "items.0.insumoId": "Ese insumo no existe o está inactivo."
+        }
+      }
+    }
+  },
+  "error400RecetaVehiculo": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "vehiculo": "Ese servicio no se ofrece para ese vehículo."
+        }
+      }
+    }
+  },
+  "error404RecetaServicio": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "NOT_FOUND",
+        "message": "No encontramos ese servicio."
+      }
+    }
+  },
+  "error403RecetaEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol podés ver las recetas, pero no cambiarlas."
+      }
+    }
+  },
+  "recetasAdmin": {
+    "status": 200,
+    "body": {
+      "recetas": [
+        {
+          "servicioId": "lavado-basico",
+          "general": [
+            {
+              "insumoId": "00000000-0000-4000-8000-000000000031",
+              "nombre": "Cera líquida",
+              "unidad": "ml",
+              "cantidad": 30
+            },
+            {
+              "insumoId": "00000000-0000-4000-8000-000000000032",
+              "nombre": "Shampoo",
+              "unidad": "litro",
+              "cantidad": 0.5
+            }
+          ],
+          "porVehiculo": {
+            "pickup": [
+              {
+                "insumoId": "00000000-0000-4000-8000-000000000032",
+                "nombre": "Shampoo",
+                "unidad": "litro",
+                "cantidad": 0.8
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "recetasEmpleado": {
+    "status": 200,
+    "body": {
+      "recetas": [
+        {
+          "servicioId": "lavado-basico",
+          "general": [
+            {
+              "insumoId": "00000000-0000-4000-8000-000000000031",
+              "nombre": "Cera líquida",
+              "unidad": "ml",
+              "cantidad": 30
+            },
+            {
+              "insumoId": "00000000-0000-4000-8000-000000000032",
+              "nombre": "Shampoo",
+              "unidad": "litro",
+              "cantidad": 0.5
+            }
+          ],
+          "porVehiculo": {
+            "pickup": [
+              {
+                "insumoId": "00000000-0000-4000-8000-000000000032",
+                "nombre": "Shampoo",
+                "unidad": "litro",
+                "cantidad": 0.8
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "alertasAdmin": {
+    "status": 200,
+    "body": {
+      "bajoStock": 2,
+      "insumos": [
+        {
+          "id": "00000000-0000-4000-8000-000000000033",
+          "nombre": "Paños de microfibra",
+          "unidad": "unidad",
+          "stock": 2,
+          "stockMinimo": 6
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000032",
+          "nombre": "Shampoo",
+          "unidad": "litro",
+          "stock": 1,
+          "stockMinimo": 1
+        }
+      ]
+    }
+  },
+  "error403AlertasEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver el consumo, la lista para comprar ni los avisos de stock bajo."
+      }
+    }
+  },
+  "paraComprarAdmin": {
+    "status": 200,
+    "body": {
+      "items": [
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000033",
+          "nombre": "Paños de microfibra",
+          "categoria": "Accesorios",
+          "unidad": "unidad",
+          "stock": 2,
+          "stockMinimo": 6,
+          "sugerido": 10,
+          "costoEstimado": null
+        },
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000032",
+          "nombre": "Shampoo",
+          "categoria": "Químicos",
+          "unidad": "litro",
+          "stock": 1,
+          "stockMinimo": 1,
+          "sugerido": 1,
+          "costoEstimado": 9000
+        }
+      ],
+      "costoTotalEstimado": 9000
+    }
+  },
+  "error403ParaComprarEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver el consumo, la lista para comprar ni los avisos de stock bajo."
+      }
+    }
+  },
+  "consumoAdmin": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2026-10-01",
+        "hasta": "2026-10-31",
+        "agrupado": "dia"
+      },
+      "lavados": {
+        "total": 6,
+        "serie": [
+          {
+            "clave": "2026-10-01",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-02",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-03",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-04",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-05",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-06",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-07",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-08",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-09",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-10",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-11",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-12",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-13",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-14",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-15",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-16",
+            "cantidad": 6
+          },
+          {
+            "clave": "2026-10-17",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-18",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-19",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-20",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-21",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-22",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-23",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-24",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-25",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-26",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-27",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-28",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-29",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-30",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-31",
+            "cantidad": 0
+          }
+        ]
+      },
+      "porInsumo": [
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000031",
+          "nombre": "Cera líquida",
+          "unidad": "ml",
+          "consumido": 60,
+          "costo": 720
+        },
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000033",
+          "nombre": "Paños de microfibra",
+          "unidad": "unidad",
+          "consumido": 1,
+          "costo": null
+        },
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000032",
+          "nombre": "Shampoo",
+          "unidad": "litro",
+          "consumido": 1,
+          "costo": 9000
+        }
+      ],
+      "costoInsumos": 9720,
+      "costoPorLavado": 1620
+    }
+  },
+  "consumoSemanas": {
+    "status": 200,
+    "body": {
+      "rango": {
+        "desde": "2026-08-01",
+        "hasta": "2026-10-31",
+        "agrupado": "semana"
+      },
+      "lavados": {
+        "total": 6,
+        "serie": [
+          {
+            "clave": "2026-07-27",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-08-03",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-08-10",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-08-17",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-08-24",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-08-31",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-09-07",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-09-14",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-09-21",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-09-28",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-05",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-12",
+            "cantidad": 6
+          },
+          {
+            "clave": "2026-10-19",
+            "cantidad": 0
+          },
+          {
+            "clave": "2026-10-26",
+            "cantidad": 0
+          }
+        ]
+      },
+      "porInsumo": [
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000031",
+          "nombre": "Cera líquida",
+          "unidad": "ml",
+          "consumido": 60,
+          "costo": 720
+        },
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000033",
+          "nombre": "Paños de microfibra",
+          "unidad": "unidad",
+          "consumido": 1,
+          "costo": null
+        },
+        {
+          "insumoId": "00000000-0000-4000-8000-000000000032",
+          "nombre": "Shampoo",
+          "unidad": "litro",
+          "consumido": 1,
+          "costo": 9000
+        }
+      ],
+      "costoInsumos": 9720,
+      "costoPorLavado": 1620
+    }
+  },
+  "error400Consumo": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "hasta": "\"hasta\" no puede ser anterior a \"desde\"."
+        }
+      }
+    }
+  },
+  "error403ConsumoEmpleado": {
+    "status": 403,
+    "body": {
+      "error": {
+        "code": "FORBIDDEN",
+        "message": "Con tu rol no podés ver el consumo, la lista para comprar ni los avisos de stock bajo."
+      }
+    }
+  },
+  "error400MovimientoDevolucion": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Revisá los datos ingresados.",
+        "fields": {
+          "tipo": "Las devoluciones las registra el sistema al deshacer o corregir un lavado: no se cargan a mano."
+        }
       }
     }
   }

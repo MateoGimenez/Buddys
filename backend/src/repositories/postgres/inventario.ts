@@ -1,6 +1,10 @@
 import type { SqlClient } from '../../db/postgres.js';
 import { type Row, bool, int, intOrNull, isoTimestamp, num, oneOf, str, strOrNull } from '../../db/rows.js';
 import {
+  type AgrupadoConsumo,
+  type AlertasDeStock,
+  type DatosDeConsumo,
+  type ParaComprar,
   type CambiosInsumo,
   type ContextoMovimiento,
   type FiltroInsumos,
@@ -24,11 +28,18 @@ import {
 } from '../../domain/inventario.js';
 import { registrarGastoDeInventario } from '../../services/gastos.js';
 import { escapeLike } from './bookings.js';
+import { LOCK_STOCK, revisarAvisoBajo } from './stock.js';
 import { isUuid } from './uuid.js';
 
-/** Claves de los pg_advisory_xact_lock de este módulo (7340001 a 7340003 y los de push ya están en uso). */
-const LOCK_STOCK = 7340010;
+/** Clave del pg_advisory_xact_lock de los nombres (la del stock, LOCK_STOCK, la comparte stock.ts). */
 const LOCK_NOMBRES = 7340011;
+
+/** El período de date_trunc / generate_series de cada agrupación del consumo (constantes: nunca vienen del cliente). */
+const PERIODO_DE_SERIE: Readonly<Record<AgrupadoConsumo, 'day' | 'week' | 'month'>> = {
+  dia: 'day',
+  semana: 'week',
+  mes: 'month',
+};
 
 function toInsumo(row: Row): Insumo {
   return {
@@ -207,6 +218,9 @@ export class PostgresInventarioRepository implements InventarioRepository {
              categoria = CASE WHEN $3::boolean THEN $4::text ELSE categoria END,
              unidad = coalesce($5::text, unidad),
              stock_minimo = coalesce($6::numeric, stock_minimo),
+             -- Cambiar el mínimo reinicia el aviso de stock bajo (regla 6): el próximo cruce vuelve a avisar.
+             aviso_bajo_at = CASE WHEN $6::numeric IS NOT NULL AND $6::numeric <> stock_minimo THEN NULL
+                                  ELSE aviso_bajo_at END,
              costo_unitario = CASE WHEN $7::boolean THEN $8::int ELSE costo_unitario END,
              activo = coalesce($9::boolean, activo),
              updated_at = $10::timestamptz
@@ -259,6 +273,15 @@ export class PostgresInventarioRepository implements InventarioRepository {
   ): Promise<ResultadoMovimiento | null> {
     if (!isUuid(id)) return Promise.resolve(null);
     return this.sql.transaction(async (tx) => {
+      // Un uso vinculado a un lavado bloquea PRIMERO el turno y después el insumo: el mismo orden que deshacer y
+      // corregir un lavado (turno FOR UPDATE, después los insumos), así no se traban entre sí. FOR KEY SHARE: nadie lo
+      // borra en el medio (el DELETE pondría turno_id en null), pero no frena otras lecturas ni los cambios de estado.
+      // Si no existe, el error se da después de ver el insumo (un insumo inexistente sigue siendo 404).
+      let turnoExiste = true;
+      if (pedido.tipo === 'uso' && pedido.turnoId !== null) {
+        const turno = await tx.query('SELECT 1 AS ok FROM buddys.bookings WHERE id = $1::uuid FOR KEY SHARE', [pedido.turnoId]);
+        turnoExiste = turno.rows.length > 0;
+      }
       // Un bloqueo por insumo, hasta el COMMIT: dos usos a la vez se ordenan y el segundo ve el stock ya descontado.
       await tx.query('SELECT pg_catalog.pg_advisory_xact_lock($1::int, pg_catalog.hashtext($2::text))', [LOCK_STOCK, id]);
       const actual = await tx.query(
@@ -272,10 +295,7 @@ export class PostgresInventarioRepository implements InventarioRepository {
 
       let movimientoId: string | null = null;
       if (pedido.tipo === 'uso') {
-        if (pedido.turnoId !== null) {
-          const turno = await tx.query('SELECT 1 AS ok FROM buddys.bookings WHERE id = $1::uuid', [pedido.turnoId]);
-          if (turno.rows.length === 0) throw new TurnoInexistenteError();
-        }
+        if (!turnoExiste) throw new TurnoInexistenteError();
         // UPDATE condicional: aunque algo se saltara el bloqueo, nunca resta de más (y el CHECK stock >= 0 es la red).
         const resta = await tx.query(
           'UPDATE buddys.insumos SET stock = stock - $2::numeric WHERE id = $1::uuid AND stock >= $2::numeric',
@@ -336,9 +356,122 @@ export class PostgresInventarioRepository implements InventarioRepository {
         }
       }
 
+      // Cualquier salida (uso o ajuste) puede cruzar el mínimo; cualquier subida (compra o ajuste) limpia el aviso.
+      const aviso = movimientoId === null ? null : await revisarAvisoBajo(tx, id, stock, contexto.ahora);
       const insumo = await leerInsumo(tx, id);
       if (!insumo) throw new Error('El insumo no se encontró después de moverlo');
-      return { insumo, movimiento: movimientoId === null ? null : await leerMovimiento(tx, movimientoId) };
+      return { insumo, movimiento: movimientoId === null ? null : await leerMovimiento(tx, movimientoId), aviso };
     });
+  }
+  async alertas(): Promise<AlertasDeStock> {
+    const { rows } = await this.sql.query(
+      `SELECT i.id::text AS id, i.nombre, i.unidad, i.stock::float8 AS stock, i.stock_minimo::float8 AS stock_minimo
+       FROM buddys.insumos i
+       WHERE i.activo AND i.stock_minimo > 0 AND i.stock <= i.stock_minimo
+       ORDER BY i.stock / i.stock_minimo, buddys.texto_busqueda(i.nombre), i.id`,
+    );
+    const insumos = rows.map((row) => ({
+      id: str(row, 'id'),
+      nombre: str(row, 'nombre'),
+      unidad: oneOf(UNIDADES, row, 'unidad'),
+      stock: num(row, 'stock'),
+      stockMinimo: num(row, 'stock_minimo'),
+    }));
+    return { bajoStock: insumos.length, insumos };
+  }
+
+  async paraComprar(): Promise<ParaComprar> {
+    // Regla 8: max(2 x mínimo - stock, 0), hacia arriba a entero para las unidades contables y a 2 decimales para el
+    // resto. El total estimado lo suma la base (ventana sobre las mismas filas).
+    const { rows } = await this.sql.query(
+      `SELECT x.*, coalesce(sum(x.costo_estimado) OVER (), 0)::float8 AS costo_total
+       FROM (
+         SELECT i.id::text AS insumo_id, i.nombre, i.categoria, i.unidad,
+                i.stock::float8 AS stock, i.stock_minimo::float8 AS stock_minimo, s.sugerido::float8 AS sugerido,
+                CASE WHEN i.costo_unitario IS NULL THEN NULL ELSE round(s.sugerido * i.costo_unitario)::float8 END AS costo_estimado,
+                i.categoria IS NULL AS sin_categoria, buddys.texto_busqueda(i.categoria) AS orden_categoria,
+                buddys.texto_busqueda(i.nombre) AS orden_nombre, i.id AS orden_id
+         FROM buddys.insumos i
+         CROSS JOIN LATERAL (
+           SELECT CASE WHEN i.unidad IN ('unidad', 'par', 'caja') THEN ceil(greatest(2 * i.stock_minimo - i.stock, 0))
+                       ELSE round(greatest(2 * i.stock_minimo - i.stock, 0), 2) END AS sugerido
+         ) s
+         WHERE i.activo AND i.stock_minimo > 0 AND i.stock <= i.stock_minimo
+       ) x
+       ORDER BY x.sin_categoria, x.orden_categoria, x.orden_nombre, x.orden_id`,
+    );
+    return {
+      items: rows.map((row) => ({
+        insumoId: str(row, 'insumo_id'),
+        nombre: str(row, 'nombre'),
+        categoria: strOrNull(row, 'categoria'),
+        unidad: oneOf(UNIDADES, row, 'unidad'),
+        stock: num(row, 'stock'),
+        stockMinimo: num(row, 'stock_minimo'),
+        sugerido: num(row, 'sugerido'),
+        costoEstimado: intOrNull(row, 'costo_estimado'),
+      })),
+      costoTotalEstimado: rows[0] === undefined ? 0 : int(rows[0], 'costo_total'),
+    };
+  }
+
+  async consumo(desde: string, hasta: string, agrupado: AgrupadoConsumo): Promise<DatosDeConsumo> {
+    const unidad = PERIODO_DE_SERIE[agrupado];
+    const [serie, porInsumo] = await Promise.all([
+      // Lavados de mostrador completados por fecha del lavado, con ceros (generate_series). La semana es de lunes a
+      // domingo (date_trunc('week')) y su clave es el lunes, aunque caiga antes de "desde".
+      this.sql.query(
+        `WITH serie AS (
+           SELECT g::date AS clave
+           FROM generate_series(date_trunc($3::text, $1::date::timestamp), $2::date::timestamp, ('1 ' || $3::text)::interval) g
+         ),
+         lavados AS (
+           SELECT date_trunc($3::text, coalesce(b.fecha_confirmada, b.fecha_preferida)::timestamp)::date AS clave,
+                  count(*)::int AS cantidad
+           FROM buddys.bookings b
+           WHERE b.origen = 'mostrador' AND b.estado = 'completado'
+             AND coalesce(b.fecha_confirmada, b.fecha_preferida) BETWEEN $1::date AND $2::date
+           GROUP BY 1
+         )
+         SELECT to_char(s.clave, CASE WHEN $3::text = 'month' THEN 'YYYY-MM' ELSE 'YYYY-MM-DD' END) AS clave,
+                coalesce(l.cantidad, 0) AS cantidad,
+                coalesce(sum(l.cantidad) OVER (), 0)::int AS total
+         FROM serie s LEFT JOIN lavados l ON l.clave = s.clave
+         ORDER BY s.clave`,
+        [desde, hasta, unidad],
+      ),
+      // Consumo: usos (en positivo) menos devoluciones, por la fecha del movimiento en La Rioja (índice parcial
+      // movimientos_stock_consumo_idx). Solo los renglones con consumo > 0. El costo, con el costo unitario de hoy.
+      this.sql.query(
+        `SELECT x.*, coalesce(sum(x.costo) OVER (), 0)::float8 AS costo_insumos
+         FROM (
+           SELECT i.id::text AS insumo_id, i.nombre, i.unidad, sum(-m.cantidad)::float8 AS consumido,
+                  CASE WHEN i.costo_unitario IS NULL THEN NULL ELSE round(sum(-m.cantidad) * i.costo_unitario)::float8 END AS costo
+           FROM buddys.movimientos_stock m
+           JOIN buddys.insumos i ON i.id = m.insumo_id
+           WHERE m.tipo IN ('uso', 'devolucion')
+             AND m.created_at >= ($1::date::timestamp AT TIME ZONE 'America/Argentina/La_Rioja')
+             AND m.created_at <  (($2::date + 1)::timestamp AT TIME ZONE 'America/Argentina/La_Rioja')
+           GROUP BY i.id
+           HAVING sum(-m.cantidad) > 0
+         ) x
+         ORDER BY x.consumido DESC, x.nombre, x.insumo_id`,
+        [desde, hasta],
+      ),
+    ]);
+    const primera = serie.rows[0];
+    const primerConsumo = porInsumo.rows[0];
+    return {
+      total: primera === undefined ? 0 : int(primera, 'total'),
+      serie: serie.rows.map((row) => ({ clave: str(row, 'clave'), cantidad: int(row, 'cantidad') })),
+      porInsumo: porInsumo.rows.map((row) => ({
+        insumoId: str(row, 'insumo_id'),
+        nombre: str(row, 'nombre'),
+        unidad: oneOf(UNIDADES, row, 'unidad'),
+        consumido: num(row, 'consumido'),
+        costo: intOrNull(row, 'costo'),
+      })),
+      costoInsumos: primerConsumo === undefined ? 0 : int(primerConsumo, 'costo_insumos'),
+    };
   }
 }

@@ -1,5 +1,5 @@
-import { ImageUp, Trash2 } from 'lucide-react';
-import { useId, useState, type ChangeEvent, type SyntheticEvent } from 'react';
+import { Bell, BellOff, BellRing, ImageUp, Trash2 } from 'lucide-react';
+import { useEffect, useId, useState, type ChangeEvent, type ReactNode, type SyntheticEvent } from 'react';
 import { ApiError, mensajeDeError } from '../api/client';
 import * as ep from '../api/endpoints';
 import type { Perfil as DatosPerfil } from '../api/types';
@@ -7,6 +7,7 @@ import { Avatar } from '../components/Avatar';
 import { nombreDe } from '../components/Layout';
 import { Aviso, Boton, Campo, Encabezado } from '../components/ui';
 import { NOMBRE_ROL } from '../lib/format';
+import { cuerpoSuscripcion, claveABytes, esDeLaClave, registroDelPanel, soportePush } from '../lib/push';
 import { useCarga } from '../lib/useCarga';
 import { useSesion, useUsuario } from '../session/SessionContext';
 
@@ -20,7 +21,7 @@ type Resultado = { tipo: 'ok' | 'error'; texto: string } | null;
 
 export function Perfil() {
   const usuario = useUsuario();
-  const { actualizarUsuario } = useSesion();
+  const { actualizarUsuario, puede } = useSesion();
   // Lo que cambia en el perfil va también a la sesión: la barra se actualiza sin recargar.
   const aplicar = (p: DatosPerfil) => {
     actualizarUsuario({ nombre: p.nombre, fotoVersion: p.fotoVersion });
@@ -41,6 +42,7 @@ export function Perfil() {
         onCambio={aplicar}
       />
       <BloqueNombre nombreActual={usuario.nombre} onCambio={aplicar} />
+      {puede('push.activar') ? <BloqueAvisos /> : null}
       <BloqueContrasena email={usuario.email} />
     </>
   );
@@ -326,5 +328,245 @@ function BloqueContrasena({ email }: { email: string | null }) {
         </Boton>
       </div>
     </form>
+  );
+}
+
+/* ------------------------------------------------------------------ Avisos en este celular */
+
+type Situacion =
+  | { tipo: 'instalar' }
+  | { tipo: 'sin-soporte' }
+  | { tipo: 'no-disponible' }
+  | { tipo: 'listo'; clave: string; activo: boolean };
+
+const ERROR_ACTIVAR = 'No pudimos activar los avisos en este celular. Probá de nuevo en un rato.';
+const SIN_INSTALAR = 'El panel todavía no terminó de instalarse en este celular. Recargá la página y probá de nuevo.';
+
+/** Notification.permission, o 'default' si el navegador no lo tiene. */
+const permisoActual = (): NotificationPermission => ('Notification' in window ? Notification.permission : 'default');
+
+async function cargarSituacion(): Promise<Situacion> {
+  const soporte = soportePush();
+  if (soporte === 'instalar') return { tipo: 'instalar' };
+  if (soporte === 'no') return { tipo: 'sin-soporte' };
+  const estado = await ep.estadoPush();
+  if (!estado.disponible || !estado.clavePublica) return { tipo: 'no-disponible' };
+  const registro = await registroDelPanel();
+  const suscripcion = registro ? await registro.pushManager.getSubscription() : null;
+  const activo = permisoActual() === 'granted' && suscripcion !== null && esDeLaClave(suscripcion, estado.clavePublica);
+  return { tipo: 'listo', clave: estado.clavePublica, activo };
+}
+
+/** El registro del service worker; si todavía se está instalando, lo espera un rato. */
+async function esperarRegistro(): Promise<ServiceWorkerRegistration> {
+  const ya = await registroDelPanel();
+  if (ya) return ya;
+  let reloj: ReturnType<typeof setTimeout> | undefined;
+  const tope = new Promise<never>((_, rechazar) => {
+    reloj = setTimeout(() => {
+      rechazar(new Error(SIN_INSTALAR));
+    }, 8000);
+  });
+  try {
+    return await Promise.race([navigator.serviceWorker.ready, tope]);
+  } finally {
+    clearTimeout(reloj);
+  }
+}
+
+function BloqueAvisos() {
+  const { puede } = useSesion();
+  const [carga, recargar, actualizar] = useCarga(cargarSituacion, []);
+  const [permiso, setPermiso] = useState<NotificationPermission>(permisoActual);
+  const [ocupado, setOcupado] = useState<'activando' | 'desactivando' | null>(null);
+  const [resultado, setResultado] = useState<Resultado>(null);
+  const tituloId = useId();
+  // Quien destraba el permiso en los ajustes vuelve a esta pantalla: se lee de nuevo al volver.
+  useEffect(() => {
+    const revisar = () => {
+      if (document.visibilityState === 'visible') setPermiso(permisoActual());
+    };
+    document.addEventListener('visibilitychange', revisar);
+    return () => {
+      document.removeEventListener('visibilitychange', revisar);
+    };
+  }, []);
+
+  const situacion = carga.datos;
+  const marcar = (activo: boolean) => {
+    actualizar((s) => (s.tipo === 'listo' ? { ...s, activo } : s));
+  };
+
+  const activar = async (clave: string) => {
+    setOcupado('activando');
+    setResultado(null);
+    try {
+      // Lo primero del toque: el navegador solo muestra la pregunta si viene de un gesto de la persona.
+      const respuesta = await Notification.requestPermission();
+      setPermiso(respuesta);
+      if (respuesta === 'denied') return;
+      if (respuesta !== 'granted') {
+        setResultado({ tipo: 'error', texto: 'No diste el permiso. Tocá “Activar avisos” y elegí Permitir.' });
+        return;
+      }
+      const registro = await esperarRegistro();
+      let previa = await registro.pushManager.getSubscription();
+      // Una suscripción hecha con otra clave del servidor ya no recibe nada: se cambia por una nueva.
+      if (previa && !esDeLaClave(previa, clave)) {
+        await previa.unsubscribe();
+        previa = null;
+      }
+      const suscripcion =
+        previa ?? (await registro.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: claveABytes(clave) }));
+      const cuerpo = cuerpoSuscripcion(suscripcion);
+      try {
+        if (!cuerpo) throw new Error(ERROR_ACTIVAR);
+        await ep.suscribirPush(cuerpo);
+      } catch (err) {
+        // Sin el servidor no hay avisos: no queda una suscripción a medias en el celular.
+        await suscripcion.unsubscribe().catch(() => false);
+        throw err;
+      }
+      marcar(true);
+    } catch (err) {
+      const texto =
+        err instanceof ApiError ? mensajeDeError(err) : err instanceof Error && err.message === SIN_INSTALAR ? SIN_INSTALAR : ERROR_ACTIVAR;
+      setResultado({ tipo: 'error', texto });
+    } finally {
+      setOcupado(null);
+    }
+  };
+
+  const desactivar = async () => {
+    setOcupado('desactivando');
+    setResultado(null);
+    try {
+      const registro = await registroDelPanel();
+      const suscripcion = registro ? await registro.pushManager.getSubscription() : null;
+      if (suscripcion) {
+        const { endpoint } = suscripcion;
+        // Primero en el celular: así deja de recibir aunque el servidor no conteste.
+        await suscripcion.unsubscribe();
+        // Si el servidor no se entera ahora, borra el dispositivo en el próximo envío (el servicio de push responde 410).
+        await ep.desuscribirPush(endpoint).catch(() => undefined);
+      }
+      marcar(false);
+    } catch {
+      setResultado({ tipo: 'error', texto: 'No pudimos desactivar los avisos. Probá de nuevo.' });
+    } finally {
+      setOcupado(null);
+    }
+  };
+
+  const queRecibe = puede('inventario.consumo')
+    ? 'Te avisamos cuando entra un turno nuevo y cuando queda poco de un insumo.'
+    : 'Te avisamos cuando entra un turno nuevo.';
+  const activo = situacion?.tipo === 'listo' && situacion.activo && permiso === 'granted';
+
+  let contenido: ReactNode;
+  if (carga.estado === 'error' && !situacion) {
+    contenido = (
+      <Aviso tipo="info" accion={<Boton chico onClick={recargar}>Reintentar</Boton>}>
+        No pudimos ver si los avisos están disponibles. {carga.mensaje}
+      </Aviso>
+    );
+  } else if (!situacion) {
+    contenido = <p className="nota-chica">Revisando este celular…</p>;
+  } else if (situacion.tipo === 'instalar') {
+    contenido = (
+      <Aviso tipo="info" titulo="Instalá el panel para recibir avisos">
+        En iPhone los avisos llegan solo con el panel en la pantalla de inicio. En Safari tocá Compartir y después
+        “Agregar a inicio”. Abrilo desde ese ícono y activalos acá.
+      </Aviso>
+    );
+  } else if (situacion.tipo === 'sin-soporte') {
+    contenido = (
+      <Aviso tipo="info" titulo="Este navegador no recibe avisos">
+        Abrí el panel en Chrome, Edge, Firefox o Safari actualizados para activarlos.
+      </Aviso>
+    );
+  } else if (situacion.tipo === 'no-disponible') {
+    contenido = (
+      <Aviso tipo="info" titulo="Los avisos están apagados por ahora">
+        Todavía no se configuraron en el servidor. Cuando estén, los vas a poder activar acá.
+      </Aviso>
+    );
+  } else if (permiso === 'denied') {
+    contenido = (
+      <Aviso
+        tipo="info"
+        titulo="El navegador bloqueó los avisos"
+        accion={
+          <Boton
+            chico
+            onClick={() => {
+              const ahora = permisoActual();
+              setPermiso(ahora);
+              setResultado(
+                ahora === 'denied' ? { tipo: 'error', texto: 'Todavía figura bloqueado. Cambialo a Permitir y tocá de nuevo.' } : null,
+              );
+            }}
+          >
+            Ya los permití
+          </Boton>
+        }
+      >
+        Tocá el ícono a la izquierda de la dirección (o, con la app instalada, Ajustes del celular, Notificaciones,
+        Buddys), elegí Permitir y volvé a esta pantalla.
+      </Aviso>
+    );
+  } else if (activo) {
+    contenido = (
+      <>
+        <p className="push-estado">
+          <BellRing aria-hidden size={20} />
+          Activados en este celular
+        </p>
+        <div className="fila-botones fila-botones-inicio">
+          <Boton
+            variante="fantasma"
+            icono={<BellOff aria-hidden size={18} />}
+            cargando={ocupado === 'desactivando'}
+            onClick={() => void desactivar()}
+          >
+            {ocupado === 'desactivando' ? 'Desactivando…' : 'Desactivar avisos'}
+          </Boton>
+        </div>
+      </>
+    );
+  } else {
+    const clave = situacion.clave;
+    contenido = (
+      <div className="fila-botones fila-botones-inicio">
+        <Boton
+          variante="primario"
+          icono={<Bell aria-hidden size={18} />}
+          cargando={ocupado === 'activando'}
+          onClick={() => void activar(clave)}
+        >
+          {ocupado === 'activando' ? 'Activando…' : 'Activar avisos'}
+        </Boton>
+      </div>
+    );
+  }
+
+  return (
+    <section className="hoja formulario" aria-labelledby={tituloId} aria-busy={ocupado ? true : undefined}>
+      <h2 id={tituloId} className="bloque-titulo">
+        Avisos en este celular
+      </h2>
+      <p className="nota-chica">{queRecibe}</p>
+      {contenido}
+      <p className="solo-lectores" role="status">
+        {ocupado === 'activando'
+          ? 'Activando avisos…'
+          : ocupado === 'desactivando'
+            ? 'Desactivando avisos…'
+            : activo
+              ? 'Avisos activados en este celular.'
+              : ''}
+      </p>
+      {resultado ? <Aviso tipo={resultado.tipo}>{resultado.texto}</Aviso> : null}
+    </section>
   );
 }

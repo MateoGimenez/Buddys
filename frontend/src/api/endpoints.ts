@@ -1,6 +1,9 @@
 import { api, descargar, query } from './client';
 import type {
+  AlertasStock,
+  CambioReceta,
   CambioServicio,
+  Consumo,
   CambioTurno,
   Comprobante,
   Estadisticas,
@@ -11,6 +14,7 @@ import type {
   ListaInsumos,
   MetaActual,
   MisTrabajos,
+  Movimiento,
   MovimientoNuevo,
   NuevoGasto,
   NuevoInsumo,
@@ -20,8 +24,12 @@ import type {
   NuevoServicio,
   NuevoUsuario,
   CambioPerfil,
+  EstadoPush,
   Perfil,
+  SuscripcionPush,
+  ParaComprar,
   Permisos,
+  Receta,
   ResultadoEliminar,
   PlanillaDelDia,
   Presupuesto,
@@ -50,6 +58,14 @@ export const quitarFoto = () => api<{ perfil: Perfil }>('/api/admin/perfil/foto'
 /** URL de la foto de alguien. `?v=` es la versión: cambia cuando cambia la foto (y deja que el navegador la guarde). */
 export const urlFoto = (usuarioId: string, version: string) =>
   `/api/admin/usuarios/${encodeURIComponent(usuarioId)}/foto${query({ v: version })}`;
+
+// Avisos push en este dispositivo (backend/README.md, "Avisos push")
+export const estadoPush = () => api<EstadoPush>('/api/admin/push/estado');
+export const suscribirPush = (s: SuscripcionPush) =>
+  api<{ ok: true }>('/api/admin/push/suscripciones', { method: 'POST', body: s });
+/** 204 también si el dispositivo no estaba guardado. */
+export const desuscribirPush = (endpoint: string) =>
+  api<undefined>('/api/admin/push/suscripciones', { method: 'DELETE', body: { endpoint } });
 
 // Lavados
 /** `NuevoLavadoLegado` solo para lo que había quedado en la cola sin conexión con un único servicioId. */
@@ -113,6 +129,18 @@ export const crearInsumo = (datos: NuevoInsumo) =>
   api<{ insumo: Insumo }>('/api/admin/insumos', { method: 'POST', body: datos });
 export const moverInsumo = (id: string, mov: MovimientoNuevo) =>
   api<{ insumo: Insumo }>(`/api/admin/insumos/${encodeURIComponent(id)}/movimientos`, { method: 'POST', body: mov });
+export const movimientosInsumo = (id: string) =>
+  api<{ movimientos: Movimiento[]; total: number }>(`/api/admin/insumos/${encodeURIComponent(id)}/movimientos`);
+/** Lo que pide la campanita (admin y superadmin): cuántos insumos están en el mínimo o debajo. */
+export const alertasStock = () => api<AlertasStock>('/api/admin/insumos/alertas');
+export const paraComprar = () => api<ParaComprar>('/api/admin/insumos/para-comprar');
+export const consumo = (desde: string, hasta: string) => api<Consumo>(`/api/admin/consumo${query({ desde, hasta })}`);
+
+// Recetas (contrato 06): verlas, todos los roles; cambiarlas, admin y superadmin.
+export const recetas = () => api<{ recetas: Receta[] }>('/api/admin/recetas');
+/** Reemplaza una variante de la receta (la general con `vehiculo: null`) y devuelve la receta entera del servicio. */
+export const guardarReceta = (servicioId: string, cambio: CambioReceta) =>
+  api<{ receta: Receta }>(`/api/admin/servicios/${encodeURIComponent(servicioId)}/receta`, { method: 'PUT', body: cambio });
 
 // Presupuestos
 export const presupuestos = () => api<{ presupuestos: Presupuesto[]; total: number }>(

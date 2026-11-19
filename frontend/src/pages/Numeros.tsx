@@ -2,6 +2,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { ApiError, mensajeDeError } from '../api/client';
 import * as ep from '../api/endpoints';
 import type { Cifras, Estadisticas, MetaActual, MisTrabajos } from '../api/types';
+import { Barras } from '../components/Barras';
 import { Aviso, Boton, Campo, Cargando, Encabezado, Segmentado, Vacio } from '../components/ui';
 import {
   diaMes,
@@ -241,33 +242,6 @@ function Tablero({ e }: { e: Estadisticas }) {
         </div>
       </section>
     </>
-  );
-}
-
-/* ---------------------------------------------------------------- Barras (SVG simple, una serie) */
-
-function Barras({ titulo, puntos, formato }: { titulo: string; puntos: { clave: string; valor: number }[]; formato: (v: number) => string }) {
-  const max = Math.max(1, ...puntos.map((p) => p.valor));
-  const mejor = puntos.reduce<{ clave: string; valor: number } | null>((acc, p) => (!acc || p.valor > acc.valor ? p : acc), null);
-  const etiqueta = (clave: string) => (clave.length === 7 ? nombreMes(clave).split(' ')[0] ?? clave : diaMes(clave));
-  return (
-    <figure className="barras">
-      <figcaption>
-        {titulo}
-        {mejor && mejor.valor > 0 ? <span className="barras-mejor"> · mejor: {etiqueta(mejor.clave)}, {formato(mejor.valor)}</span> : null}
-      </figcaption>
-      <div className="barras-area" role="img" aria-label={`${titulo}. Máximo ${formato(max)}.`}>
-        {puntos.map((p) => (
-          <span key={p.clave} className="grafico-col" title={`${etiqueta(p.clave)}: ${formato(p.valor)}`}>
-            <span className="grafico-relleno" style={{ blockSize: `${(p.valor / max) * 100}%` }} />
-          </span>
-        ))}
-      </div>
-      <div className="barras-eje" aria-hidden>
-        <span>{puntos[0] ? etiqueta(puntos[0].clave) : ''}</span>
-        <span>{puntos.at(-1) ? etiqueta(puntos.at(-1)?.clave ?? '') : ''}</span>
-      </div>
-    </figure>
   );
 }
 

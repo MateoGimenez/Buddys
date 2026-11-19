@@ -58,12 +58,14 @@ export function adminBookingsRouter(deps: { bookings: BookingRepository; agenda:
 
   // DELETE /api/admin/bookings/:id => 204
   router.delete('/:id', async (req, res) => {
-    if (!puedeBorrarTurnos(getUsuario(res).rol)) {
+    const usuario = getUsuario(res);
+    if (!puedeBorrarTurnos(usuario.rol)) {
       throw AppError.forbidden('Con tu rol no podés borrar turnos.');
     }
     const id = parseBookingId(req.params.id);
     try {
-      if (!(await bookings.delete(id))) throw AppError.notFound(NOT_FOUND_MESSAGE);
+      // Un lavado de mostrador devuelve el stock que descontó su receta (a nombre de quien lo borra).
+      if (!(await bookings.delete(id, usuario.id))) throw AppError.notFound(NOT_FOUND_MESSAGE);
     } catch (error) {
       if (error instanceof TurnoConComprobanteError) throw AppError.turnoConComprobante();
       throw error;

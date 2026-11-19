@@ -1,4 +1,4 @@
-import type { Franja, FormaPago, VehiculoTipo, Rol, Servicio } from '../api/types';
+import type { Franja, FormaPago, VehiculoTipo, Rol, Servicio, Unidad } from '../api/types';
 
 /** Zona horaria del taller (la misma que usa el backend para "hoy"). */
 export const ZONA = 'America/Argentina/La_Rioja';
@@ -232,4 +232,20 @@ export function franjaSegunHora(ahora: Date = new Date()): Franja {
     new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: ZONA }).format(ahora),
   );
   return h % 24 < HORA_TARDE ? 'manana' : 'tarde';
+}
+
+/** Cómo se dice cada unidad de los insumos: [singular, plural]. */
+export const NOMBRE_UNIDAD: Record<Unidad, [string, string]> = {
+  unidad: ['unidad', 'unidades'],
+  litro: ['litro', 'litros'],
+  ml: ['ml', 'ml'],
+  kg: ['kg', 'kg'],
+  g: ['g', 'g'],
+  par: ['par', 'pares'],
+  caja: ['caja', 'cajas'],
+};
+
+/** "2 litros", "1 unidad", "0,5 litro"… (singular solo para 1, como se dice). */
+export function cantidadConUnidad(n: number, u: Unidad): string {
+  return `${numero(n)} ${NOMBRE_UNIDAD[u][n === 1 ? 0 : 1]}`;
 }

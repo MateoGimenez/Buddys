@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { PlanillaDelDia, Turno, Usuario } from '../api/types';
-import { errores, fx, lavado, planillaAdmin, planillaEmpleado, real, usuarioAdmin } from './fixtures';
+import type { AlertasStock, Consumo, ParaComprar, PlanillaDelDia, Receta, Turno, Usuario } from '../api/types';
+import {
+  alertas,
+  consumoNoviembre,
+  consumoVacio,
+  errores,
+  fx,
+  lavado,
+  paraComprar,
+  planillaAdmin,
+  planillaEmpleado,
+  real,
+  recetaBasico,
+  usuarioAdmin,
+} from './fixtures';
 
 /** Forma de un valor: las claves de los objetos (recursivo, el primer elemento de cada lista). Las hojas no importan. */
 function forma(valor: unknown): unknown {
@@ -115,6 +128,51 @@ describe('los fixtures del panel tienen la forma de las respuestas reales del ba
     // y la fixture del empleado respeta lo mismo
     const f = planillaEmpleado('2026-10-16');
     expect(f.lavados.every((l) => l.monto === null) && f.resumen.total === null).toBe(true);
+  });
+
+  it('recetas, alertas, para comprar y consumo (contrato 06): misma forma que el contrato del backend, y los fixtures salen de ahí', () => {
+    const pares: [string, string][] = [
+      ['recetasAdmin', 'recetasAdmin'],
+      ['recetasEmpleado', 'recetasEmpleado'],
+      ['recetaPut', 'recetaPut'],
+      ['alertasAdmin', 'alertasAdmin'],
+      ['paraComprarAdmin', 'paraComprarAdmin'],
+      ['consumoAdmin', 'consumoAdmin'],
+      ['recetaPutInsumoInvalido', 'error400RecetaInsumo'],
+      ['recetaPutVehiculoNoOfrecido', 'error400RecetaVehiculo'],
+      ['recetaPutEmpleado', 'error403RecetaEmpleado'],
+      ['alertasEmpleado', 'error403AlertasEmpleado'],
+      ['paraComprarEmpleado', 'error403ParaComprarEmpleado'],
+      ['consumoEmpleado', 'error403ConsumoEmpleado'],
+    ];
+    for (const [delPanel, delBackend] of pares) {
+      expect(real[delPanel]?.status, delPanel).toBe(fx[delBackend]?.status);
+      expect(forma(real[delPanel]?.body), delPanel).toEqual(forma(fx[delBackend]?.body));
+    }
+    // Los mensajes de error son los mismos (el panel los muestra tal cual).
+    expect(real.recetaPutInsumoInvalido?.body).toEqual(fx.error400RecetaInsumo?.body);
+    expect(real.consumoEmpleado?.body).toEqual(fx.error403ConsumoEmpleado?.body);
+
+    // Los fixtures de los tests son esas respuestas.
+    expect(recetaBasico()).toEqual(cuerpo<{ recetas: Receta[] }>('recetasAdmin').recetas[0]);
+    expect(alertas(2)).toEqual(cuerpo<AlertasStock>('alertasAdmin'));
+    expect(forma(alertas(3))).toEqual(forma(fx.alertasAdmin?.body));
+    expect(paraComprar()).toEqual(cuerpo<ParaComprar>('paraComprarAdmin'));
+    expect(consumoNoviembre()).toEqual(cuerpo<Consumo>('consumoAdmin'));
+    expect(Object.keys(consumoVacio()).sort()).toEqual(Object.keys(fx.consumoAdmin?.body as object).sort());
+    expect(consumoVacio().porInsumo).toEqual([]);
+
+    // Tipos que el panel da por sentados (api/types.ts).
+    for (const p of [cuerpo<ParaComprar>('paraComprarAdmin'), fx.paraComprarAdmin?.body as ParaComprar]) {
+      expect(typeof p.costoTotalEstimado).toBe('number'); // nunca null: 0 si nada tiene costo
+      expect(p.costoTotalEstimado).toBe(p.items.reduce((a, i) => a + (i.costoEstimado ?? 0), 0));
+    }
+    expect(consumoVacio().costoPorLavado).toBeNull();
+    expect(consumoVacio().lavados.serie.length).toBeGreaterThan(0); // con ceros, no vacía
+    expect(typeof consumoNoviembre().costoPorLavado).toBe('number');
+    // El empleado ve las recetas sin costos.
+    expect(JSON.stringify(real.recetasEmpleado?.body)).not.toMatch(/costo/i);
+    expect(JSON.stringify(fx.recetasEmpleado?.body)).not.toMatch(/costo/i);
   });
 
   it('los errores que usan los tests son los del backend', () => {

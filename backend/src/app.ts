@@ -31,6 +31,7 @@ import { MetaService } from './services/metas.js';
 import { PerfilService } from './services/perfil.js';
 import { PresupuestoService } from './services/presupuestos.js';
 import { PUSH_TIMEOUT_MS, PushService } from './services/push.js';
+import { RecetaService } from './services/recetas.js';
 import { RecordatorioService } from './services/recordatorios.js';
 import { ServicioService } from './services/servicios.js';
 import { TallerService } from './services/taller.js';
@@ -79,6 +80,7 @@ export function createApp(deps: AppDeps): Express {
     metas: metasRepo,
     taller: tallerRepo,
     inventario: inventarioRepo,
+    recetas: recetasRepo,
     presupuestos: presupuestosRepo,
     comprobantes: comprobantesRepo,
   } = deps.repositories;
@@ -120,8 +122,9 @@ export function createApp(deps: AppDeps): Express {
       : new SupabaseStorageClient({ url: config.supabase.url, secretKey }, deps.storageFetch);
   const usuarios = new UsuarioService({ perfiles, admin: supabaseAdmin, storage, logger, now });
   const perfil = new PerfilService({ perfiles, auth: supabaseAuth, admin: supabaseAdmin, storage, logger, now });
-  const agenda = new AgendaService({ bookings, servicios, perfiles, logger, now });
-  const lavados = new LavadoService({ bookings, servicios, perfiles, logger, now });
+  // El aviso de stock bajo (push a admin y superadmin) sale de los lavados, de su corrección y de los movimientos.
+  const agenda = new AgendaService({ bookings, servicios, perfiles, logger, now, avisos: push });
+  const lavados = new LavadoService({ bookings, servicios, perfiles, logger, now, avisos: push });
   const estadisticas = new EstadisticasService({ estadisticas: estadisticasRepo, now });
   const servicioService = new ServicioService({ servicios, logger, now });
   const disponibilidadService = new DisponibilidadService({ disponibilidad, logger, now });
@@ -134,7 +137,8 @@ export function createApp(deps: AppDeps): Express {
     now,
   });
   const taller = new TallerService({ taller: tallerRepo, logger, now });
-  const inventario = new InventarioService({ inventario: inventarioRepo, logger, now });
+  const inventario = new InventarioService({ inventario: inventarioRepo, logger, now, avisos: push });
+  const recetas = new RecetaService({ recetas: recetasRepo, servicios, logger });
   const presupuestos = new PresupuestoService({ presupuestos: presupuestosRepo, logger, now });
   const comprobantes = new ComprobanteService({ comprobantes: comprobantesRepo, logger, now });
   const recordatorios = new RecordatorioService({
@@ -182,6 +186,7 @@ export function createApp(deps: AppDeps): Express {
       metas,
       taller,
       inventario,
+      recetas,
       presupuestos,
       comprobantes,
       cookies,

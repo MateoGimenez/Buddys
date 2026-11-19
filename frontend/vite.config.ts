@@ -42,6 +42,9 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api(\/|$)/],
         runtimeCaching: [],
         cleanupOutdatedCaches: true,
+        // Avisos push (turnos nuevos y stock bajo): public/push-sw.js agrega los manejadores de `push` y
+        // `notificationclick` al service worker generado. Lo precachea el mismo globPatterns (es un .js de dist/).
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

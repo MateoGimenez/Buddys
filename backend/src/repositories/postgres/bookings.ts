@@ -3,6 +3,8 @@ import { type Row, int, intOrNull, isoTimestamp, num, oneOf, oneOfOrNull, str, s
 import {
   type ActualizacionTurno,
   type Booking,
+  type CorreccionDeStock,
+  type LavadoGuardado,
   type BookingRepository,
   type CandidatoRecordatorio,
   type Estado,
@@ -24,8 +26,10 @@ import {
 } from '../../domain/booking.js';
 import { FORMAS_DE_PAGO, TurnoConComprobanteError } from '../../domain/comprobantes.js';
 import { verificarLugar } from '../../domain/disponibilidad.js';
+import type { InsumoBajo } from '../../domain/inventario.js';
 import { telefonoWhatsapp } from '../../domain/telefono.js';
 import { cuposEntre } from './disponibilidad.js';
+import { NOTA_LAVADO_DESHECHO, descontarReceta, devolverDelLavado, recalcularReceta } from './stock.js';
 import { isUuid } from './uuid.js';
 
 /**
@@ -157,6 +161,15 @@ async function buscarTurno(sql: SqlClient, id: string): Promise<Booking | undefi
   return row ? toBooking(row) : undefined;
 }
 
+/** true si el turno es un lavado de mostrador (FOR UPDATE: nadie lo borra ni lo corrige en el medio). */
+async function esDeMostrador(sql: SqlClient, id: string): Promise<boolean> {
+  const { rows } = await sql.query(
+    "SELECT 1 AS ok FROM buddys.bookings WHERE id = $1::uuid AND origen = 'mostrador' FOR UPDATE",
+    [id],
+  );
+  return rows.length > 0;
+}
+
 /** Igual que buscarTurno, pero el turno tiene que existir (se acaba de escribir en la misma transacción). */
 async function turnoEscrito(sql: SqlClient, id: string): Promise<Booking> {
   const booking = await buscarTurno(sql, id);
@@ -242,7 +255,7 @@ export class PostgresBookingRepository implements BookingRepository {
    * Con idLocal repetido no inserta (el índice único bookings_id_local_key es el árbitro, también ante dos reintentos
    * simultáneos) y devuelve undefined.
    */
-  registrarLavado(input: NuevoLavado, now: Date): Promise<Booking | undefined> {
+  registrarLavado(input: NuevoLavado, now: Date): Promise<LavadoGuardado | undefined> {
     const [principal] = input.servicioIds;
     if (principal === undefined) return Promise.reject(new Error('Un lavado necesita al menos un servicio'));
     return this.sql.transaction(async (sql) => {
@@ -280,7 +293,9 @@ export class PostgresBookingRepository implements BookingRepository {
       const id = str(row, 'id');
       // El trigger ya agregó el principal; con un solo servicio no hay nada más que escribir.
       if (input.servicioIds.length > 1) await reemplazarServicios(sql, id, input.servicioIds);
-      return turnoEscrito(sql, id);
+      // El descuento de la receta, en esta misma transacción: si algo falla, no queda ni el lavado ni el descuento.
+      const stockBajo = await descontarReceta(sql, id, input.registradoPor, now);
+      return { lavado: await turnoEscrito(sql, id), stockBajo };
     });
   }
 
@@ -533,15 +548,17 @@ export class PostgresBookingRepository implements BookingRepository {
     return buscarTurno(this.sql, id);
   }
 
-  actualizar(
+  async actualizar(
     id: string,
     { estado, notasInternas, monto, trabajadorId, formaPago, servicioIds }: ActualizacionTurno,
     now: Date,
+    stock?: CorreccionDeStock,
   ): Promise<Booking | undefined> {
     // Un id que no es UUID no puede existir (y Postgres rechazaría el cast): igual que "no existe".
-    if (!isUuid(id)) return Promise.resolve(undefined);
+    if (!isUuid(id)) return undefined;
     const principal = servicioIds?.[0] ?? null;
-    return this.sql.transaction(async (sql) => {
+    let stockBajo: InsumoBajo[] = [];
+    const booking = await this.sql.transaction(async (sql) => {
       // coalesce($1, estado): sin estado nuevo, queda el que tenía. La nota: $2 dice si se toca (null es un valor
       // válido: borrarla). Sin condición de estado: la nota se puede cambiar aunque el turno esté cerrado.
       // Cobro ($6 y $8 dicen si se toca; $7 y $9 son los valores): si el estado final no es "completado" quedan en
@@ -580,9 +597,18 @@ export class PostgresBookingRepository implements BookingRepository {
         ],
       );
       if (rowCount === 0) return undefined;
-      if (servicioIds !== undefined) await reemplazarServicios(sql, id, servicioIds);
+      if (servicioIds !== undefined) {
+        await reemplazarServicios(sql, id, servicioIds);
+        // Un lavado de mostrador con otros servicios: se devuelve lo que descontó su receta y se descuenta la nueva.
+        if (stock !== undefined && (await esDeMostrador(sql, id))) {
+          stockBajo = await recalcularReceta(sql, id, stock.perfilId, now);
+        }
+      }
       return turnoEscrito(sql, id);
     });
+    // Después del COMMIT: si la transacción falló, no se avisa de nada.
+    if (stock !== undefined) stock.stockBajo.push(...stockBajo);
+    return booking;
   }
 
   updateEstado(id: string, estado: Estado, now: Date): Promise<Booking | undefined> {
@@ -672,13 +698,19 @@ export class PostgresBookingRepository implements BookingRepository {
     return rows.map(toBooking);
   }
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, perfilId?: string): Promise<boolean> {
     if (!isUuid(id)) return false;
-    // Un turno con comprobante emitido no se borra (la FK es ON DELETE RESTRICT): se avisa con un error de negocio.
-    // Sus servicios (lavado_servicios) se van con él: ON DELETE CASCADE.
-    const emitido = await this.sql.query('SELECT 1 AS ok FROM buddys.comprobantes WHERE booking_id = $1::uuid', [id]);
-    if (emitido.rows.length > 0) throw new TurnoConComprobanteError();
-    const { rowCount } = await this.sql.query('DELETE FROM buddys.bookings WHERE id = $1::uuid', [id]);
-    return rowCount > 0;
+    return this.sql.transaction(async (sql) => {
+      // Un turno con comprobante emitido no se borra (la FK es ON DELETE RESTRICT): se avisa con un error de negocio.
+      // Sus servicios (lavado_servicios) se van con él: ON DELETE CASCADE.
+      const emitido = await sql.query('SELECT 1 AS ok FROM buddys.comprobantes WHERE booking_id = $1::uuid', [id]);
+      if (emitido.rows.length > 0) throw new TurnoConComprobanteError();
+      // Un lavado de mostrador devuelve al stock lo que descontó ANTES del DELETE (después, turno_id ya es null).
+      if (await esDeMostrador(sql, id)) {
+        await devolverDelLavado(sql, id, perfilId ?? null, NOTA_LAVADO_DESHECHO, false);
+      }
+      const { rowCount } = await sql.query('DELETE FROM buddys.bookings WHERE id = $1::uuid', [id]);
+      return rowCount > 0;
+    });
   }
 }

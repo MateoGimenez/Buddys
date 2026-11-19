@@ -1,9 +1,10 @@
-import { Pencil, Plus } from 'lucide-react';
+import { ChevronDown, Pencil, Plus } from 'lucide-react';
 import { useId, useState, type SyntheticEvent } from 'react';
 import { ApiError, mensajeDeError } from '../api/client';
 import * as ep from '../api/endpoints';
-import { VEHICULOS, type Servicio, type VehiculoTipo } from '../api/types';
-import { AreaTexto, Aviso, Boton, Campo, Cargando, Encabezado, Vacio } from '../components/ui';
+import { VEHICULOS, type Receta, type Servicio, type VehiculoTipo } from '../api/types';
+import { BloqueReceta } from '../components/Receta';
+import { AreaTexto, Aviso, Boton, Campo, Cargando, Confirmar, Encabezado, Vacio } from '../components/ui';
 import {
   CAMPO_PRECIO,
   CATEGORIAS_SERVICIO,
@@ -24,6 +25,17 @@ export function Servicios() {
   const edita = puede('catalogo.editar');
   const [carga, recargar, actualizar] = useCarga(() => ep.servicios().then((r) => r.servicios), []);
   const [creando, setCreando] = useState(false);
+  // Recetas (contrato 06): las ve quien ve el inventario; las cambia quien tiene inventario.recetas.
+  const veRecetas = puede('inventario.ver');
+  const editaRecetas = puede('inventario.recetas');
+  const [cargaRecetas, recargarRecetas, actualizarRecetas] = useCarga(
+    () => (veRecetas ? ep.recetas().then((r) => r.recetas) : Promise.resolve([] as Receta[])),
+    [veRecetas],
+  );
+  const recetas = new Map((cargaRecetas.datos ?? []).map((r) => [r.servicioId, r]));
+  const reemplazarReceta = (r: Receta) => {
+    actualizarRecetas((lista) => [...lista.filter((x) => x.servicioId !== r.servicioId), r]);
+  };
 
   const reemplazar = (s: Servicio) => {
     actualizar((lista) => lista.map((x) => (x.id === s.id ? s : x)));
@@ -40,6 +52,9 @@ export function Servicios() {
         ) : null}
       </Encabezado>
       {!edita ? <p className="nota-chica">Solo lectura: los servicios los cambia un encargado.</p> : null}
+      {veRecetas && cargaRecetas.estado === 'error' ? (
+        <Aviso titulo="No pudimos cargar las recetas" accion={<Boton onClick={recargarRecetas}>Reintentar</Boton>}>{cargaRecetas.mensaje}</Aviso>
+      ) : null}
 
       {creando ? (
         <NuevoServicio
@@ -63,7 +78,14 @@ export function Servicios() {
             </h2>
             <ul className="lista-hojas">
               {g.items.map((s) => (
-                <FilaServicio key={s.id} servicio={s} edita={edita} categorias={categorias} onCambio={reemplazar} />
+                <FilaServicio
+                  key={s.id}
+                  servicio={s}
+                  edita={edita}
+                  receta={veRecetas && cargaRecetas.datos ? { valor: recetas.get(s.id), edita: editaRecetas, onGuardada: reemplazarReceta } : null}
+                  categorias={categorias}
+                  onCambio={reemplazar}
+                />
               ))}
             </ul>
           </section>
@@ -79,8 +101,44 @@ function categoriasConocidas(servicios: Servicio[]): string[] {
   return [...new Set([...CATEGORIAS_SERVICIO, ...extra])];
 }
 
-function FilaServicio({ servicio, edita, categorias, onCambio }: { servicio: Servicio; edita: boolean; categorias: string[]; onCambio: (s: Servicio) => void }) {
+interface RecetaDeFila {
+  valor: Receta | undefined;
+  edita: boolean;
+  onGuardada: (r: Receta) => void;
+}
+
+function tieneRenglones(r: Receta | undefined): boolean {
+  return !!r && (r.general.length > 0 || Object.values(r.porVehiculo).some((x) => x.length > 0));
+}
+
+function FilaServicio({
+  servicio,
+  edita,
+  receta,
+  categorias,
+  onCambio,
+}: {
+  servicio: Servicio;
+  edita: boolean;
+  /** null = este rol no ve recetas (o todavía no llegaron). */
+  receta: RecetaDeFila | null;
+  categorias: string[];
+  onCambio: (s: Servicio) => void;
+}) {
   const [editando, setEditando] = useState(false);
+  const puedeEditar = edita || !!receta?.edita;
+  // La receta se guarda aparte: si al cerrar la edición quedó algo sin guardar, se pregunta antes de perderlo.
+  const [recetaPendiente, setRecetaPendiente] = useState(false);
+  const [confirmarCierre, setConfirmarCierre] = useState<(() => void) | null>(null);
+  const cerrar = (despues?: () => void) => {
+    const fin = () => {
+      setEditando(false);
+      setRecetaPendiente(false);
+      despues?.();
+    };
+    if (recetaPendiente) setConfirmarCierre(() => fin);
+    else fin();
+  };
   return (
     <li className="hoja fila-hoja" data-inactivo={servicio.activo ? undefined : ''}>
       <div className="fila-hoja-cabeza">
@@ -90,12 +148,35 @@ function FilaServicio({ servicio, edita, categorias, onCambio }: { servicio: Ser
       </div>
       <p className="fila-hoja-texto">{servicio.resumen}</p>
       {editando ? (
-        <EditarServicio
-          servicio={servicio}
-          categorias={categorias}
-          onListo={(s) => { setEditando(false); onCambio(s); }}
-          onCancelar={() => { setEditando(false); }}
-        />
+        <>
+          {edita ? (
+            <EditarServicio
+              servicio={servicio}
+              categorias={categorias}
+              onListo={(s) => { onCambio(s); cerrar(); }}
+              onCancelar={() => { cerrar(); }}
+            />
+          ) : null}
+          {receta?.edita ? (
+            <BloqueReceta servicio={servicio} receta={receta.valor} edita onGuardada={receta.onGuardada} onPendientes={setRecetaPendiente} />
+          ) : null}
+          {!edita ? (
+            <Boton chico variante="fantasma" className="receta-listo" onClick={() => { cerrar(); }}>Listo</Boton>
+          ) : null}
+          <Confirmar
+            abierto={confirmarCierre !== null}
+            titulo="La receta tiene cambios sin guardar"
+            confirmar="Cerrar sin guardarlos"
+            onConfirmar={() => {
+              const fin = confirmarCierre;
+              setConfirmarCierre(null);
+              fin?.();
+            }}
+            onCancelar={() => { setConfirmarCierre(null); }}
+          >
+            Las pestañas marcadas con un punto rosa no se guardaron. Volvé y tocá “Guardar” en cada una, o cerrá y se pierden.
+          </Confirmar>
+        </>
       ) : (
         <>
           <dl className="precios">
@@ -112,7 +193,20 @@ function FilaServicio({ servicio, edita, categorias, onCambio }: { servicio: Ser
               );
             })}
           </dl>
-          {edita ? (
+          {receta?.edita && !tieneRenglones(receta.valor) ? (
+            <p className="nota-chica">Sin receta: este servicio no descuenta insumos. Cargala con “Editar”.</p>
+          ) : null}
+          {receta && tieneRenglones(receta.valor) ? (
+            <details className="plegable plegable-receta">
+              <summary>
+                <span>Receta</span>
+                <span className="plegable-ayuda">Qué insumos se descuentan en cada lavado</span>
+                <ChevronDown aria-hidden size={20} className="plegable-flecha" />
+              </summary>
+              <BloqueReceta servicio={servicio} receta={receta.valor} edita={false} />
+            </details>
+          ) : null}
+          {puedeEditar ? (
             <Boton chico variante="fantasma" icono={<Pencil aria-hidden size={18} />} onClick={() => { setEditando(true); }}>
               Editar
             </Boton>

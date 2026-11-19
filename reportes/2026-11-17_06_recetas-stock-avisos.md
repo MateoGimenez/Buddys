@@ -27,19 +27,26 @@ Seguir **cuántos lavados se hacen, qué productos se gastan, qué hay en stock 
    descontó, con la nota *"Faltaron 20 ml según la receta"*. Ese insumo queda bajo, así que se avisa.
 3. **Todo en la misma transacción que el lavado**: los bloqueos `pg_advisory_xact_lock` por insumo (los mismos de
    `registrarMovimiento`, tomados **en orden de id** para que dos lavados no se traben entre sí), la resta y los movimientos
-   `uso` con `turno_id` = el lavado y `perfil_id` = quien registra, con la nota *"Receta: Lavado completo"*. Si algo
-   falla, no queda ni el lavado ni el descuento.
+   `uso` con `turno_id` = el lavado, `perfil_id` = quien registra y `origen = 'receta'`, con la nota *"Receta: Lavado
+   completo"*. Si algo falla, no queda ni el lavado ni el descuento.
 4. **Deshacer devuelve exactamente lo descontado.** Antes de borrar el lavado, y en la misma transacción, por cada
    movimiento `uso` de ese lavado se crea uno de tipo nuevo, **`devolucion`** (positivo), con la nota *"Lavado deshecho"*.
    Se hace antes del `DELETE` porque `movimientos_stock.turno_id` es `ON DELETE SET NULL`: después del borrado ya no se
-   sabría qué movimientos eran de ese lavado.
+   sabría qué movimientos eran de ese lavado. Va una devolución por insumo y por origen: la de lo que descontó la receta
+   lleva `origen = 'receta'`; la de los usos manuales vinculados, `'manual'`.
 5. **Corregir los servicios o el vehículo de un lavado de mostrador** (`PATCH /api/admin/bookings/:id`) recalcula el
-   descuento en la misma transacción: se devuelve todo lo descontado antes y se descuenta según la receta nueva.
-6. **Aviso de stock bajo, una sola vez por cruce.** Se avisa cuando un insumo pasa de `stock > stock_minimo` a
-   `stock <= stock_minimo` (con `stock_minimo > 0`, la misma definición de `bajoStock` que ya existe), por cualquier
-   salida: una receta, un uso manual o un ajuste. Hay una columna nueva `insumos.aviso_bajo_at`: se completa al avisar y
-   vuelve a null cuando el stock sube por encima del mínimo (por una compra, una devolución, un ajuste o un cambio del
-   mínimo). Mientras no sea null, no se repite el aviso. **El push se manda después del COMMIT y nunca hace fallar el
+   descuento en la misma transacción: se devuelve todo lo descontado antes y se descuenta según la receta nueva. Qué es
+   "de la receta" lo dice la columna `movimientos_stock.origen`, **nunca el texto de la nota**: un uso manual con la
+   nota *"Receta: …"* vinculado al lavado sigue siendo manual y no se devuelve.
+6. **Aviso de stock bajo, una sola vez hasta que se reponga.** Una salida (una receta, un uso manual o un ajuste
+   negativo) avisa si el insumo queda bajo (`stock_minimo > 0 AND stock <= stock_minimo`, la misma definición de
+   `bajoStock` que ya existe), no tiene un aviso pendiente (`aviso_bajo_at` null) y el stock **bajó** en ese pedido.
+   Eso incluye el cruce del mínimo y también el insumo que ya estaba bajo sin aviso: si se sube el mínimo con el stock
+   ya por debajo, o si ya estaba bajo cuando se aplicó la migración, avisa en su próxima salida (decisión del dueño,
+   2026-11-19). Una subida nunca avisa. Hay una columna nueva `insumos.aviso_bajo_at`: se completa al avisar y vuelve a
+   null cuando el stock sube por encima del mínimo por una compra o un ajuste, o cuando cambia el mínimo. **Deshacer un
+   lavado NO la limpia** (segunda auditoría: si no, registrar y deshacer en bucle mandaría un push en cada vuelta).
+   Mientras no sea null, no se repite el aviso. **El push se manda después del COMMIT y nunca hace fallar el
    pedido**, igual que el de turnos nuevos.
 7. **Avisos solo a admin y superadmin activos**: a los dispositivos de esas personas (filtrando `push_suscripciones` por
    el rol del perfil). Texto: título *"Queda poco: Shampoo"*, cuerpo *"Hay 0,5 litro (mínimo 1 litro). Mirá la lista
@@ -61,6 +68,9 @@ Seguir **cuántos lavados se hacen, qué productos se gastan, qué hay en stock 
   - `buddys_app`: SELECT, INSERT, UPDATE (cantidad) y DELETE, con RLS y una policy por operación.
 - `buddys.movimientos_stock`: el CHECK de `tipo` suma **`devolucion`** (con cantidad `> 0`). Hay que reemplazar el CHECK
   de tipo y el del signo, si existe.
+- `buddys.movimientos_stock.origen text not null default 'manual'` con CHECK `in ('manual','receta')` (hallazgo de
+  seguridad, 2026-11-19). Los movimientos existentes quedan en `'manual'`. `GRANT INSERT (origen)` a `buddys_app`, sin
+  UPDATE. Lo pone solo el backend: la API manual nunca lo acepta.
 - `buddys.insumos.aviso_bajo_at timestamptz null` + `GRANT UPDATE (aviso_bajo_at)`.
 - Índice `movimientos_stock (turno_id) where turno_id is not null`, si todavía no existe. Lo usan el deshacer y la corrección.
 - Índice para el resumen: `movimientos_stock (created_at) where tipo in ('uso','devolucion')`, o el que muestre `EXPLAIN`
@@ -98,6 +108,10 @@ Todas las rutas van detrás de la sesión, con los errores, el control CSRF y lo
 - `POST /api/admin/lavados`: descuenta según las reglas 1, 2 y 3. La respuesta no cambia.
 - `DELETE` de un lavado (deshacer): devuelve el stock (regla 4).
 - `PATCH /api/admin/bookings/:id` sobre un lavado de mostrador, con `servicioIds` o con un cambio de vehículo: regla 5.
+- **Un lavado de mostrador no se cancela** (decisión del dueño, 2026-11-19). Un `PATCH /api/admin/bookings/:id` que pasa
+  un turno con `origen = 'mostrador'` a `cancelado` (o a cualquier estado que no sea `completado`) responde
+  `409 CONFLICT` con *"Un lavado de mostrador no se cancela: deshacelo desde la planilla (así vuelve el stock)."* y no
+  escribe nada. Los turnos web no cambian. La Planilla no ofrece cancelar (solo corregir y deshacer).
 
 ### Insumos
 
@@ -108,7 +122,9 @@ Todas las rutas van detrás de la sesión, con los errores, el control CSRF y lo
   `200 { "items": [{ insumoId, nombre, categoria, unidad, stock, stockMinimo, sugerido, costoEstimado }], "costoTotalEstimado" }`.
   `costoEstimado` es `round(sugerido × costo_unitario)`, o `null` si no hay costo cargado. Van ordenados por categoría y nombre.
 - Movimientos: el tipo `devolucion` aparece en `GET /api/admin/insumos/:id/movimientos`. **No se puede crear a mano**:
-  `POST` con `tipo: "devolucion"` da `400`.
+  `POST` con `tipo: "devolucion"` da `400`. El body tampoco acepta `origen` (`400`): lo cargado a mano es siempre
+  `'manual'`. Un uso con `turnoId` bloquea primero el turno (`FOR KEY SHARE`) y después el insumo, el mismo orden que
+  deshacer y corregir.
 - Compras: sin cambios. Solo hay que sumar que una compra que deja el stock por encima del mínimo limpia `aviso_bajo_at`.
 
 ### `GET /api/admin/consumo?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` (solo `admin` y `superadmin`)
@@ -197,7 +213,18 @@ Ninguna.
 ## Estado
 
 - [x] Migración (buddys-base-de-datos)
-- [ ] Backend (buddys-backend)
-- [ ] Frontend (buddys-frontend)
-- [ ] Pruebas (buddys-pruebas)
-- [ ] Seguridad (buddys-seguridad)
+- [x] Backend (buddys-backend)
+- [x] Frontend (buddys-frontend)
+- [x] Pruebas (buddys-pruebas) — 2026-11-19: backend y frontend en verde, casos límite en
+  `backend/test/recetas-stock-limites.test.ts`. Las dos dudas de diseño (aviso al subir el mínimo y cancelar un lavado
+  de mostrador sin devolver stock) las decidió el dueño el 2026-11-19: ver abajo.
+- [x] Decisiones del dueño (2026-11-19, buddys-backend): un lavado de mostrador no se cancela por PATCH (`409`); el
+  aviso de stock bajo sale en la próxima salida aunque el insumo ya estuviera bajo (regla 6). Las dos dudas de
+  `recetas-stock-limites.test.ts` quedaron resueltas y probadas.
+- [x] Hallazgos de la auditoría de seguridad (2026-11-19, buddys-backend): `movimientos_stock.origen` (la corrección ya
+  no mira la nota), U+2028/U+2029 rechazados en los textos de una línea, orden de bloqueos turno → insumo en el uso
+  manual vinculado y CSP única `default-src 'none'` en el backend (no sirve el panel). Además, el aviso push de turno
+  nuevo va a `/planilla` y los dos avisos llevan `tipo` (`turno` o `stock`). Tests en
+  `backend/test/recetas-stock-seguridad.test.ts`, `recetas-stock-limites.test.ts`, `migracion-recetas-stock.test.ts` y
+  `security.test.ts`.
+- [x] Seguridad (buddys-seguridad): dos pasadas. Primera: hallazgo bajo (origen por la nota) arreglado con la columna `origen`; endurecimientos de U+2028/2029, orden de locks y CSP. Segunda: medio (lluvia de avisos con registrar/deshacer) arreglado: la devolución ya no limpia `aviso_bajo_at`; bajo (`destinoSeguro` del service worker) arreglado validando el resultado normalizado. Nota: el frontend todavía no tiene CSP propia; hay que ponerla en el hosting estático.

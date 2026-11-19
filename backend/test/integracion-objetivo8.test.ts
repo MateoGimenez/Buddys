@@ -325,6 +325,39 @@ describe('respuestas reales del backend (contrato de la API)', () => {
     expect((await admin.get(`/api/admin/usuarios/${ana}/foto?v=${String(subida.body.perfil.fotoVersion)}`)).status).toBe(200);
     cap('perfilFotoQuita', await admin.delete('/api/admin/perfil/foto'));
 
+    // Recetas, stock y avisos (contrato 2026-11-17_06). Al final: no mueve nada de arriba. Los movimientos del consumo
+    // van con fecha fija (los de la receta llevan la hora real de la base y caen fuera del rango pedido).
+    const nuevoInsumo = async (datos: Record<string, unknown>) =>
+      String((await admin.post('/api/admin/insumos', { unidad: 'ml', ...datos })).body.insumo.id);
+    const stShampoo = await nuevoInsumo({ nombre: 'Shampoo', categoria: 'Químicos', unidad: 'litro', stockInicial: 2, stockMinimo: 1, costoUnitario: 9000 });
+    const stPanos = await nuevoInsumo({ nombre: 'Paños de microfibra', categoria: 'Accesorios', unidad: 'unidad', stockInicial: 2, stockMinimo: 6 });
+    const stCera = await nuevoInsumo({ nombre: 'Cera líquida', categoria: 'Químicos', stockInicial: 4000, stockMinimo: 500, costoUnitario: 12 });
+    cap('recetaPut', await admin.put('/api/admin/servicios/lavado-basico/receta', { vehiculo: null, items: [{ insumoId: stShampoo, cantidad: 0.5 }, { insumoId: stCera, cantidad: 30 }] }));
+    cap('recetaPutVehiculo', await admin.put('/api/admin/servicios/lavado-basico/receta', { vehiculo: 'pickup', items: [{ insumoId: stShampoo, cantidad: 0.8 }] }));
+    cap('error400RecetaInsumo', await admin.put('/api/admin/servicios/lavado-basico/receta', { vehiculo: null, items: [{ insumoId: '44444444-4444-4444-8444-444444444444', cantidad: 1 }] }));
+    cap('error400RecetaVehiculo', await admin.put('/api/admin/servicios/lavado-basico/receta', { vehiculo: 'moto', items: [] }));
+    cap('error404RecetaServicio', await admin.put('/api/admin/servicios/no-existe/receta', { vehiculo: null, items: [] }));
+    cap('error403RecetaEmpleado', await otroEmpleado.put('/api/admin/servicios/lavado-basico/receta', { vehiculo: null, items: [] }));
+    cap('recetasAdmin', await admin.get('/api/admin/recetas'));
+    cap('recetasEmpleado', await otroEmpleado.get('/api/admin/recetas'));
+    await admin.post('/api/admin/lavados', { servicioId: 'lavado-basico', vehiculoTipo: 'auto' }); // stShampoo 2 -> 1,5
+    await admin.post('/api/admin/lavados', { servicioId: 'lavado-basico', vehiculoTipo: 'auto' }); // 1,5 -> 1: cruza
+    await context.db.sql.query(
+      `INSERT INTO buddys.movimientos_stock (insumo_id, tipo, cantidad, created_at)
+       VALUES ($1::uuid, 'uso', -1.5, '2026-10-10T15:00:00Z'), ($1::uuid, 'devolucion', 0.5, '2026-10-11T15:00:00Z'),
+              ($2::uuid, 'uso', -60, '2026-10-12T15:00:00Z'), ($3::uuid, 'uso', -1, '2026-10-12T15:00:00Z')`,
+      [stShampoo, stCera, stPanos],
+    );
+    cap('alertasAdmin', await admin.get('/api/admin/insumos/alertas'));
+    cap('error403AlertasEmpleado', await otroEmpleado.get('/api/admin/insumos/alertas'));
+    cap('paraComprarAdmin', await admin.get('/api/admin/insumos/para-comprar'));
+    cap('error403ParaComprarEmpleado', await otroEmpleado.get('/api/admin/insumos/para-comprar'));
+    cap('consumoAdmin', await admin.get('/api/admin/consumo?desde=2026-10-01&hasta=2026-10-31'));
+    cap('consumoSemanas', await admin.get('/api/admin/consumo?desde=2026-08-01&hasta=2026-10-31'));
+    cap('error400Consumo', await admin.get('/api/admin/consumo?desde=2026-10-31&hasta=2026-10-01'));
+    cap('error403ConsumoEmpleado', await otroEmpleado.get('/api/admin/consumo?desde=basura'));
+    cap('error400MovimientoDevolucion', await admin.post(`/api/admin/insumos/${stShampoo}/movimientos`, { tipo: 'devolucion', cantidad: 1 }));
+
     const generadas = normalizar(capturas);
     if (process.env.ACTUALIZAR_FIXTURES === '1') {
       mkdirSync(path.dirname(FIXTURES), { recursive: true });

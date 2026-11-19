@@ -9,6 +9,7 @@ import type { MetaRepository } from '../domain/metas.js';
 import type { PerfilRepository } from '../domain/perfil.js';
 import type { PresupuestoRepository } from '../domain/presupuestos.js';
 import type { PushRepository } from '../domain/push.js';
+import type { RecetaRepository } from '../domain/recetas.js';
 import type { ServicioRepository } from '../domain/servicios.js';
 import type { TallerRepository } from '../domain/taller.js';
 import { PostgresBookingRepository } from './postgres/bookings.js';
@@ -21,6 +22,7 @@ import { PostgresMetaRepository } from './postgres/metas.js';
 import { PostgresPerfilRepository } from './postgres/perfiles.js';
 import { PostgresPresupuestoRepository } from './postgres/presupuestos.js';
 import { PostgresPushRepository } from './postgres/push.js';
+import { PostgresRecetaRepository } from './postgres/recetas.js';
 import { PostgresServicioRepository } from './postgres/servicios.js';
 import { PostgresTallerRepository } from './postgres/taller.js';
 
@@ -35,6 +37,7 @@ export interface Repositories {
   metas: MetaRepository;
   taller: TallerRepository;
   inventario: InventarioRepository;
+  recetas: RecetaRepository;
   presupuestos: PresupuestoRepository;
   comprobantes: ComprobanteRepository;
 }
@@ -52,6 +55,7 @@ export function createPostgresRepositories(sql: SqlClient): Repositories {
     metas: new PostgresMetaRepository(sql),
     taller: new PostgresTallerRepository(sql),
     inventario: new PostgresInventarioRepository(sql),
+    recetas: new PostgresRecetaRepository(sql),
     presupuestos: new PostgresPresupuestoRepository(sql),
     comprobantes: new PostgresComprobanteRepository(sql),
   };

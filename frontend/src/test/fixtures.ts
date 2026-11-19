@@ -11,7 +11,22 @@
 //    se regenere ese archivo.
 import contrato from '../../../backend/test/fixtures/respuestas-api.json';
 import reales from './respuestas-reales.json';
-import type { Permisos, PlanillaDelDia, Servicio, Trabajador, Turno, Usuario, UsuarioEquipo, VehiculoTipo } from '../api/types';
+import type {
+  AlertasStock,
+  Consumo,
+  Insumo,
+  ListaInsumos,
+  ParaComprar,
+  Permisos,
+  PlanillaDelDia,
+  Receta,
+  Servicio,
+  Trabajador,
+  Turno,
+  Usuario,
+  UsuarioEquipo,
+  VehiculoTipo,
+} from '../api/types';
 
 export interface RespuestaFalsa {
   status: number;
@@ -337,4 +352,98 @@ export function equipo(yo: 'ana' | 'carla'): { usuarios: UsuarioEquipo[]; gestio
     ].map((u) => (esAna || u.id !== CARLA_ID ? u : { ...u, email: null })),
     gestionCuentas: true,
   };
+}
+
+// ------------------------------------------------------------------ Recetas y stock (contrato 06)
+// reportes/2026-11-17_06_recetas-stock-avisos.md. Recetas, alertas, para comprar y consumo salen de las respuestas
+// REALES de respuestas-reales.json (recetasAdmin, alertasAdmin, paraComprarAdmin, consumoAdmin y consumoVacio). Lo
+// único armado a mano: la lista de insumos de la pantalla de stock (con los mismos ids y valores) y un tercer insumo
+// bajo (guantes) para probar la campanita con 3.
+
+/** Las dos capacidades nuevas del contrato 06, tal como las manda GET /api/admin/permisos (contrato del backend). */
+const CAPACIDADES_STOCK: Permisos['capacidades'] = cuerpo<Permisos>('permisosAdmin').capacidades.filter(
+  (c) => c.id === 'inventario.recetas' || c.id === 'inventario.consumo',
+);
+
+/** Una tabla de permisos con las capacidades del contrato 06 (el contrato del backend ya las trae: queda igual). */
+export function conStock(p: Permisos): Permisos {
+  const ids = new Set(p.capacidades.map((c) => c.id));
+  if (CAPACIDADES_STOCK.every((c) => ids.has(c.id))) return p;
+  return { ...p, capacidades: [...p.capacidades, ...CAPACIDADES_STOCK.filter((c) => !ids.has(c.id))] };
+}
+
+export const SHAMPOO_ID = '00000000-0000-4000-8000-0000000051a1';
+export const CERA_ID = '00000000-0000-4000-8000-0000000051a2';
+export const PANOS_ID = '00000000-0000-4000-8000-0000000051a3';
+export const GUANTES_ID = '00000000-0000-4000-8000-0000000051a4';
+
+/** Un insumo como lo devuelve GET /api/admin/insumos (para el encargado, con costos). */
+export function insumoStock(cambios: Partial<Insumo> & { id: string; nombre: string }): Insumo {
+  return {
+    categoria: null,
+    unidad: 'unidad',
+    stock: 10,
+    stockMinimo: 0,
+    costoUnitario: null,
+    activo: true,
+    bajoStock: false,
+    valorEnStock: null,
+    updatedAt: '2026-11-17T15:00:00.000Z',
+    ...cambios,
+  };
+}
+
+export function listaInsumos(): ListaInsumos {
+  const insumos = [
+    insumoStock({ id: SHAMPOO_ID, nombre: 'Shampoo', categoria: 'Químicos', unidad: 'litro', stock: 0.5, stockMinimo: 1, bajoStock: true, costoUnitario: 9000, valorEnStock: 4500 }),
+    insumoStock({ id: PANOS_ID, nombre: 'Paños de microfibra', categoria: 'Accesorios', unidad: 'unidad', stock: 2, stockMinimo: 6, bajoStock: true }),
+    insumoStock({ id: CERA_ID, nombre: 'Cera líquida', categoria: 'Químicos', unidad: 'ml', stock: 4000, stockMinimo: 500, costoUnitario: 12, valorEnStock: 48000 }),
+  ];
+  return { insumos, total: insumos.length, bajoStock: 2, valorTotal: 52500 };
+}
+
+/** La misma lista como la recibe el empleado: sin costos ni valores en pesos. */
+export function listaInsumosEmpleado(): ListaInsumos {
+  const l = listaInsumos();
+  return { ...l, valorTotal: null, insumos: l.insumos.map((i) => ({ ...i, costoUnitario: null, valorEnStock: null })) };
+}
+
+/**
+ * La receta real de Lavado Básico (GET /api/admin/recetas): general con cera (30 ml) y shampoo (0,05 litros), en el
+ * orden del backend (por nombre), y una propia para pick-up con cera (45 ml) y shampoo (0,08 litros).
+ */
+export function recetaBasico(): Receta {
+  const receta = cuerpoReal<{ recetas: Receta[] }>('recetasAdmin').recetas.find((r) => r.servicioId === 'lavado-basico');
+  if (!receta) throw new Error('Falta la receta de lavado-basico en respuestas-reales.json');
+  return receta;
+}
+
+/** GET /api/admin/insumos/alertas con `n` insumos: los dos reales (paños y shampoo) y, para n = 3, unos guantes. */
+export function alertas(n: number): AlertasStock {
+  const todos: AlertasStock['insumos'] = [
+    ...cuerpoReal<AlertasStock>('alertasAdmin').insumos,
+    { id: GUANTES_ID, nombre: 'Guantes de nitrilo', unidad: 'par', stock: 3, stockMinimo: 5 },
+  ];
+  return { bajoStock: n, insumos: todos.slice(0, n) };
+}
+
+/**
+ * GET /api/admin/insumos/para-comprar real: paños (Accesorios, 10 unidades, sin costo) y shampoo (Químicos,
+ * 1,5 litros, $ 13.500).
+ */
+export function paraComprar(): ParaComprar {
+  return cuerpoReal<ParaComprar>('paraComprarAdmin');
+}
+
+/**
+ * GET /api/admin/consumo real de noviembre de 2026 (por día): 5 lavados; cera 900 ml ($ 10.800), paños 4 unidades
+ * (sin costo) y shampoo 1,25 litros ($ 11.250); costo de insumos $ 22.050 y $ 4.410 por lavado.
+ */
+export function consumoNoviembre(): Consumo {
+  return cuerpoReal<Consumo>('consumoAdmin');
+}
+
+/** GET /api/admin/consumo real de un mes sin lavados ni consumo (enero de 2026). */
+export function consumoVacio(): Consumo {
+  return cuerpoReal<Consumo>('consumoVacio');
 }

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useSesion, useUsuario } from '../session/SessionContext';
+import { Campanita } from './Campanita';
 import { MenuCuenta } from './MenuCuenta';
 import { Senal } from './Senal';
 
@@ -48,6 +49,7 @@ function nombreVisible(u: { nombre: string | null; email: string | null }): stri
 
 export function Layout() {
   const usuario = useUsuario();
+  const { puede } = useSesion();
   const secciones = useSecciones();
   const principales = secciones.filter((s) => s.principal);
 
@@ -58,7 +60,10 @@ export function Layout() {
       </a>
       <header className="barra">
         <img className="barra-logo" src="/logo.png" alt="Buddys Wash Detail" width={150} height={36} />
-        <MenuCuenta />
+        <div className="barra-acciones">
+          {puede('inventario.consumo') ? <Campanita /> : null}
+          <MenuCuenta />
+        </div>
       </header>
 
       <nav className="riel" aria-label="Secciones">

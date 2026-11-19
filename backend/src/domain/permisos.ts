@@ -27,6 +27,8 @@ import type { Rol } from './perfil.js';
  * | Presupuestos, comprobantes, taller     | sí         | sí    | no                                |
  * | Inventario: ver / usar                 | sí         | sí    | sí                                |
  * | Inventario: crear, comprar, ajustar    | sí         | sí    | no                                |
+ * | Recetas: ver / definir                 | sí / sí    | sí / sí | sí / no                         |
+ * | Consumo, para comprar y stock bajo     | sí         | sí    | no                                |
  * | Gestionar usuarios                     | sí         | parcial: solo empleados | no              |
  * | Su propio perfil (nombre, foto, clave) | sí         | sí    | sí                                |
  * | Avisos push en su dispositivo          | sí         | sí    | sí                                |
@@ -209,6 +211,18 @@ export const CAPACIDADES = [
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
+    id: 'inventario.recetas',
+    grupo: 'Inventario',
+    texto: 'Definir qué insumos usa cada servicio',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
+  },
+  {
+    id: 'inventario.consumo',
+    grupo: 'Inventario',
+    texto: 'Ver el consumo de insumos, la lista para comprar y los avisos de stock bajo',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
+  },
+  {
     id: 'usuarios.gestionar',
     grupo: 'Usuarios',
     texto: 'Crear, editar, desactivar y eliminar usuarios del panel',
@@ -224,7 +238,7 @@ export const CAPACIDADES = [
   {
     id: 'push.activar',
     grupo: 'Avisos',
-    texto: 'Activar los avisos de turnos nuevos en su propio dispositivo',
+    texto: 'Activar los avisos en su propio dispositivo (turnos nuevos y, para admin y superadmin, stock bajo)',
     roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
   },
 ] as const satisfies readonly Capacidad[];
@@ -396,6 +410,22 @@ export function puedeRegistrarUsoInsumos(rol: Rol): boolean {
 /** Crear y editar insumos, cargar compras y ajustar el stock. */
 export function puedeGestionarInventario(rol: Rol): boolean {
   return nivelDe(rol, 'inventario.gestionar') === 'si';
+}
+
+/**
+ * Definir las recetas (PUT /api/admin/servicios/:id/receta). Verlas entra en inventario.ver: el empleado las ve, sin
+ * costos (las recetas no llevan).
+ */
+export function puedeDefinirRecetas(rol: Rol): boolean {
+  return nivelDe(rol, 'inventario.recetas') === 'si';
+}
+
+/**
+ * El consumo de insumos (con costos), la lista para comprar, la campanita de stock bajo y su aviso push. Los avisos
+ * push de stock bajo van solo a los dispositivos de quienes tienen esta capacidad.
+ */
+export function puedeVerConsumoInventario(rol: Rol): boolean {
+  return nivelDe(rol, 'inventario.consumo') === 'si';
 }
 
 /** Los costos y valores en pesos del inventario los ven solo quienes gestionan el inventario (no el empleado). */

@@ -138,7 +138,7 @@ describe('PATCH /api/admin/bookings/:id con formaPago', () => {
 
 describe('GET /api/admin/lavados: resumen.porFormaPago (cierre de caja)', () => {
   it('una entrada por forma usada (null = sin indicar), más cobrado primero; sin cancelados ni otros días', async () => {
-    const { admin, franco } = await equipo();
+    const { context, admin, franco } = await equipo();
     await admin.post('/api/admin/lavados', { ...LAVADO, monto: 10000, formaPago: 'efectivo' });
     await admin.post('/api/admin/lavados', { ...LAVADO, monto: 12000, formaPago: 'efectivo' });
     await admin.post('/api/admin/lavados', { ...LAVADO, monto: 30000, formaPago: 'transferencia' });
@@ -146,7 +146,11 @@ describe('GET /api/admin/lavados: resumen.porFormaPago (cierre de caja)', () => 
     await admin.post('/api/admin/lavados', { ...LAVADO, formaPago: 'debito' }); // sin monto
     await admin.post('/api/admin/lavados', { ...LAVADO, monto: 99000, formaPago: 'credito', fecha: '2026-10-15' });
     const cancelado = (await admin.post('/api/admin/lavados', { ...LAVADO, monto: 70000, formaPago: 'otro' })).body.lavado as { id: string };
-    await admin.patch(`/api/admin/bookings/${cancelado.id}`, { estado: 'cancelado' });
+    // Un lavado de mostrador ya no se cancela por la API (409): este es uno cancelado de antes de esa regla.
+    await context.db.sql.query(
+      "UPDATE buddys.bookings SET estado = 'cancelado', monto = NULL, trabajador_id = NULL WHERE id = $1::uuid",
+      [cancelado.id],
+    );
 
     const r = await admin.get('/api/admin/lavados');
     expect(r.status).toBe(200);

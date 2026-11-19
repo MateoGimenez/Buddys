@@ -22,6 +22,7 @@ import type { MetaService } from '../services/metas.js';
 import type { TallerService } from '../services/taller.js';
 import type { PerfilRepository } from '../domain/perfil.js';
 import type { PushService } from '../services/push.js';
+import type { RecetaService } from '../services/recetas.js';
 import type { RecordatorioService } from '../services/recordatorios.js';
 import type { ServicioService } from '../services/servicios.js';
 import type { UsuarioService } from '../services/usuarios.js';
@@ -35,7 +36,8 @@ import { adminServiciosRouter } from './admin-servicios.js';
 import { adminTrabajadoresRouter } from './admin-trabajadores.js';
 import { adminEstadisticasRouter } from './admin-estadisticas.js';
 import { adminComprobantesRouter } from './admin-comprobantes.js';
-import { adminInsumosRouter } from './admin-insumos.js';
+import { adminConsumoRouter, adminInsumosRouter } from './admin-insumos.js';
+import { adminRecetasRouter } from './admin-recetas.js';
 import { adminLavadosRouter } from './admin-lavados.js';
 import { adminPresupuestosRouter } from './admin-presupuestos.js';
 import { adminGastosRouter } from './admin-gastos.js';
@@ -74,6 +76,7 @@ export interface ApiDeps {
   metas: MetaService;
   taller: TallerService;
   inventario: InventarioService;
+  recetas: RecetaService;
   presupuestos: PresupuestoService;
   comprobantes: ComprobanteService;
   cookies: SessionCookies;
@@ -104,6 +107,7 @@ export function createApiRouter(deps: ApiDeps): Router {
     metas,
     taller,
     inventario,
+    recetas,
     presupuestos,
     comprobantes,
     cookies,
@@ -155,6 +159,8 @@ export function createApiRouter(deps: ApiDeps): Router {
   // La foto de un usuario va ANTES del router de usuarios: la propia la puede ver cualquier rol.
   api.use('/admin/usuarios', adminFotoUsuarioRouter({ perfil }));
   api.use('/admin/usuarios', adminUsuariosRouter({ usuarios }));
+  // Recetas: GET /admin/recetas y PUT /admin/servicios/:id/receta (antes del catálogo, que no tiene esa ruta).
+  api.use('/admin', adminRecetasRouter({ recetas }));
   api.use('/admin/servicios', adminServiciosRouter({ servicios }));
   api.use('/admin/trabajadores', adminTrabajadoresRouter({ perfiles }));
   api.use('/admin/estadisticas', adminEstadisticasRouter({ estadisticas }));
@@ -162,6 +168,7 @@ export function createApiRouter(deps: ApiDeps): Router {
   api.use('/admin/metas', adminMetasRouter({ metas }));
   api.use('/admin/taller', adminTallerRouter({ taller }));
   api.use('/admin/insumos', adminInsumosRouter({ inventario }));
+  api.use('/admin/consumo', adminConsumoRouter({ inventario }));
   api.use('/admin/presupuestos', adminPresupuestosRouter({ presupuestos, taller, pdfLimiter: limiters.pdf }));
   api.use('/admin', adminComprobantesRouter({ comprobantes, taller, pdfLimiter: limiters.pdf }));
   api.use('/admin/permisos', adminPermisosRouter({ perfiles }));

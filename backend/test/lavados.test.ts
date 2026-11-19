@@ -327,9 +327,13 @@ describe('GET /api/admin/lavados (planilla del día)', () => {
   });
 
   it('un lavado cancelado no cuenta en la planilla', async () => {
-    const { admin } = await equipo();
+    const { context, admin } = await equipo();
     const { id } = (await admin.post('/api/admin/lavados', { ...LAVADO, monto: 1000 })).body.lavado as { id: string };
-    await admin.patch(`/api/admin/bookings/${id}`, { estado: 'cancelado' });
+    // Un lavado de mostrador ya no se cancela por la API (409): este es uno cancelado de antes de esa regla.
+    await context.db.sql.query(
+      "UPDATE buddys.bookings SET estado = 'cancelado', monto = NULL, trabajador_id = NULL WHERE id = $1::uuid",
+      [id],
+    );
     expect((await admin.get('/api/admin/lavados')).body.resumen).toMatchObject({ cantidad: 0, total: 0 });
   });
 });

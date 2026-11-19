@@ -6,6 +6,7 @@ import {
   type NuevaSuscripcion,
   type PushRepository,
 } from '../../domain/push.js';
+import type { Rol } from '../../domain/perfil.js';
 import { isUuid } from './uuid.js';
 
 /** Clave 1 del advisory lock de las altas de dispositivos (7340001 a 7340003 ya están en uso). */
@@ -58,6 +59,23 @@ export class PostgresPushRepository implements PushRepository {
        JOIN buddys.perfiles AS p ON p.id = s.perfil_id
        WHERE p.activo
        ORDER BY s.created_at, s.id`,
+    );
+    return rows.map((row) => ({
+      id: str(row, 'id'),
+      endpoint: str(row, 'endpoint'),
+      p256dh: str(row, 'p256dh'),
+      auth: str(row, 'auth'),
+    }));
+  }
+
+  async destinosConRol(roles: readonly Rol[]): Promise<DestinoPush[]> {
+    const { rows } = await this.sql.query(
+      `SELECT s.id::text AS id, s.endpoint, s.p256dh, s.auth
+       FROM buddys.push_suscripciones AS s
+       JOIN buddys.perfiles AS p ON p.id = s.perfil_id
+       WHERE p.activo AND p.eliminado_at IS NULL AND p.rol_id = ANY($1::text[])
+       ORDER BY s.created_at, s.id`,
+      [roles],
     );
     return rows.map((row) => ({
       id: str(row, 'id'),

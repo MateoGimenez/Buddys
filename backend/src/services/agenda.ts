@@ -1,18 +1,22 @@
 import {
   type Booking,
   type BookingRepository,
+  type CorreccionDeStock,
   ESTADOS_CERRADOS,
+  type Estado,
   type Reprogramacion,
   TurnoCerradoError,
 } from '../domain/booking.js';
 import { fechaConfirmadaRange, MAX_DAYS_CONFIRMADA } from '../domain/booking-dates.js';
 import type { PerfilRepository } from '../domain/perfil.js';
+import type { StockPushNotifier } from '../domain/push.js';
 import type { ServicioRepository } from '../domain/servicios.js';
 import { puedeCambiarEstado, puedeCorregirCobro, puedeRegistrarCobro, puedeReprogramar } from '../domain/permisos.js';
 import { AppError } from '../lib/errors.js';
 import type { Logger } from '../lib/logger.js';
 import type { CambiosTurno } from '../schemas/admin.js';
 import type { UsuarioSesion } from './auth.js';
+import { avisarStockBajo } from './inventario.js';
 import { serviciosDelLavado } from './servicios.js';
 
 export interface AgendaServiceDeps {
@@ -23,6 +27,8 @@ export interface AgendaServiceDeps {
   perfiles: PerfilRepository;
   logger: Logger;
   now: () => Date;
+  /** Aviso push de stock bajo si corregir los servicios de un lavado deja un insumo bajo el mínimo. */
+  avisos?: StockPushNotifier | undefined;
 }
 
 export const NOT_FOUND_MESSAGE = 'No encontramos ese turno.';
@@ -36,6 +42,8 @@ export const EMPLEADO_COBRO_COMPLETADO_MESSAGE = 'Con tu rol no podés cambiar e
 export const TRABAJADOR_INVALIDO_MESSAGE = 'Elegí una persona activa del panel.';
 export const EMPLEADO_FORMA_PAGO_MESSAGE = 'Con tu rol no podés cambiar la forma de pago: la corrige un administrador.';
 export const EMPLEADO_SERVICIOS_MESSAGE = 'Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador.';
+export const MOSTRADOR_NO_SE_CANCELA_MESSAGE =
+  'Un lavado de mostrador no se cancela: deshacelo desde la planilla (así vuelve el stock).';
 
 /** Errores por campo cuando se manda cobro (con valor) para un turno que no queda completado. */
 function erroresCobroSinCompletar(
@@ -77,6 +85,8 @@ export class AgendaService {
    *    fields.servicioIds) también los cambia quien corrige el cobro, en cualquier estado: reemplazan la lista y el
    *    principal (el primero) y mueven updated_at (el servicio se ve en el seguimiento). La misma lista de antes no
    *    escribe nada;
+   *  - un lavado de mostrador nace completado y no sale de ahí: pasarlo a cualquier otro estado es 409 (se deshace
+   *    desde la planilla, que devuelve el stock; contrato 2026-11-17_06, decisión del dueño). Los turnos web no cambian;
    *  - todo se valida antes de escribir: o se guarda todo o nada.
    * Cargar o corregir solo el cobro no mueve updated_at (es el "actualizado el" que ve el cliente).
    */
@@ -103,6 +113,7 @@ export class AgendaService {
     }
 
     if (estado !== undefined && !puedeCambiarEstado(actor.rol, estado)) throw AppError.forbidden(SOLO_COMPLETAR_MESSAGE);
+    await this.verificarEstadoDeMostrador(id, estado);
 
     const completaTodo = puedeRegistrarCobro(actor.rol);
     const tocaCobro = monto !== undefined || trabajadorId !== undefined;
@@ -117,8 +128,10 @@ export class AgendaService {
         return actual;
       }
       // Sin cobro de por medio: estado y/o nota, como siempre (el repositorio borra el cobro si el turno sale de completado).
-      const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota }, now);
+      const stock = this.correccionDeStock(actor);
+      const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota }, now, stock);
       if (booking === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
+      avisarStockBajo(this.deps.avisos, this.deps.logger, stock.stockBajo);
       return booking;
     }
 
@@ -157,12 +170,39 @@ export class AgendaService {
     const igualForma = formaPago === undefined || formaPago === actual.formaPago;
     if (igualEstado && notasInternas === undefined && igualCobro && igualForma && servicios === undefined) return actual;
 
-    const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota, ...cobro }, now);
+    const stock = this.correccionDeStock(actor);
+    const booking = await this.deps.bookings.actualizar(
+      id,
+      { ...(estado !== undefined && { estado }), ...nota, ...cobro },
+      now,
+      stock,
+    );
     if (booking === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
+    avisarStockBajo(this.deps.avisos, this.deps.logger, stock.stockBajo);
     if (cobro.monto !== undefined || cobro.trabajadorId !== undefined) {
       this.deps.logger.info(`Cobro de turno actualizado id=${booking.id} por=${actor.id}`); // sin el importe
     }
     return booking;
+  }
+
+  /**
+   * 409 si `estado` saca de completado a un lavado de mostrador (404 si el turno no existe). El origen de un turno no
+   * cambia nunca, así que leerlo antes de escribir no deja carreras. Sin estado, o con 'completado', no lee nada.
+   */
+  private async verificarEstadoDeMostrador(id: string, estado: Estado | undefined): Promise<void> {
+    if (estado === undefined || estado === 'completado') return;
+    const actual = await this.deps.bookings.find(id);
+    if (actual === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
+    if (actual.origen === 'mostrador') throw AppError.conflict(MOSTRADOR_NO_SE_CANCELA_MESSAGE);
+  }
+
+  /**
+   * Con quién se registran los movimientos si la corrección cambia los servicios de un lavado de mostrador (el
+   * repositorio devuelve lo que descontó la receta y descuenta la nueva, regla 5) y dónde quedan los insumos que
+   * cruzaron su mínimo.
+   */
+  private correccionDeStock(actor: UsuarioSesion): CorreccionDeStock {
+    return { perfilId: actor.id, stockBajo: [] };
   }
 
   /**
@@ -188,6 +228,7 @@ export class AgendaService {
     const { estado, confirmada } = cambios;
     if (!puedeReprogramar(actor.rol)) throw AppError.forbidden(SIN_PERMISO_REPROGRAMAR_MESSAGE);
     if (estado !== undefined && !puedeCambiarEstado(actor.rol, estado)) throw AppError.forbidden(SOLO_COMPLETAR_MESSAGE);
+    await this.verificarEstadoDeMostrador(id, estado);
 
     // Confirmar una fecha y a la vez cancelar o completar el turno no tiene sentido: se rechaza igual que
     // reprogramar uno que ya está cerrado.

@@ -348,6 +348,97 @@ export type MovimientoNuevo =
   | { tipo: 'compra'; cantidad: number; costoTotal?: number; proveedor?: string; nota?: string }
   | { tipo: 'ajuste'; stockReal: number; nota?: string };
 
+/**
+ * Tipos de movimiento de stock. `devolucion` (contrato 06) lo crea solo el backend al deshacer o corregir un lavado:
+ * devuelve lo que la receta había descontado. No se puede mandar a mano (POST con `devolucion` es 400).
+ */
+export type TipoMovimiento = 'uso' | 'compra' | 'ajuste' | 'devolucion';
+
+/** Un renglón de GET /api/admin/insumos/:id/movimientos. `cantidad` con signo; `costoTotal` null para el empleado. */
+export interface Movimiento {
+  id: string;
+  tipo: TipoMovimiento;
+  cantidad: number;
+  costoTotal: number | null;
+  proveedor: string | null;
+  nota: string | null;
+  persona: Persona | null;
+  /** El lavado que lo generó (los `uso` y `devolucion` de una receta). */
+  turnoId: string | null;
+  createdAt: string;
+}
+
+/* ------------------------------------------------------------------ Recetas y stock (contrato 06) */
+
+/** Un insumo de una receta, con su nombre y su unidad (sin costos: lo ven todos los roles). */
+export interface RenglonReceta {
+  insumoId: string;
+  nombre: string;
+  unidad: Unidad;
+  cantidad: number;
+}
+
+/**
+ * Qué insumos usa un servicio. `general` se usa cuando el vehículo del lavado no tiene renglones propios.
+ * `porVehiculo` solo trae las claves que tienen renglones.
+ */
+export interface Receta {
+  servicioId: string;
+  general: RenglonReceta[];
+  porVehiculo: Partial<Record<VehiculoTipo, RenglonReceta[]>>;
+}
+
+/** Cuántos renglones puede tener una variante de receta (el backend rechaza más). */
+export const MAX_RENGLONES_RECETA = 30;
+/** Tope de la cantidad de un renglón (numeric(12,2), CHECK > 0 y <= 99999). */
+export const MAX_CANTIDAD_RECETA = 99999;
+
+/** PUT /api/admin/servicios/:id/receta: reemplaza una variante. `items: []` la borra. */
+export interface CambioReceta {
+  vehiculo: VehiculoTipo | null;
+  items: { insumoId: string; cantidad: number }[];
+}
+
+/** GET /api/admin/insumos/alertas: lo liviano que pide la campanita. Ordenados por stock / mínimo, ascendente. */
+export interface AlertasStock {
+  bajoStock: number;
+  insumos: { id: string; nombre: string; unidad: Unidad; stock: number; stockMinimo: number }[];
+}
+
+export interface ItemParaComprar {
+  insumoId: string;
+  nombre: string;
+  categoria: string | null;
+  unidad: Unidad;
+  stock: number;
+  stockMinimo: number;
+  /** max(2 × mínimo − stock, 0): entero para unidad, par y caja; 2 decimales para el resto. */
+  sugerido: number;
+  /** round(sugerido × costo unitario), o null si el insumo no tiene costo cargado. */
+  costoEstimado: number | null;
+}
+
+/** GET /api/admin/insumos/para-comprar (admin y superadmin), ordenado por categoría y nombre. */
+export interface ParaComprar {
+  items: ItemParaComprar[];
+  /** Suma de los costoEstimado que no son null: 0 si ninguno tiene costo cargado (nunca null). */
+  costoTotalEstimado: number;
+}
+
+export type AgrupadoConsumo = 'dia' | 'semana' | 'mes';
+
+/** GET /api/admin/consumo (admin y superadmin). Los costos son con el costo unitario de hoy. */
+export interface Consumo {
+  rango: { desde: string; hasta: string; agrupado: AgrupadoConsumo };
+  /** Lavados de mostrador completados; la serie trae ceros en los días, semanas (clave = el lunes) o meses sin lavados. */
+  lavados: { total: number; serie: { clave: string; cantidad: number }[] };
+  /** `consumido` = usos menos devoluciones; `costo` null si el insumo no tiene costo cargado. */
+  porInsumo: { insumoId: string; nombre: string; unidad: Unidad; consumido: number; costo: number | null }[];
+  costoInsumos: number;
+  /** null si no hubo lavados. */
+  costoPorLavado: number | null;
+}
+
 export const ESTADOS_PRESUPUESTO = ['borrador', 'enviado', 'aceptado', 'rechazado'] as const;
 export type EstadoPresupuesto = (typeof ESTADOS_PRESUPUESTO)[number];
 
@@ -403,4 +494,19 @@ export interface Comprobante {
   servicioNombre: string;
   vehiculo: string;
   notas: string | null;
+}
+
+// ------------------------------------------------------------------ Avisos push (backend/README.md, "Avisos push")
+
+/** GET /api/admin/push/estado: la clave pública solo viene si el envío está disponible. */
+export interface EstadoPush {
+  disponible: boolean;
+  clavePublica: string | null;
+}
+
+/** POST /api/admin/push/suscripciones: la forma de PushSubscription.toJSON() (sin campos de más: el backend es estricto). */
+export interface SuscripcionPush {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: { p256dh: string; auth: string };
 }
