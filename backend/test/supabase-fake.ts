@@ -78,6 +78,8 @@ export async function signAccessToken(
 interface FakeUser {
   id: string;
   password: string;
+  /** ban_duration de la API admin (ej. "876000h"): baneado, no puede iniciar sesión ni refrescar. */
+  banDuration?: string;
 }
 
 interface RefreshTokenState {
@@ -98,6 +100,11 @@ export class FakeSupabaseAuth {
   readonly calls: FakeCall[] = [];
   /** 'down': la red falla; 'error': Supabase responde 500; 'rate': 429. Se aplica a todos los pedidos. */
   mode: 'ok' | 'down' | 'error' | 'rate' = 'ok';
+  /**
+   * Se corre justo antes de borrar un usuario por la API admin (DELETE /admin/users/:id): para simular algo que pasa
+   * entre la consulta del servicio y el borrado (ej.: alguien le registra un lavado y lo frena la FK RESTRICT).
+   */
+  antesDeBorrar: ((id: string) => Promise<void>) | undefined;
 
   private readonly users = new Map<string, FakeUser>();
   private readonly refreshTokens = new Map<string, RefreshTokenState>();
@@ -155,6 +162,12 @@ export class FakeSupabaseAuth {
     return this.users.get(email.toLowerCase())?.password;
   }
 
+  /** Email actual y ban de un usuario por id (para comprobar la baja hecha por la API admin). */
+  cuentaDe(id: string): { email: string; banDuration: string | undefined } | undefined {
+    const entry = [...this.users.entries()].find(([, user]) => user.id === id);
+    return entry ? { email: entry[0], banDuration: entry[1].banDuration } : undefined;
+  }
+
   private async admin(method: string, path: string, body: Record<string, unknown>): Promise<Response> {
     const email = typeof body.email === 'string' ? body.email.toLowerCase() : undefined;
     const password = typeof body.password === 'string' ? body.password : undefined;
@@ -187,13 +200,16 @@ export class FakeSupabaseAuth {
         this.users.set(email, user);
       }
       if (password !== undefined) user.password = password;
+      if (typeof body.ban_duration === 'string') user.banDuration = body.ban_duration === 'none' ? undefined : body.ban_duration;
       return json(200, { id: user.id, aud: 'authenticated', role: 'authenticated', email: email ?? currentEmail });
     }
     if (method === 'DELETE') {
+      await this.antesDeBorrar?.(user.id);
       try {
         await this.db.authSql.query('DELETE FROM auth.users WHERE id = $1::uuid', [user.id]);
       } catch {
-        // Ej.: el trigger que impide quedarse sin superadmin. GoTrue responde 500 con un error de base de datos.
+        // Ej.: el trigger que impide quedarse sin superadmin o una FK ON DELETE RESTRICT (SQLSTATE 23001). GoTrue
+        // responde 500 con un error de base de datos genérico, sin el SQLSTATE.
         return json(500, { code: 500, error_code: 'unexpected_failure', msg: 'Database error deleting user' });
       }
       this.users.delete(currentEmail);
@@ -207,6 +223,9 @@ export class FakeSupabaseAuth {
     const user = this.users.get(email);
     if (user === undefined || user.password !== body.password) {
       return json(400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
+    }
+    if (user.banDuration !== undefined) {
+      return json(400, { code: 400, error_code: 'user_banned', msg: 'User is banned' });
     }
     const sessionId = randomUUID();
     await this.db.sql.query('INSERT INTO auth.sessions (id, user_id) VALUES ($1::uuid, $2::uuid)', [sessionId, user.id]);

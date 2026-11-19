@@ -67,6 +67,19 @@ export class SupabaseAdminClient {
       body.email_confirm = true;
     }
     if (cambios.password !== undefined) body.password = cambios.password;
+    return this.put(id, body);
+  }
+
+  /**
+   * Paso 2 de la baja: le pone el email `emailLiberado` (confirmado, así no se manda ningún email y el real queda
+   * libre para otra cuenta) y lo banea por `banDuration` (ej. "876000h"): no puede iniciar sesión ni refrescar.
+   * false = el usuario no existe.
+   */
+  async banUser(id: string, emailLiberado: string, banDuration: string): Promise<boolean> {
+    return this.put(id, { email: emailLiberado, email_confirm: true, ban_duration: banDuration });
+  }
+
+  private async put(id: string, body: Record<string, unknown>): Promise<boolean> {
     const response = await this.request('PUT', `/admin/users/${encodeURIComponent(id)}`, body);
     if (response.status === 404) {
       await response.body?.cancel();
@@ -80,8 +93,9 @@ export class SupabaseAdminClient {
   }
 
   /**
-   * Borra el usuario (y, en cascada, su perfil y sus sesiones). false = no existía. Si lo frena un trigger de la base
-   * (ej.: era el último superadmin activo), GoTrue responde 500 y esto lanza AuthUnavailableError.
+   * Borra el usuario (y, en cascada, su perfil y sus sesiones). false = no existía. Si lo frena la base (era el último
+   * superadmin activo, o tiene historial y lo frena una FK ON DELETE RESTRICT, SQLSTATE 23001), GoTrue responde 500
+   * sin decir por qué y esto lanza AuthUnavailableError: quien llama tiene que volver a mirar la base.
    */
   async deleteUser(id: string): Promise<boolean> {
     const response = await this.request('DELETE', `/admin/users/${encodeURIComponent(id)}`, undefined);

@@ -277,13 +277,17 @@ export function Confirmar({
   onCancelar: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const cancelarRef = useRef<HTMLButtonElement>(null);
   const tituloId = useId();
+  const cuerpoId = useId();
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
     if (abierto && !d.open) {
       if (typeof d.showModal === 'function') d.showModal();
       else d.setAttribute('open', '');
+      // El foco arranca en lo seguro (Cancelar), nunca en la acción que confirma.
+      cancelarRef.current?.focus();
     }
     if (!abierto && d.open) {
       if (typeof d.close === 'function') d.close();
@@ -295,6 +299,7 @@ export function Confirmar({
       ref={ref}
       className="dialogo"
       aria-labelledby={tituloId}
+      aria-describedby={children ? cuerpoId : undefined}
       onCancel={(e) => {
         e.preventDefault();
         onCancelar();
@@ -303,9 +308,13 @@ export function Confirmar({
       <h2 id={tituloId} className="dialogo-titulo">
         {titulo}
       </h2>
-      {children ? <div className="dialogo-cuerpo">{children}</div> : null}
+      {children ? (
+        <div className="dialogo-cuerpo" id={cuerpoId}>
+          {children}
+        </div>
+      ) : null}
       <div className="dialogo-acciones">
-        <Boton variante="fantasma" onClick={onCancelar} disabled={ocupado}>
+        <Boton ref={cancelarRef} variante="fantasma" onClick={onCancelar} disabled={ocupado}>
           Cancelar
         </Boton>
         <Boton variante={variante} onClick={onConfirmar} cargando={ocupado ?? false}>

@@ -80,6 +80,16 @@ export function nombreMes(fecha: string): string {
   );
 }
 
+/** Día y mes de un ISO en La Rioja, "17/11". */
+export function diaMesDeIso(iso: string): string {
+  return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', timeZone: ZONA }).format(new Date(iso));
+}
+
+/** Para buscar: sin mayúsculas ni acentos ("Lucía" y "lucia" son lo mismo). */
+export function paraBuscar(texto: string): string {
+  return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+}
+
 /** Hora local de un ISO, "14:05". */
 export function hora(iso: string): string {
   return new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', timeZone: ZONA, hour12: false }).format(
