@@ -627,6 +627,42 @@ a {
   padding-inline-start: 6px;
 }
 
+/* Botón para ver la contraseña: dentro de la caja, a la derecha, del alto del campo. */
+.con-ojo .ojo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 48px;
+  block-size: 48px;
+  margin-inline-start: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radio-chico) - 2px);
+  background: transparent;
+  color: var(--tinta-2);
+  cursor: pointer;
+  transition: color var(--t-toque) ease-out, background-color var(--t-toque) ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.con-ojo .ojo:hover {
+  color: var(--tinta);
+  background: var(--carbon-claro);
+}
+
+.con-ojo .ojo[aria-pressed='true'] {
+  color: var(--carbon);
+}
+
+.con-ojo .ojo:focus-visible {
+  outline-offset: -3px;
+}
+
+/* El ojo propio alcanza: sin el botón de Edge encima. */
+.con-ojo input::-ms-reveal {
+  display: none;
+}
+
 .campo-error {
   display: flex;
   align-items: flex-start;
@@ -3118,6 +3154,18 @@ a {
 }
 
 /* Esqueleto con la forma de Registrar (barra de vehículos y fichas): la pantalla no salta cuando llega el catálogo. */
+/* El título de la pantalla mientras baja (mismo alto que el h1 de .pagina-encabezado). */
+.esqueleto-titulo {
+  display: block;
+  inline-size: min(220px, 60%);
+  block-size: 1.625rem;
+  margin-block: 0.25rem;
+  border-radius: var(--radio-chico);
+  background: linear-gradient(90deg, #e2e5ef 0%, #f3f4f9 50%, #e2e5ef 100%);
+  background-size: 200% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+}
+
 .esqueleto-formulario {
   padding: 16px;
   border-radius: var(--radio);

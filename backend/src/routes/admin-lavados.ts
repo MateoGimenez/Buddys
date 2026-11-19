@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { type RequestHandler, Router } from 'express';
 import { AppError } from '../lib/errors.js';
 import { getUsuario } from '../middleware/require-session.js';
 import { bookingIdSchema } from '../schemas/admin.js';
@@ -15,11 +15,16 @@ import { LAVADO_NOT_FOUND, type LavadoService, rangoLavado } from '../services/l
  *  - DELETE /api/admin/lavados/:id => 204 ("deshacer": quien lo registró, hasta 5 minutos; quien borra turnos, siempre)
  * Corregir o borrar un lavado: como cualquier turno, PATCH y DELETE /api/admin/bookings/:id.
  */
-export function adminLavadosRouter(deps: { lavados: LavadoService; now: () => Date }): Router {
-  const { lavados, now } = deps;
+export function adminLavadosRouter(deps: {
+  lavados: LavadoService;
+  now: () => Date;
+  /** 60 por usuario por minuto para POST y DELETE; los reintentos del mismo idLocal no cuentan. */
+  limiter: RequestHandler;
+}): Router {
+  const { lavados, now, limiter } = deps;
   const router = Router();
 
-  router.post('/', async (req, res) => {
+  router.post('/', limiter, async (req, res) => {
     const datos = parseOrThrow(registrarLavadoSchema(rangoLavado(now())), req.body ?? {});
     // 201 si se registró; 200 con el original si el idLocal ya estaba (reintento de la cola sin conexión).
     const { lavado, deshacerHasta, creado } = await lavados.registrar(getUsuario(res), datos);
@@ -31,7 +36,7 @@ export function adminLavadosRouter(deps: { lavados: LavadoService; now: () => Da
     res.json(await lavados.delDia(getUsuario(res), fecha));
   });
 
-  router.delete('/:id', async (req, res) => {
+  router.delete('/:id', limiter, async (req, res) => {
     // Un id con formato inválido no puede existir: 404, igual que uno inexistente.
     const parsed = bookingIdSchema.safeParse(req.params.id);
     if (!parsed.success) throw AppError.notFound(LAVADO_NOT_FOUND);

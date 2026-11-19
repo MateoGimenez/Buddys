@@ -128,6 +128,8 @@ describe('Planilla del día', () => {
     const { user } = renderApp('/planilla');
     const [borrar] = await screen.findAllByRole('button', { name: 'Borrar' });
     await user.click(borrar as HTMLElement);
+    // Avisa que el stock que descontó vuelve (contrato 06).
+    expect(screen.getByRole('dialog')).toHaveTextContent('Los productos que usó vuelven al stock. No se puede deshacer.');
     await user.click(screen.getByRole('button', { name: 'Sí, borrarlo' }));
     await screen.findAllByRole('button', { name: 'Borrar' });
     const [del] = api.de('DELETE', '/api/admin/bookings/l1');

@@ -125,8 +125,10 @@ export interface AppConfig {
     api: RateLimitRule;
     /** Solicitudes de turno creadas, por IP. */
     bookings: RateLimitRule;
-    /** Intentos de login FALLIDOS, por IP. */
+    /** Intentos de login FALLIDOS, por IP + email (así un error no bloquea a todo el lavadero, que comparte WiFi). */
     loginFailures: RateLimitRule;
+    /** Intentos de login FALLIDOS solo por IP, con un tope más alto: frena el barrido de muchas cuentas. */
+    loginFailuresIp: RateLimitRule;
     /** Consultas de seguimiento de un turno (GET /api/turnos/:id), por IP. */
     seguimiento: RateLimitRule;
     /** Descarga de PDF (presupuestos y comprobantes), por IP: generarlos cuesta CPU. */
@@ -135,6 +137,8 @@ export interface AppConfig {
     perfilPassword: RateLimitRule;
     /** Subidas de la propia foto (PUT /api/admin/perfil/foto), por USUARIO: re-codificarla cuesta CPU y memoria. */
     perfilFoto: RateLimitRule;
+    /** Lavados registrados o deshechos (POST y DELETE /api/admin/lavados), por USUARIO. Los reintentos no cuentan. */
+    lavados: RateLimitRule;
   };
   whatsapp: WhatsappConfig;
   recordatorios: RecordatoriosConfig;
@@ -153,7 +157,9 @@ const SESSION_COOKIE_MAX_AGE_SECONDS = 8 * 60 * 60;
 export const DEFAULT_RATE_LIMITS: AppConfig['rateLimits'] = {
   api: { windowMs: 60 * 1000, limit: 300 },
   bookings: { windowMs: 15 * 60 * 1000, limit: 5 },
+  // Por persona (IP + email): 5 fallos. Por IP sola, más alto: el lavadero entero sale por la misma IP.
   loginFailures: { windowMs: 15 * 60 * 1000, limit: 5 },
+  loginFailuresIp: { windowMs: 15 * 60 * 1000, limit: 30 },
   // Una persona mira su turno unas pocas veces; un barrido de ids necesitaría millones de pedidos.
   seguimiento: { windowMs: 15 * 60 * 1000, limit: 60 },
   // Generar un PDF cuesta CPU: 30 por minuto por IP alcanzan de sobra para un panel con 2 o 3 personas.
@@ -162,6 +168,8 @@ export const DEFAULT_RATE_LIMITS: AppConfig['rateLimits'] = {
   perfilPassword: { windowMs: 15 * 60 * 1000, limit: 5 },
   // Cambiar la foto es algo de una vez cada tanto: 10 subidas en 15 minutos alcanzan para probar varias.
   perfilFoto: { windowMs: 15 * 60 * 1000, limit: 10 },
+  // Un lavado por minuto ya es mucho para una persona: 60 frena un script o un bucle sin molestar al uso real.
+  lavados: { windowMs: 60 * 1000, limit: 60 },
 };
 
 /** Largo mínimo de CRON_SECRET: suficiente entropía para que no se pueda adivinar por fuerza bruta. */

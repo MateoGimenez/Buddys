@@ -201,7 +201,7 @@ describe('PUT /api/admin/perfil/foto: tamaños y framing', () => {
     expect(context.storage.calls).toHaveLength(0);
 
     // body-parser lee (descarta) el cuerpo entero antes de responder 413: si el cliente promete 3 MB y manda menos,
-    // la conexión queda esperando hasta que la corta server.requestTimeout (30 s, src/index.ts). Nunca se procesa.
+    // la conexión queda esperando hasta que la corta el plazo de la foto (30 s, middleware/plazo-cuerpo.ts). Nunca se procesa.
     const dice3MB = await httpCrudo(
       context,
       (host) => Buffer.concat([Buffer.from(cabeceras(host, cookie, [`Content-Length: ${String(3 * 1024 * 1024)}`])), foto]),

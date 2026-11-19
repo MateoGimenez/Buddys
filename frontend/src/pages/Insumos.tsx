@@ -114,6 +114,9 @@ function Stock({ gestiona, veCompras, creando, setCreando }: { gestiona: boolean
               ))}
             </ul>
           )}
+          {carga.datos.total > carga.datos.insumos.length ? (
+            <p className="nota-chica">Se muestran {carga.datos.insumos.length} de {carga.datos.total} insumos.</p>
+          ) : null}
         </>
       )}
     </>

@@ -1,7 +1,7 @@
 import { LogIn } from 'lucide-react';
 import { useState, type SyntheticEvent } from 'react';
 import { ApiError, mensajeDeError } from '../api/client';
-import { Aviso, Boton, Campo } from '../components/ui';
+import { Aviso, Boton, Campo, CampoContrasena } from '../components/ui';
 import { useSesion } from '../session/SessionContext';
 
 export function Login({ aviso }: { aviso?: string }) {
@@ -59,9 +59,8 @@ export function Login({ aviso }: { aviso?: string }) {
             }}
             error={campos.email}
           />
-          <Campo
+          <CampoContrasena
             etiqueta="Contraseña"
-            type="password"
             name="password"
             autoComplete="current-password"
             value={password}

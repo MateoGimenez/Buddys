@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Permisos } from '../api/types';
 import { claveABytes } from '../lib/push';
 import { apiFalsa } from './apiFalsa';
-import { perfilReal, permisosAdmin } from './fixtures';
+import { perfilReal, permisosAdmin, permisosEmpleado } from './fixtures';
 import { renderApp } from './render';
 import { sesionAdmin, sesionEmpleado } from './sesiones';
 
@@ -89,7 +89,7 @@ describe('Mi perfil: avisos en este celular', () => {
     const api = apiFalsa(sesion({ 'GET /api/admin/push/estado': estadoOk, 'POST /api/admin/push/suscripciones': { status: 201, body: { ok: true } } }));
     const { user } = renderApp('/perfil');
     const b = await bloque();
-    expect(b.getByText('Te avisamos cuando entra un turno nuevo y cuando queda poco de un insumo.')).toBeInTheDocument();
+    expect(b.getByText('Te avisamos cuando queda poco de un insumo.')).toBeInTheDocument();
     const activar = await b.findByRole('button', { name: 'Activar avisos' });
     // Al cargar la pantalla no se pregunta nada.
     expect(requestPermission).not.toHaveBeenCalled();
@@ -227,13 +227,19 @@ describe('Mi perfil: avisos en este celular', () => {
     expect(await b.findByRole('button', { name: 'Activar avisos' })).toBeInTheDocument();
   });
 
-  it('el empleado ve que recibe solo turnos nuevos', async () => {
+  it('el empleado no ve el bloque: con los turnos online apagados no le llega ningún aviso', async () => {
     navegador();
-    apiFalsa({ ...sesionEmpleado(), 'GET /api/admin/perfil': { status: 200, body: perfilReal('perfilEmpleado') }, 'GET /api/admin/push/estado': estadoOk });
+    const api = apiFalsa({ ...sesionEmpleado(), 'GET /api/admin/perfil': { status: 200, body: perfilReal('perfilEmpleado') }, 'GET /api/admin/push/estado': estadoOk });
     renderApp('/perfil');
-    const b = await bloque();
-    expect(b.getByText('Te avisamos cuando entra un turno nuevo.')).toBeInTheDocument();
-    expect(await b.findByRole('button', { name: 'Activar avisos' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Mi perfil', level: 1 })).toBeInTheDocument();
+    // Puede activar avisos (push.activar), pero no tiene inventario.consumo: el único aviso de hoy no es para él.
+    expect(permisosEmpleado().capacidades.find((c) => c.id === 'push.activar')?.roles.empleado).toBe('si');
+    await waitFor(() => {
+      expect(api.de('GET', '/api/admin/perfil').length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByRole('heading', { name: 'Avisos en este celular' })).toBeNull();
+    expect(screen.queryByText('Por ahora no hay avisos para tu rol.')).toBeNull();
+    expect(api.de('GET', '/api/admin/push/estado')).toHaveLength(0);
   });
 
   it('si el rol no puede activar avisos, el bloque no aparece', async () => {

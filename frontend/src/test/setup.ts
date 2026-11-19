@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 import { reiniciarCola } from '../lib/cola';
+
+// Con varios workers en paralelo la máquina se carga y algunos findBy pasaban el segundo por defecto.
+configure({ asyncUtilTimeout: 3000 });
 
 afterEach(() => {
   cleanup();

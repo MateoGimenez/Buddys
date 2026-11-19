@@ -43,7 +43,7 @@ export const TRABAJADOR_INVALIDO_MESSAGE = 'Elegí una persona activa del panel.
 export const EMPLEADO_FORMA_PAGO_MESSAGE = 'Con tu rol no podés cambiar la forma de pago: la corrige un administrador.';
 export const EMPLEADO_SERVICIOS_MESSAGE = 'Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador.';
 export const MOSTRADOR_NO_SE_CANCELA_MESSAGE =
-  'Un lavado de mostrador no se cancela: deshacelo desde la planilla (así vuelve el stock).';
+  'Un lavado de mostrador no se cancela: borralo desde la planilla (así vuelven los productos al stock).';
 
 /** Errores por campo cuando se manda cobro (con valor) para un turno que no queda completado. */
 function erroresCobroSinCompletar(

@@ -560,7 +560,7 @@ function Talon({
         <div className="talon-cuerpo">
           <p className="talon-titulo">Lavado borrado</p>
           <p className="talon-detalle">
-            {registrado.servicio} · {vehiculo}. Ya no cuenta en la planilla.
+            {registrado.servicio} · {vehiculo}. Ya no cuenta en la planilla y los productos que usó volvieron al stock.
           </p>
         </div>
         <div className="talon-acciones">

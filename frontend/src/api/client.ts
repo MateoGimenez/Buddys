@@ -88,6 +88,8 @@ async function enviar(path: string, opciones: Opciones): Promise<Response> {
   try {
     return await fetch(path, armarPedido(opciones));
   } catch (err) {
+    // Cancelado a propósito (AbortController): sigue como AbortError. Un plazo vencido (AbortSignal.timeout, que
+    // corta con TimeoutError) se trata como falta de señal: NETWORK.
     if (err instanceof DOMException && err.name === 'AbortError') throw err;
     throw new ApiError(0, 'NETWORK', MENSAJE_SIN_CONEXION);
   }

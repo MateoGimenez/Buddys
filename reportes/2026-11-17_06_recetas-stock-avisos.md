@@ -110,7 +110,7 @@ Todas las rutas van detrás de la sesión, con los errores, el control CSRF y lo
 - `PATCH /api/admin/bookings/:id` sobre un lavado de mostrador, con `servicioIds` o con un cambio de vehículo: regla 5.
 - **Un lavado de mostrador no se cancela** (decisión del dueño, 2026-11-19). Un `PATCH /api/admin/bookings/:id` que pasa
   un turno con `origen = 'mostrador'` a `cancelado` (o a cualquier estado que no sea `completado`) responde
-  `409 CONFLICT` con *"Un lavado de mostrador no se cancela: deshacelo desde la planilla (así vuelve el stock)."* y no
+  `409 CONFLICT` con *"Un lavado de mostrador no se cancela: borralo desde la planilla (así vuelven los productos al stock)."* y no
   escribe nada. Los turnos web no cambian. La Planilla no ofrece cancelar (solo corregir y deshacer).
 
 ### Insumos
@@ -129,12 +129,14 @@ Todas las rutas van detrás de la sesión, con los errores, el control CSRF y lo
 
 ### `GET /api/admin/consumo?desde=YYYY-MM-DD&hasta=YYYY-MM-DD` (solo `admin` y `superadmin`)
 
-Rango y errores como en `/estadisticas`: por defecto el mes actual de La Rioja y hasta 366 días. La serie es **por día**
-hasta 62 días y por **semana** (de lunes a domingo, con la clave del lunes) hasta 200 días. Con más, por **mes**.
+Rango y errores como en `/estadisticas`: por omisión va **del día 1 del mes hasta hoy** (fechas de La Rioja; `hasta`
+es hoy y `desde`, el día 1 del mes de `hasta`), y abarca hasta 366 días. La serie es **por día** hasta 62 días y por
+**semana** (de lunes a domingo, con la clave del lunes) hasta 200 días. Con más, por **mes**. Ejemplo sin parámetros,
+pedido el 19/11/2026:
 
 ```json
 {
-  "rango": { "desde": "2026-11-01", "hasta": "2026-11-30", "agrupado": "dia" },
+  "rango": { "desde": "2026-11-01", "hasta": "2026-11-19", "agrupado": "dia" },
   "lavados": { "total": 182, "serie": [{ "clave": "2026-11-01", "cantidad": 6 }] },
   "porInsumo": [{ "insumoId": "<uuid>", "nombre": "Shampoo", "unidad": "ml", "consumido": 9100, "costo": 45500 }],
   "costoInsumos": 98000,
@@ -228,3 +230,7 @@ Ninguna.
   `backend/test/recetas-stock-seguridad.test.ts`, `recetas-stock-limites.test.ts`, `migracion-recetas-stock.test.ts` y
   `security.test.ts`.
 - [x] Seguridad (buddys-seguridad): dos pasadas. Primera: hallazgo bajo (origen por la nota) arreglado con la columna `origen`; endurecimientos de U+2028/2029, orden de locks y CSP. Segunda: medio (lluvia de avisos con registrar/deshacer) arreglado: la devolución ya no limpia `aviso_bajo_at`; bajo (`destinoSeguro` del service worker) arreglado validando el resultado normalizado. Nota: el frontend todavía no tiene CSP propia; hay que ponerla en el hosting estático.
+- [x] Objetivo E (2026-11-19, buddys-backend): el `409` del lavado de mostrador ahora dice *"Un lavado de mostrador no se
+  cancela: borralo desde la planilla (así vuelven los productos al stock)."* (el botón de la Planilla se llama
+  "Borrar"); el texto no estaba en las respuestas guardadas, así que los fixtures no cambiaron. El ejemplo de
+  `GET /api/admin/consumo` se corrigió: por omisión el rango va del día 1 del mes hasta hoy (el código no cambió).

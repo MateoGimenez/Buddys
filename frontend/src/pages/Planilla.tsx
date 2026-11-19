@@ -416,7 +416,7 @@ function Copia({ lavado, numero, orden, nombresServicio, veImportes, corrige, bo
         onConfirmar={() => void borrar()}
         onCancelar={() => { setConfirmando(false); }}
       >
-        {servicio} · {NOMBRE_VEHICULO[lavado.vehiculoTipo]}. Deja de contar en la planilla y en las estadísticas. No se puede deshacer.
+        {servicio} · {NOMBRE_VEHICULO[lavado.vehiculoTipo]}. Deja de contar en la planilla y en las estadísticas. Los productos que usó vuelven al stock. No se puede deshacer.
       </Confirmar>
     </li>
   );

@@ -18,7 +18,7 @@ const RUTA_FOTO = '/admin/perfil/foto';
 /** El 415 de esa ruta habla de la foto, no de JSON (mismo texto que el 400 de una foto inválida). */
 const FOTO_TIPO_MESSAGE = 'Subí una foto JPG, PNG o WebP.';
 
-const esRutaFoto = (method: string, path: string) => method === 'PUT' && path === RUTA_FOTO;
+export const esRutaFoto = (method: string, path: string) => method === 'PUT' && path === RUTA_FOTO;
 
 /**
  * Defensa CSRF para POST/PUT/PATCH/DELETE (se suma a SameSite=Strict de la cookie):

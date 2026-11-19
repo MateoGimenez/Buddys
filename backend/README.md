@@ -1,8 +1,8 @@
 # Buddys Wash Detail - backend
 
-API REST del **sistema interno** de Buddys Wash Detail (lavadero y detailing). **No tiene web**: es solo la API; el
-frontend se hará más adelante con otro diseño y va a consumir los endpoints de este documento. El contrato real de
-cada respuesta está guardado en `test/fixtures/respuestas-api.json` (un test verifica que no cambie sin querer).
+API REST del **sistema interno** de Buddys Wash Detail (lavadero y detailing). El panel web está en `../frontend/`
+(Vite + React) y consume los endpoints de este documento llamando a `/api` relativo. El contrato real de cada
+respuesta está guardado en `test/fixtures/respuestas-api.json` (un test verifica que no cambie sin querer).
 
 Hace esto:
 
@@ -623,9 +623,9 @@ Esta sección es la referencia para el frontend. Todo viaja como JSON; las fecha
 
 - **`POST`, `PATCH` y `DELETE` (y `PUT`) exigen `Content-Type: application/json` aunque no lleven body** (por ejemplo `logout` y `delete`); si no, responden `415`. Un body vacío se acepta en esos casos. El body se interpreta como UTF-8.
 - **Si el pedido trae cabecera `Origin`, tiene que coincidir exactamente con uno de los `FRONTEND_ORIGIN`**; si no, `403 FORBIDDEN_ORIGIN`. Los navegadores la mandan solos. Los clientes sin `Origin` (curl, scripts) se aceptan.
-- Con `fetch` hay que enviar las cookies: `credentials: "include"`. El JS nunca ve los tokens: son cookies httpOnly.
+- Las cookies viajan solas porque el panel llama a `/api` en su mismo origen (`credentials: 'same-origin'`; ver [Despliegue](#despliegue)). El JS nunca ve los tokens: son cookies httpOnly.
 - **Única excepción al JSON:** `PUT /api/admin/perfil/foto` (solo esa ruta y ese método) manda la imagen tal cual, con `Content-Type: image/jpeg`, `image/png` o `image/webp` (`middleware/request-guard.ts`). El control de `Origin` es el mismo: un formulario de otro sitio no puede mandar esos tipos sin un preflight CORS, y la cookie es `SameSite=Strict`.
-- Body máximo: **10 kb** (la foto de perfil: 2 MB, solo en su ruta). Los objetos de entrada son estrictos: **un campo desconocido se rechaza** con `400`.
+- Body máximo: **10 kb** (la foto de perfil: 2 MB, solo en su ruta). **Plazo para recibirlo: 10 s** desde las cabeceras (la foto: 30 s; `middleware/plazo-cuerpo.ts`). Es un plazo total, no de inactividad: si el cuerpo no termina de llegar (un `Content-Length` mayor que lo que se manda, o un goteo de bytes), se corta la conexión sin respuesta. `server.requestTimeout` (30 s) queda de respaldo. Los objetos de entrada son estrictos: **un campo desconocido se rechaza** con `400`.
 - Las respuestas de `/api` llevan `Cache-Control: no-store` (salvo la foto de perfil, `GET /api/admin/usuarios/:id/foto`, que se cachea con `?v=` y `ETag`).
 - Una ruta `/api/...` que no existe responde `404 NOT_FOUND` en JSON. Todo lo que cuelga de `/api/admin` pide sesión primero (`401`), exista o no la ruta.
 - **Sesión del panel**: ante un `401 SESSION_EXPIRED` en `/api/admin/*`, llamá **una vez** a `POST /api/auth/refresh` y, si responde `200`, reintentá el pedido original; si responde `401` o `403 NO_ACCESS`, mandá al login. Un `403 FORBIDDEN` es solo "tu rol no puede hacer esto": la sesión sigue. Ante `401 UNAUTHORIZED` o `403 FORBIDDEN` con `message` de "no tiene acceso al panel", la sesión terminó: al login. Un `403 FORBIDDEN` de permisos (rol insuficiente) **no** cierra la sesión: mostrá el mensaje.
@@ -742,7 +742,7 @@ Error de validación `400` (ejemplo):
 
 ### `POST /api/auth/login`
 
-Body `{ "email": string, "password": string }` (estricto; `password` hasta 128 caracteres). `200 { "usuario": { id, email, nombre, rol } }` y las cookies de sesión. Errores: `401 INVALID_CREDENTIALS` con un único mensaje genérico (*"El email o la contraseña no son correctos, o tu usuario todavía no está habilitado para el panel."*) para contraseña incorrecta, email inexistente o sin confirmar **y también para un usuario sin perfil o inactivo**: así el login no confirma que la contraseña de un usuario inactivo es correcta (la sesión que Supabase abrió se cierra en segundo plano), `400 VALIDATION_ERROR`, `429 RATE_LIMITED`, `503 SERVICE_UNAVAILABLE` (Supabase Auth no responde). Límite: **5 intentos fallidos por IP cada 15 minutos** (`429`; los logins correctos no cuentan). `usuario` lleva también `fotoVersion`.
+Body `{ "email": string, "password": string }` (estricto; `password` hasta 128 caracteres). `200 { "usuario": { id, email, nombre, rol } }` y las cookies de sesión. Errores: `401 INVALID_CREDENTIALS` con un único mensaje genérico (*"El email o la contraseña no son correctos, o tu usuario todavía no está habilitado para el panel."*) para contraseña incorrecta, email inexistente o sin confirmar **y también para un usuario sin perfil o inactivo**: así el login no confirma que la contraseña de un usuario inactivo es correcta (la sesión que Supabase abrió se cierra en segundo plano), `400 VALIDATION_ERROR`, `429 RATE_LIMITED`, `503 SERVICE_UNAVAILABLE` (Supabase Auth no responde). Límites de intentos **fallidos** (los logins correctos no cuentan; los dos dan el mismo `429` con *"Hiciste demasiados intentos fallidos. Esperá unos minutos antes de volver a probar."*): **5 cada 15 minutos por IP + email** (el email normalizado: minúsculas y sin espacios; en la clave va un hash, nunca el email) y **30 cada 15 minutos por IP sola**, contra el barrido de muchas cuentas. Así, con todo el lavadero en el mismo WiFi, el que se equivoca no deja afuera a los demás. Se mira primero el de la persona: los intentos que ya tiene frenados no gastan el cupo de la IP. Si el email viene mal formado, cuenta solo la IP (`rateLimits.loginFailures` y `rateLimits.loginFailuresIp`). `usuario` lleva también `fotoVersion`.
 
 Cookies (el JS de la página no puede leerlas: para saber si hay sesión, llamar a `GET /api/auth/me`):
 
@@ -787,6 +787,12 @@ registró lo puede **deshacer** enseguida con `DELETE /api/admin/lavados/:id` (v
 | `vehiculoModelo` | no | Modelo y/o patente, texto libre (hasta 80). |
 | `notasInternas` | no | Nota (hasta 1000). |
 | `idLocal` | no | UUID que genera el panel para cada lavado de su cola sin conexión. Si ya existe un lavado con ese `idLocal` registrado por **la misma persona**, no se crea otro: `200` (no `201`) con el mismo `{ lavado, deshacerHasta }` del original (aunque el servicio se haya desactivado en el medio). Si lo registró **otra persona**: `409 CONFLICT` (*"Ese lavado ya lo registró otra persona."*). No es UUID = 400 en `fields.idLocal`. |
+
+Límite: **60 pedidos por minuto por usuario** entre `POST /api/admin/lavados` y `DELETE /api/admin/lavados/:id`
+(`429 RATE_LIMITED`, *"Registraste demasiados lavados seguidos. Esperá un minuto y probá de nuevo."*; `rateLimits.lavados`,
+contado por id de usuario, detrás de la sesión). Los **reintentos** del mismo `idLocal` (los que responden `200`) no
+cuentan: se descuentan después de procesarlos, así la cola sin conexión que se vacía de golpe al volver la señal no se
+frena.
 
 `201 { "lavado": Turno, "deshacerHasta": "2026-11-13T15:05:00.000Z" }` (el mismo objeto Turno de
 `/api/admin/bookings`, con `estado: "completado"`, `origen: "mostrador"` y su `formaPago`). `deshacerHasta` (ISO 8601
@@ -917,7 +923,7 @@ Body estricto con **al menos uno** de: `estado`, la pareja `fechaConfirmada` + `
 `200 { "booking": { ...mismo objeto que el listado... } }`. `404 NOT_FOUND` si no existe.
 
 - **Solo `estado`** (las reglas de siempre): `400` con `fields.estado` si es inválido. **`empleado` solo puede pasar a `completado`**: cualquier otro estado da `403 FORBIDDEN` (*"Con tu rol solo podés marcar los turnos como completados."*); `admin` y `superadmin`, a cualquiera. No toca la fecha confirmada.
-- **Un lavado de mostrador no sale de `completado`** (decisión del dueño, 2026-11-19): pasar un turno con `origen: "mostrador"` a `cancelado`, `pendiente` o `confirmado` (solo, con otros campos o reprogramando) da `409 CONFLICT` (*"Un lavado de mostrador no se cancela: deshacelo desde la planilla (así vuelve el stock)."*) y no escribe nada. El `403` del empleado va antes. Se deshace con `DELETE /api/admin/lavados/:id` (o `DELETE /api/admin/bookings/:id`), que devuelve el stock. Los turnos web no cambian.
+- **Un lavado de mostrador no sale de `completado`** (decisión del dueño, 2026-11-19): pasar un turno con `origen: "mostrador"` a `cancelado`, `pendiente` o `confirmado` (solo, con otros campos o reprogramando) da `409 CONFLICT` (*"Un lavado de mostrador no se cancela: borralo desde la planilla (así vuelven los productos al stock)."*) y no escribe nada. El `403` del empleado va antes. Se deshace con `DELETE /api/admin/lavados/:id` (o `DELETE /api/admin/bookings/:id`), que devuelve el stock. Los turnos web no cambian.
 - **Con fecha y franja** (reprogramar; si viene `estado`, se cambia en la misma escritura): solo `admin` y `superadmin`; `empleado` => `403 FORBIDDEN` (*"Con tu rol no podés cambiar la fecha de un turno."*). El turno no puede estar `cancelado` ni `completado`, ni pasar a uno de esos en el mismo pedido => `400 VALIDATION_ERROR` sin `fields` (*"No se puede cambiar la fecha de un turno cancelado o completado."*). Fecha inexistente, con otro formato, anterior a hoy o posterior a hoy + 120 días (hora de La Rioja) => `400` con `fields.fechaConfirmada`. Franja inválida => `fields.franjaConfirmada`.
 - **Cobro** (`monto`: entero 0 a 99.999.999 o `null`; `trabajadorId`: uuid o `null`):
   - Solo valen si el turno **queda** `completado` (en el mismo pedido o porque ya lo está); si no, `400` con `fields.monto` / `fields.trabajadorId`. Mandar `null` en un turno que no está completado no es error (no hay nada que borrar). Un pedido de reprogramar con cobro también da `400`.
@@ -1350,19 +1356,23 @@ Si se vuelve a correr `npm run vapid` y se cambia el par, los dispositivos ya su
 
 ### Despliegue
 
-Solo la API: `render.yaml` (raíz) crea el Web Service `buddys` (`npm start` → `node dist/index.js`), detrás del HTTPS
-de Render, con `TURNOS_ONLINE=false`.
+Hoy `render.yaml` (raíz) crea solo el Web Service de la API, `buddys` (`npm start` → `node dist/index.js`), detrás
+del HTTPS de Render, con `TURNOS_ONLINE=false`. **Pendiente: cómo se despliega el frontend** (lo decide el dueño).
 
 ```
-cliente (frontend futuro, curl, app) --HTTPS--> api.buddyswashdetail.com.ar (esta API)
+cliente (panel web, curl, app) --HTTPS--> api.buddyswashdetail.com.ar (esta API)
                                                   |
                                                   +--TLS--> Postgres en Supabase (Session pooler, esquema buddys)
                                                   +--HTTPS--> Supabase Auth (/auth/v1: token, logout, JWKS)
 ```
 
-Cuando exista el frontend: cargar su origen exacto en `FRONTEND_ORIGIN` (CORS + defensa CSRF). Si web y API comparten
-sitio (`app.dominio` y `api.dominio`), las cookies `SameSite=Strict` funcionan sin cambios; el frontend tiene que
-llamar con `credentials: "include"`.
+Cómo habla el panel con la API hoy: el frontend (`frontend/src/api/client.ts`) llama a **`/api` relativo** con
+`credentials: 'same-origin'`, así que **la web y la API tienen que compartir origen**. En desarrollo lo resuelve el
+proxy de Vite (`5173 -> 4000`); en producción hace falta lo mismo: un proxy (o la misma app) que sirva el panel y
+mande `/api` a esta API bajo un único dominio. Con dominios separados (`app.dominio` y `api.dominio`) el panel no
+funcionaría tal como está: habría que cambiar el cliente a una URL absoluta con `credentials: 'include'`. En
+cualquier caso, `FRONTEND_ORIGIN` lleva el origen público exacto del panel (CORS + defensa CSRF). **Pendiente: definir
+el despliegue del frontend** (dominio y proxy); hasta entonces este esquema es solo de la API.
 
 ### Variables en producción
 
@@ -1412,7 +1422,7 @@ Igual que en desarrollo: los usuarios se crean en el panel de Supabase y se acti
 - **Contraseñas y sesiones**: las maneja **Supabase Auth** (el backend no guarda contraseñas). El backend verifica cada access token con `jose` contra el JWKS del proyecto con el algoritmo (**ES256**), emisor, audiencia y vencimiento **fijados**; exige `sub`/`session_id` UUID, `role = authenticated` y no anónimo. Los tokens viajan solo en cookies `HttpOnly; SameSite=Strict` (`Secure` en producción); el refresh token solo a `/api/auth`. Cada request comprueba en la base que la sesión siga en `auth.sessions` y que el perfil esté activo: **logout, desactivación y cambio de rol son inmediatos**.
 - **Autorización**: por rol en el backend (`domain/permisos.ts`), no en la UI. Usuarios nuevos nacen inactivos.
 - **CSRF**: `SameSite=Strict` + chequeo de `Origin` + `Content-Type: application/json` obligatorio en métodos que modifican.
-- **Rate limits**: general por IP, 5 turnos / 15 min, 5 logins fallidos / 15 min, 60 consultas de seguimiento / 15 min, 30 PDF / min, y por usuario 5 intentos de cambiar la propia contraseña / 15 min y 10 subidas de foto / 15 min (más los límites propios de Supabase Auth). La re-codificación de fotos corre de a 2 a la vez como mucho.
+- **Rate limits**: general por IP, 5 turnos / 15 min, logins fallidos (5 / 15 min por IP + email y 30 / 15 min por IP), 60 consultas de seguimiento / 15 min, 30 PDF / min, y por usuario 5 intentos de cambiar la propia contraseña / 15 min , 10 subidas de foto / 15 min y 60 lavados registrados o deshechos / min (sin contar los reintentos del mismo `idLocal`) (más los límites propios de Supabase Auth). La re-codificación de fotos corre de a 2 a la vez como mucho.
 - **Endpoint interno de recordatorios**: `Bearer <CRON_SECRET>` comparado en tiempo constante (`timingSafeEqual` sobre los sha256, así tampoco depende del largo), secreto de al menos 32 caracteres; sin la variable, `404`. Pasa por el mismo control de `Origin` y `Content-Type` que el resto.
 - **Seguimiento público**: solo campos sin datos personales, `404` igual para inexistente e inválido, UUID aleatorio (122 bits), rate limit propio y `noindex`.
 - **Último lugar**: el alta pública bloquea la fecha con `pg_advisory_xact_lock` dentro de la transacción del `INSERT` (sin carreras). Con mucha contención, el `lock_timeout` de 5 s de `buddys_app` puede cortar una espera (`500`); para un taller no pasa.
@@ -1476,6 +1486,8 @@ Los tests usan un reloj fijo, **PGlite** (Postgres compilado a WebAssembly, en m
 - `recordatorios.test.ts`: 404 sin `CRON_SECRET`, 401 con secreto incorrecto, CSRF, envío por Resend y Cloud (cabeceras, body, plantilla), idempotencia, solo confirmados de mañana por fecha de agenda, fallo que no marca y se reintenta, un canal que falla y otro que anda, sin canal, reprogramar limpia la marca, marcar no cambia `updated_at`, dos corridas a la vez, log sin datos personales.
 
 - `push.test.ts`: lista permitida de endpoints (anti SSRF), estado con y sin claves, alta válida e inválida (host no permitido, http, base64 malo, campos de más), todos los roles, 401 sin sesión, CSRF, reasignación entre usuarios, tope de 10, baja idempotente, cascade al borrar el perfil, permisos de la tabla, envío (payload exacto sin datos personales, solo usuarios activos, `pendientes`, 404/410 borra, fallos y colgados que no rompen el alta ni los otros envíos, tope de tiempo, sin claves no envía, honeypot) y el cliente real `web-push` con la red simulada.
+- `plazo-cuerpo.test.ts`: un `Content-Length` mayor que el cuerpo se corta antes de 10 s + margen con los plazos reales (tarda ~10 s); con plazos acortados, que un goteo de bytes no estira el plazo, que la foto mantiene el suyo y que un cuerpo que llega entero en partes se procesa.
+- `limites-login-lavados.test.ts`: dos personas en la misma IP (una se frena a los 5 fallos, la otra entra; el email se normaliza y no queda en los logs), el tope por IP, email mal formado (solo IP), los intentos frenados no gastan el cupo de la IP; lavados: `429` en el pedido 61 (el `DELETE` también cuenta, otra persona sigue) y 70 reintentos del mismo `idLocal` que no lo disparan.
 - `vapid.test.ts`: el par generado y el formato de `npm run vapid`. `config.test.ts` cubre las tres variables VAPID juntas o ninguna; `security.test.ts`, que `/sw.js`, `/manifest.webmanifest` y `/admin/sw.js` son `404` JSON con la CSP que bloquea todo (el backend no sirve el panel).
 
 `createTestContext` abre por defecto los 7 días con 20 cupos y quita los días especiales (`disponibilidad: 'libre'`), para que los tests anteriores al objetivo 4 sigan probando lo suyo; los de disponibilidad usan `disponibilidad: 'fabrica'` (la base tal como la deja la migración).
@@ -1525,7 +1537,7 @@ Contrato: `reportes/2026-11-17_06_recetas-stock-avisos.md`. Código: `domain/rec
 
 - `GET /api/admin/insumos/alertas` (`admin` y `superadmin`, `inventario.consumo`) -> `200 { bajoStock, insumos: [{ id, nombre, unidad, stock, stockMinimo }] }`: los activos con stock bajo, por `stock / stockMinimo` ascendente.
 - `GET /api/admin/insumos/para-comprar` (`admin` y `superadmin`) -> `200 { items: [{ insumoId, nombre, categoria, unidad, stock, stockMinimo, sugerido, costoEstimado }], costoTotalEstimado }`. `sugerido = max(2 x stockMinimo - stock, 0)`, hacia arriba a entero para `unidad`, `par` y `caja` y a 2 decimales para el resto; `costoEstimado = round(sugerido x costoUnitario)` o `null`; `costoTotalEstimado` suma los no nulos (0 si no hay). Orden: categoría (sin categoría al final) y nombre.
-- `GET /api/admin/consumo?desde=&hasta=` (`admin` y `superadmin`; el empleado recibe `403` antes de validar los parámetros) -> `200 { rango: { desde, hasta, agrupado }, lavados: { total, serie: [{ clave, cantidad }] }, porInsumo: [{ insumoId, nombre, unidad, consumido, costo }], costoInsumos, costoPorLavado }`. Rango y errores como `/estadisticas` (por omisión el mes actual de La Rioja **hasta hoy**; hasta 366 días). Serie con ceros: por **día** hasta 62 días, por **semana** (lunes a domingo, clave del lunes, aunque caiga antes de `desde`) hasta 200 y por **mes** (`YYYY-MM`) con más. `lavados` = de mostrador **completados** por fecha del lavado. `consumido` = usos (en positivo) menos devoluciones por la **fecha del movimiento en La Rioja**, incluidos los usos manuales; los renglones con `consumido <= 0` no se muestran. `costo = round(consumido x costoUnitario de hoy)` o `null`; `costoInsumos` suma los no nulos; `costoPorLavado = round(costoInsumos / total)` o `null` sin lavados. Todo se agrega en SQL (índice parcial `movimientos_stock_consumo_idx`).
+- `GET /api/admin/consumo?desde=&hasta=` (`admin` y `superadmin`; el empleado recibe `403` antes de validar los parámetros) -> `200 { rango: { desde, hasta, agrupado }, lavados: { total, serie: [{ clave, cantidad }] }, porInsumo: [{ insumoId, nombre, unidad, consumido, costo }], costoInsumos, costoPorLavado }`. Rango y errores como `/estadisticas` (por omisión **del día 1 del mes hasta hoy**, en fechas de La Rioja; hasta 366 días). Serie con ceros: por **día** hasta 62 días, por **semana** (lunes a domingo, clave del lunes, aunque caiga antes de `desde`) hasta 200 y por **mes** (`YYYY-MM`) con más. `lavados` = de mostrador **completados** por fecha del lavado. `consumido` = usos (en positivo) menos devoluciones por la **fecha del movimiento en La Rioja**, incluidos los usos manuales; los renglones con `consumido <= 0` no se muestran. `costo = round(consumido x costoUnitario de hoy)` o `null`; `costoInsumos` suma los no nulos; `costoPorLavado = round(costoInsumos / total)` o `null` sin lavados. Todo se agrega en SQL (índice parcial `movimientos_stock_consumo_idx`).
 
 #### Presupuestos
 

@@ -7,6 +7,7 @@ import type { BookingNotifier } from '../src/domain/notifier.js';
 import type { PushSender } from '../src/domain/push.js';
 import type { Rol } from '../src/domain/perfil.js';
 import type { Logger } from '../src/lib/logger.js';
+import type { PlazosCuerpo } from '../src/middleware/plazo-cuerpo.js';
 import { createPostgresRepositories } from '../src/repositories/index.js';
 import { type PgliteDatabase, createPgliteDatabase } from './pglite.js';
 import { FakeSupabaseStorage } from './storage-fake.js';
@@ -53,10 +54,12 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       api: NO_LIMIT,
       bookings: NO_LIMIT,
       loginFailures: NO_LIMIT,
+      loginFailuresIp: NO_LIMIT,
       seguimiento: NO_LIMIT,
       pdf: NO_LIMIT,
       perfilPassword: NO_LIMIT,
       perfilFoto: NO_LIMIT,
+      lavados: NO_LIMIT,
     },
     whatsapp: { provider: 'none' },
     recordatorios: { cronSecret: undefined, email: undefined, whatsapp: undefined },
@@ -127,6 +130,8 @@ export async function createTestContext(
     fetch?: typeof fetch;
     /** Cliente de envío push (los tests nunca tocan la red). */
     pushSender?: PushSender;
+    /** Plazos para recibir el cuerpo (por defecto los de producción). */
+    plazosCuerpo?: PlazosCuerpo;
   } = {},
 ): Promise<TestContext> {
   const db = await createPgliteDatabase();
@@ -152,6 +157,7 @@ export async function createTestContext(
     ...(options.notifier && { notifier: options.notifier }),
     ...(options.fetch && { fetch: options.fetch }),
     ...(options.pushSender && { pushSender: options.pushSender }),
+    ...(options.plazosCuerpo && { plazosCuerpo: options.plazosCuerpo }),
   });
   } catch (error) {
     await db.close();

@@ -1,7 +1,9 @@
-import type { RequestHandler } from 'express';
-import { type Options, rateLimit } from 'express-rate-limit';
+import { createHash } from 'node:crypto';
+import type { Request, RequestHandler } from 'express';
+import { type Options, ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import type { AppConfig, RateLimitRule } from '../config.js';
 import { errorBody } from '../lib/errors.js';
+import { emailSchema } from '../schemas/auth.js';
 import { getUsuario } from './require-session.js';
 
 function createLimiter(rule: RateLimitRule, message: string, extra: Partial<Options> = {}): RequestHandler {
@@ -22,8 +24,12 @@ export interface RateLimiters {
   api: RequestHandler;
   /** POST /api/bookings: máx. 5 turnos creados por IP cada 15 min (los pedidos rechazados no cuentan). */
   bookings: RequestHandler;
-  /** POST /api/auth/login: máx. 5 intentos FALLIDOS por IP cada 15 min (los logins correctos no cuentan). */
-  loginFailures: RequestHandler;
+  /**
+   * POST /api/auth/login: máx. 5 intentos FALLIDOS por IP + email cada 15 min y 30 por IP sola (los logins correctos
+   * no cuentan). Va primero el de la persona: un intento que ella tiene bloqueado no gasta el cupo de la IP, así
+   * quien se trabó no deja afuera al resto del lavadero. Con el email mal formado cuenta solo la IP.
+   */
+  loginFailures: RequestHandler[];
   /** GET /api/turnos/:id: seguimiento del turno (contra el barrido de ids). Cuentan todos los pedidos, también los 404. */
   seguimiento: RequestHandler;
   /** GET de los PDF de presupuestos y comprobantes: cuesta CPU generarlos. */
@@ -38,6 +44,28 @@ export interface RateLimiters {
    * y ANTES de leer el cuerpo: un pedido limitado no se lee ni se procesa.
    */
   perfilFoto: RequestHandler;
+  /**
+   * POST /api/admin/lavados y DELETE /api/admin/lavados/:id: máx. 60 por USUARIO por minuto. Va detrás de
+   * requireSession. Un reintento de la cola sin conexión (mismo idLocal de un lavado que ya existe) no se sabe antes de
+   * procesarlo: responde 200 en vez de 201 y ahí se descuenta, así la cola que se vacía al volver la señal no se frena.
+   */
+  lavados: RequestHandler;
+}
+
+const LOGIN_FALLIDO_MESSAGE = 'Hiciste demasiados intentos fallidos. Esperá unos minutos antes de volver a probar.';
+
+/** Hash del email normalizado (minúsculas y sin espacios), o undefined si no es un email válido. */
+function emailDelLogin(req: Request): string | undefined {
+  const body: unknown = req.body;
+  if (typeof body !== 'object' || body === null || !('email' in body)) return undefined;
+  const parsed = emailSchema.safeParse(body.email);
+  // En la clave va un hash: el email no queda en la memoria del limitador ni puede terminar en un log.
+  return parsed.success ? createHash('sha256').update(parsed.data).digest('base64url') : undefined;
+}
+
+/** La IP como la cuenta express-rate-limit por defecto (las IPv6 se agrupan por subred). */
+function ipDe(req: Request): string {
+  return ipKeyGenerator(req.ip ?? '');
 }
 
 /** ¿El body de PATCH /api/admin/perfil intenta cambiar la contraseña? */
@@ -58,11 +86,14 @@ export function createRateLimiters(rules: AppConfig['rateLimits']): RateLimiters
       'Enviaste demasiadas solicitudes de turno en poco tiempo. Probá de nuevo en unos minutos o escribinos por WhatsApp.',
       { skipFailedRequests: true },
     ),
-    loginFailures: createLimiter(
-      rules.loginFailures,
-      'Hiciste demasiados intentos fallidos. Esperá unos minutos antes de volver a probar.',
-      { skipSuccessfulRequests: true },
-    ),
+    loginFailures: [
+      createLimiter(rules.loginFailures, LOGIN_FALLIDO_MESSAGE, {
+        skipSuccessfulRequests: true,
+        skip: (req) => emailDelLogin(req) === undefined,
+        keyGenerator: (req) => `login:${ipDe(req)}:${emailDelLogin(req) ?? ''}`,
+      }),
+      createLimiter(rules.loginFailuresIp, LOGIN_FALLIDO_MESSAGE, { skipSuccessfulRequests: true }),
+    ],
     seguimiento: createLimiter(
       rules.seguimiento,
       'Consultaste tu turno demasiadas veces seguidas. Esperá unos minutos y probá de nuevo.',
@@ -83,5 +114,11 @@ export function createRateLimiters(rules: AppConfig['rateLimits']): RateLimiters
       // Por usuario, como el de la contraseña.
       { keyGenerator: (_req, res) => `foto:${getUsuario(res).id}` },
     ),
+    lavados: createLimiter(rules.lavados, 'Registraste demasiados lavados seguidos. Esperá un minuto y probá de nuevo.', {
+      keyGenerator: (_req, res) => `lavados:${getUsuario(res).id}`,
+      // "Exitoso" = no cuenta: solo el 200 del POST, que es un reintento del mismo idLocal (uno nuevo responde 201).
+      skipSuccessfulRequests: true,
+      requestWasSuccessful: (req, res) => req.method === 'POST' && res.statusCode === 200,
+    }),
   };
 }

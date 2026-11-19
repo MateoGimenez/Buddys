@@ -2,9 +2,10 @@
 
 Sistema interno de **Buddys Wash Detail** ([@buddyswashdetail](https://www.instagram.com/buddyswashdetail/)) para
 registrar los lavados y llevar el seguimiento del taller: cuántos autos se lavan, quién registró cada uno, los
-ingresos y qué hay que reponer. Es el backend del sistema de
-MgDetailing adaptado a Buddys. **No tiene frontend**: por ahora es solo la API; la pantalla se va a hacer más
-adelante con otro diseño.
+ingresos y qué hay que reponer. Tiene dos partes: la **API** (`backend/`, el backend del sistema de MgDetailing
+adaptado a Buddys) y el **panel web** (`frontend/`, Vite + React), que se usa desde el celular y llama a la API por
+`/api`. Cómo se publica el panel en producción está **pendiente** (ver
+[backend/README.md](backend/README.md#despliegue)).
 
 ## Qué hace
 
@@ -27,7 +28,8 @@ Todos los endpoints, con ejemplos `curl`, están en [backend/README.md](backend/
 |---|---|
 | `backend/` | La API: Node 24 + TypeScript + Express 5, Postgres en Supabase (esquema `buddys`) y Supabase Auth. |
 | `backend/supabase/migrations/` | Las migraciones de la base, en orden. |
-| `backend/test/fixtures/respuestas-api.json` | Respuestas reales de la API: el contrato para el frontend futuro. |
+| `backend/test/fixtures/respuestas-api.json` | Respuestas reales de la API: el contrato que usa el frontend. |
+| `frontend/` | El panel web: Vite + React + TypeScript estricto. Llama a `/api` relativo (en desarrollo, por el proxy de Vite a `localhost:4000`). |
 | `reportes/` | Informes del proyecto. |
 
 ## Uso
@@ -38,18 +40,25 @@ npm run instalar
 
 ```bash
 npm run dev
+npm run dev:front
 ```
 
-La API queda en `http://localhost:4000` (salud: `http://localhost:4000/api/health`). Necesita `backend/.env` con la
-conexión a Supabase: ver [backend/README.md](backend/README.md#conectar-supabase).
+La API queda en `http://localhost:4000` (salud: `http://localhost:4000/api/health`) y el panel en
+`http://localhost:5173`. La API necesita `backend/.env` con la conexión a Supabase: ver
+[backend/README.md](backend/README.md#conectar-supabase).
 
 | Script | Qué hace |
 |---|---|
-| `npm run instalar` | Instala las dependencias del backend. |
+| `npm run instalar` | Instala las dependencias del backend y del frontend. |
+| `npm run instalar:front` | Instala solo las del frontend. |
 | `npm run dev` | La API en desarrollo, con recarga automática. |
+| `npm run dev:front` | El panel en desarrollo (Vite, `http://localhost:5173`, con proxy de `/api` a la API). |
 | `npm run build` / `npm start` | Compila y arranca la API compilada. |
-| `npm test` | Tests (Postgres en memoria con PGlite: no tocan Supabase). |
-| `npm run verificar` | Tipos, lint y tests. |
+| `npm run build:front` | Compila el panel (`frontend/dist`). |
+| `npm test` | Tests del backend (Postgres en memoria con PGlite: no tocan Supabase). |
+| `npm run test:front` | Tests del frontend. |
+| `npm run verificar` | Tipos, lint y tests del backend. |
+| `npm run verificar:front` | Tipos, lint, tests y build del frontend. |
 
 ## Pendientes para salir
 

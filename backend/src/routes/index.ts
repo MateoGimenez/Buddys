@@ -147,7 +147,7 @@ export function createApiRouter(deps: ApiDeps): Router {
   api.use('/auth', authRouter({ auth, cookies, loginLimiter: limiters.loginFailures, requireSession: withSession }));
   // Todo lo que cuelga de /admin exige sesión, existan o no las rutas (así no se revela cuáles existen).
   api.use('/admin', withSession);
-  api.use('/admin/lavados', adminLavadosRouter({ lavados, now }));
+  api.use('/admin/lavados', adminLavadosRouter({ lavados, now, limiter: limiters.lavados }));
   api.use('/admin/bookings', adminBookingsRouter({ bookings, agenda }));
   api.use('/admin/agenda', adminAgendaRouter({ agenda, disponibilidad }));
   api.use('/admin/disponibilidad', adminDisponibilidadRouter({ disponibilidad }));

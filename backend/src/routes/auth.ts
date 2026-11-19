@@ -9,8 +9,8 @@ import type { AuthService, UsuarioSesion } from '../services/auth.js';
 export interface AuthRouterDeps {
   auth: AuthService;
   cookies: SessionCookies;
-  /** Limita los intentos de login FALLIDOS por IP. */
-  loginLimiter: RequestHandler;
+  /** Limitan los intentos de login FALLIDOS: por IP + email y por IP sola (ver middleware/rate-limit.ts). */
+  loginLimiter: RequestHandler[];
   requireSession: RequestHandler;
 }
 
@@ -36,7 +36,7 @@ export function authRouter({ auth, cookies, loginLimiter, requireSession }: Auth
   const router = Router();
 
   // POST /api/auth/login { email, password } => 200 { usuario } + cookies bd_at y bd_rt
-  router.post('/login', loginLimiter, async (req, res) => {
+  router.post('/login', ...loginLimiter, async (req, res) => {
     const { email, password } = parseOrThrow(loginSchema, req.body ?? {});
     try {
       const { usuario, tokens } = await auth.login(email, password);

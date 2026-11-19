@@ -1,6 +1,7 @@
 # Render Blueprint: UN servicio.
-#  - buddys (Web Service): la API de Node (Express) del sistema interno de Buddys Wash Detail. No hay web: el
-#    frontend se hará más adelante con otro diseño y se conectará a esta API (ver backend/README.md).
+#  - buddys (Web Service): la API de Node (Express) del sistema interno de Buddys Wash Detail. El panel web está en
+#    frontend/ y llama a /api relativo: tiene que compartir origen con la API (proxy). Su despliegue está PENDIENTE
+#    (lo decide el dueño); por ahora este Blueprint publica solo la API (ver backend/README.md, "Despliegue").
 #    En el plan gratis se duerme tras 15 min sin pedidos; el primer pedido la despierta.
 # Uso: en Render, New > Blueprint, elegir este repo (o, si ya existe, "Sync" del Blueprint). Las variables con
 # `sync: false` se cargan a mano en el panel de Render (son secretos o datos tuyos): nunca van al repo. Detalle de cada
@@ -48,10 +49,10 @@ services:
       - key: TRUST_PROXY
         value: "1"
       # Orígenes exactos del frontend que va a usar esta API (esquema + host, sin barra final), separados por coma.
-      # Los usan CORS y la defensa CSRF. Hoy no hay frontend: cuando exista, cargá su dominio acá.
+      # Los usan CORS y la defensa CSRF. Cargá acá el dominio público del panel cuando se defina su despliegue.
       - key: FRONTEND_ORIGIN
         sync: false
-      # Dirección pública del panel (links en los avisos). Opcional hasta que exista el frontend.
+      # Dirección pública del panel (links en los avisos). Opcional hasta que se defina el despliegue del panel.
       - key: PUBLIC_URL
         sync: false
       # El certificado raíz de Supabase ya está en el repo (backend/certs).

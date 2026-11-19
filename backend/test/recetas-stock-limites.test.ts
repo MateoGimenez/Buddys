@@ -218,7 +218,7 @@ describe('casos límite del stock', () => {
  * Decisión del dueño (2026-11-19): un lavado de mostrador no se cancela ni sale de completado por PATCH (409); se
  * deshace desde la planilla, que devuelve el stock. Los turnos web siguen como siempre.
  */
-const MOSTRADOR_NO_SE_CANCELA = 'Un lavado de mostrador no se cancela: deshacelo desde la planilla (así vuelve el stock).';
+const MOSTRADOR_NO_SE_CANCELA = 'Un lavado de mostrador no se cancela: borralo desde la planilla (así vuelven los productos al stock).';
 
 async function turnoWeb(context: TestContext): Promise<string> {
   const { rows } = await context.db.sql.query(

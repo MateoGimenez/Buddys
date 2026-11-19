@@ -45,8 +45,11 @@ se lavan, quién registró cada uno y qué hay que reponer. No compara a las per
 - Roles `empleado`, `admin`, `superadmin`; la API decide y `GET /api/admin/permisos` dice qué ve cada uno.
 - El empleado solo registra lavados a su nombre y nunca recibe importes (la UI no deja huecos donde irían).
 - Sesión en cookies HttpOnly (BFF); el navegador nunca ve tokens.
-- También existen en la API: gastos, metas, inventario de insumos, presupuestos y comprobantes en PDF, agenda,
-  disponibilidad, usuarios.
+- Pantallas del panel hoy: Registrar, Planilla del día (corregir y borrar lavados), Números (estadísticas y metas),
+  Servicios (precios y recetas de productos), Insumos (stock, avisos de stock bajo, consumo y lista para comprar),
+  Gastos, Presupuestos, Equipo (usuarios, con baja que conserva el historial) y Mi perfil (con foto).
+- Cada lavado descuenta del stock los productos de la receta de sus servicios; borrarlo los devuelve.
+- También existen en la API, sin pantalla propia: comprobantes en PDF, agenda y disponibilidad de turnos.
 
 ## Brand Commitments
 

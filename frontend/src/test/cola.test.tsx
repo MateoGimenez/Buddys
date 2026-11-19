@@ -74,6 +74,73 @@ describe('Cola sin conexión de "Registrar lavado"', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('si el registro tarda más de 8 s lo corta y lo encola; el reintento lleva el mismo idLocal', async () => {
+    // El plazo lo maneja el test: AbortSignal.timeout devuelve una señal que se corta a mano.
+    const plazos: AbortController[] = [];
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => {
+      const c = new AbortController();
+      plazos.push(c);
+      return c.signal;
+    });
+    const api = apiFalsa({ ...sesionAdmin(), 'POST /api/admin/lavados': { status: 201, body: registrado({}) } });
+    const responder = api.fetchFalso.getMockImplementation();
+    if (!responder) throw new Error('apiFalsa sin implementación');
+    let posts = 0;
+    // El primer POST queda colgado (señal floja) hasta que se vence el plazo; el siguiente contesta.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const respuesta = responder(input, init);
+        if (init?.method === 'POST' && input === '/api/admin/lavados' && posts++ === 0) {
+          const signal = init.signal;
+          return new Promise<Response>((_, rechazar) => {
+            signal?.addEventListener('abort', () => {
+              rechazar(signal.reason as Error);
+            });
+          });
+        }
+        return respuesta;
+      }),
+    );
+    const { user } = renderApp('/registrar');
+    await registrarBasico(user);
+    await vi.waitFor(() => {
+      expect(plazos).toHaveLength(1);
+    });
+    expect(timeout).toHaveBeenCalledWith(8000);
+    expect(screen.queryByText('Guardado sin conexión')).toBeNull();
+
+    act(() => {
+      plazos[0]?.abort(new DOMException('Se venció el plazo.', 'TimeoutError'));
+    });
+    // Lo mismo que sin señal: talón de "Guardado sin conexión", sin error.
+    expect(await screen.findByText('Guardado sin conexión')).toBeInTheDocument();
+    expect(screen.getByText('Se envía solo cuando vuelva la señal.')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(enCola()).toHaveLength(1);
+
+    act(() => {
+      window.dispatchEvent(new Event('online'));
+    });
+    await vi.waitFor(() => {
+      expect(enCola()).toHaveLength(0);
+    });
+    const [primero, segundo] = api.de('POST', '/api/admin/lavados');
+    const idLocal = (primero?.body as { idLocal: string }).idLocal;
+    expect(idLocal).toMatch(UUID_RE);
+    expect((segundo?.body as { idLocal: string }).idLocal).toBe(idLocal);
+  });
+
+  it('el plazo es solo de registrar: los otros pedidos salen sin señal de corte', async () => {
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    const api = apiFalsa(sesionAdmin());
+    renderApp('/registrar');
+    await screen.findByRole('checkbox', { name: /Lavado Básico/ });
+    expect(api.fetchFalso).toHaveBeenCalled();
+    for (const [, init] of api.fetchFalso.mock.calls) expect(init?.signal).toBeUndefined();
+    expect(timeout).not.toHaveBeenCalled();
+  });
+
   it('un error de la API (4xx) no se encola: se muestra como siempre', async () => {
     apiFalsa({ ...sesionAdmin(), 'POST /api/admin/lavados': errores.validacionLavado });
     const { user } = renderApp('/registrar');

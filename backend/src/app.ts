@@ -10,6 +10,7 @@ import { SupabaseAdminClient } from './lib/supabase-admin.js';
 import { type FetchFn, SupabaseAuthClient } from './lib/supabase-auth.js';
 import { SupabaseStorageClient } from './lib/supabase-storage.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { type PlazosCuerpo, plazoDelCuerpo } from './middleware/plazo-cuerpo.js';
 import { createRateLimiters } from './middleware/rate-limit.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { securityHeaders } from './middleware/security.js';
@@ -58,6 +59,8 @@ export interface AppDeps {
   notifier?: BookingNotifier;
   /** Pisa al cliente de envío push (web-push) para que los tests no toquen la red. */
   pushSender?: PushSender;
+  /** Plazos para recibir el cuerpo (por defecto 10 s y 30 s la foto; los tests los acortan). */
+  plazosCuerpo?: PlazosCuerpo;
 }
 
 /**
@@ -162,6 +165,7 @@ export function createApp(deps: AppDeps): Express {
 
   app.use(requestLogger(logger));
   app.use(securityHeaders(config));
+  app.use('/api', plazoDelCuerpo(deps.plazosCuerpo));
   app.use(
     '/api',
     createApiRouter({

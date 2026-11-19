@@ -38,6 +38,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        // Los cortes latin-ext y vietnamese de Archivo solo se bajan si una página usa esos caracteres (unicode-range):
+        // el panel está en español, así que no se guardan por adelantado.
+        globIgnores: ['**/*-latin-ext-*.woff2', '**/*-vietnamese-*.woff2'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api(\/|$)/],
         runtimeCaching: [],

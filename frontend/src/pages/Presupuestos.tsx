@@ -34,17 +34,22 @@ export function Presupuestos() {
       {!carga.datos ? (carga.estado === 'cargando' ? <Cargando /> : null) : carga.datos.presupuestos.length === 0 ? (
         <Vacio titulo="Todavía no hay presupuestos">Armá uno para un pulido o un detailing completo y bajalo en PDF para mandarlo por WhatsApp.</Vacio>
       ) : (
-        <ul className="lista-hojas">
-          {carga.datos.presupuestos.map((p) => (
-            <FilaPresupuesto
-              key={p.id}
-              p={p}
-              onCambio={(nuevo) => {
-                actualizar((d) => ({ ...d, presupuestos: d.presupuestos.map((x) => (x.id === nuevo.id ? nuevo : x)) }));
-              }}
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="lista-hojas">
+            {carga.datos.presupuestos.map((p) => (
+              <FilaPresupuesto
+                key={p.id}
+                p={p}
+                onCambio={(nuevo) => {
+                  actualizar((d) => ({ ...d, presupuestos: d.presupuestos.map((x) => (x.id === nuevo.id ? nuevo : x)) }));
+                }}
+              />
+            ))}
+          </ul>
+          {carga.datos.total > carga.datos.presupuestos.length ? (
+            <p className="nota-chica">Se muestran los {carga.datos.presupuestos.length} más recientes de {carga.datos.total}.</p>
+          ) : null}
+        </>
       )}
     </>
   );

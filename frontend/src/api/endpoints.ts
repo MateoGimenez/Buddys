@@ -69,8 +69,15 @@ export const desuscribirPush = (endpoint: string) =>
 
 // Lavados
 /** `NuevoLavadoLegado` solo para lo que había quedado en la cola sin conexión con un único servicioId. */
+/**
+ * Plazo para registrar un lavado. Con poca señal el pedido puede quedar colgado: a los 8 s se corta y Registrar lo
+ * manda a la cola sin conexión (el idLocal evita que se duplique si aquel pedido igual llegó). Solo este pedido lleva
+ * plazo: la foto de perfil y los PDF pueden tardar más.
+ */
+export const PLAZO_REGISTRAR_MS = 8000;
+
 export const registrarLavado = (datos: NuevoLavado | NuevoLavadoLegado) =>
-  api<LavadoRegistrado>('/api/admin/lavados', { method: 'POST', body: datos });
+  api<LavadoRegistrado>('/api/admin/lavados', { method: 'POST', body: datos, signal: AbortSignal.timeout(PLAZO_REGISTRAR_MS) });
 /** Deshacer un lavado recién registrado (quien lo anotó, dentro del plazo; o quien puede borrar turnos). 204. */
 export const deshacerLavado = (id: string) =>
   api<undefined>(`/api/admin/lavados/${encodeURIComponent(id)}`, { method: 'DELETE' });

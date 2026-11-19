@@ -5,7 +5,7 @@ import * as ep from '../api/endpoints';
 import type { Perfil as DatosPerfil } from '../api/types';
 import { Avatar } from '../components/Avatar';
 import { nombreDe } from '../components/Layout';
-import { Aviso, Boton, Campo, Encabezado } from '../components/ui';
+import { Aviso, Boton, Campo, CampoContrasena, Encabezado } from '../components/ui';
 import { NOMBRE_ROL } from '../lib/format';
 import { cuerpoSuscripcion, claveABytes, esDeLaClave, registroDelPanel, soportePush } from '../lib/push';
 import { useCarga } from '../lib/useCarga';
@@ -42,7 +42,13 @@ export function Perfil() {
         onCambio={aplicar}
       />
       <BloqueNombre nombreActual={usuario.nombre} onCambio={aplicar} />
-      {puede('push.activar') ? <BloqueAvisos /> : null}
+      {/*
+        Hoy el único aviso que sale es el de stock bajo (los turnos online están apagados) y es para quien tiene
+        inventario.consumo: al empleado no le llega ninguno, así que no ve el bloque. Si se prenden los turnos online
+        (vuelve el aviso de turno nuevo), el bloque vuelve a aparecer para todos los roles con push.activar: sacá la
+        segunda condición y que BloqueAvisos diga qué recibe cada rol.
+      */}
+      {puede('push.activar') && puede('inventario.consumo') ? <BloqueAvisos /> : null}
       <BloqueContrasena email={usuario.email} />
     </>
   );
@@ -286,9 +292,8 @@ function BloqueContrasena({ email }: { email: string | null }) {
       {/* Para el gestor de contraseñas: sabe de qué cuenta es la contraseña nueva. */}
       {email ? <input type="email" name="username" autoComplete="username" value={email} readOnly hidden /> : null}
       {error ? <Aviso>{error}</Aviso> : null}
-      <Campo
+      <CampoContrasena
         etiqueta="Contraseña actual"
-        type="password"
         name="current-password"
         autoComplete="current-password"
         value={actual}
@@ -297,9 +302,8 @@ function BloqueContrasena({ email }: { email: string | null }) {
           setActual(e.target.value);
         }}
       />
-      <Campo
+      <CampoContrasena
         etiqueta="Contraseña nueva"
-        type="password"
         name="new-password"
         autoComplete="new-password"
         value={nueva}
@@ -309,9 +313,8 @@ function BloqueContrasena({ email }: { email: string | null }) {
           setNueva(e.target.value);
         }}
       />
-      <Campo
+      <CampoContrasena
         etiqueta="Repetí la nueva"
-        type="password"
         name="new-password-repetida"
         autoComplete="new-password"
         enterKeyHint="done"
@@ -375,7 +378,6 @@ async function esperarRegistro(): Promise<ServiceWorkerRegistration> {
 }
 
 function BloqueAvisos() {
-  const { puede } = useSesion();
   const [carga, recargar, actualizar] = useCarga(cargarSituacion, []);
   const [permiso, setPermiso] = useState<NotificationPermission>(permisoActual);
   const [ocupado, setOcupado] = useState<'activando' | 'desactivando' | null>(null);
@@ -458,9 +460,6 @@ function BloqueAvisos() {
     }
   };
 
-  const queRecibe = puede('inventario.consumo')
-    ? 'Te avisamos cuando entra un turno nuevo y cuando queda poco de un insumo.'
-    : 'Te avisamos cuando entra un turno nuevo.';
   const activo = situacion?.tipo === 'listo' && situacion.activo && permiso === 'granted';
 
   let contenido: ReactNode;
@@ -555,7 +554,7 @@ function BloqueAvisos() {
       <h2 id={tituloId} className="bloque-titulo">
         Avisos en este celular
       </h2>
-      <p className="nota-chica">{queRecibe}</p>
+      <p className="nota-chica">Te avisamos cuando queda poco de un insumo.</p>
       {contenido}
       <p className="solo-lectores" role="status">
         {ocupado === 'activando'
