@@ -26,7 +26,20 @@ import type { RecetaService } from '../services/recetas.js';
 import type { RecordatorioService } from '../services/recordatorios.js';
 import type { ServicioService } from '../services/servicios.js';
 import type { UsuarioService } from '../services/usuarios.js';
+import type { CajaService } from '../services/caja.js';
+import type { ClienteService } from '../services/clientes.js';
+import type { FotoService } from '../services/fotos.js';
 import type { PerfilService } from '../services/perfil.js';
+import type { GastoFijoService } from '../services/gastos-fijos.js';
+import type { TurnoPanelService } from '../services/turnos.js';
+import type { ExportRepository } from '../domain/exportar.js';
+import { adminCajaRouter } from './admin-caja.js';
+import { adminClientesRouter, adminFidelizacionRouter } from './admin-clientes.js';
+import { adminExportarRouter } from './admin-exportar.js';
+import { adminFotosRouter } from './admin-fotos.js';
+import { adminGastosFijosRouter } from './admin-gastos-fijos.js';
+import { adminTurnosRouter } from './admin-turnos.js';
+import { adminErroresClienteRouter, publicErroresClienteRouter } from './errores-cliente.js';
 import { adminAgendaRouter } from './admin-agenda.js';
 import { adminBookingsRouter } from './admin-bookings.js';
 import { adminDisponibilidadRouter } from './admin-disponibilidad.js';
@@ -81,6 +94,12 @@ export interface ApiDeps {
   comprobantes: ComprobanteService;
   cookies: SessionCookies;
   limiters: RateLimiters;
+  turnos: TurnoPanelService;
+  clientes: ClienteService;
+  fotos: FotoService;
+  gastosFijos: GastoFijoService;
+  caja: CajaService;
+  exportar: ExportRepository;
 }
 
 /** Router de /api. El ORDEN de los middlewares importa: cada uno protege a los que vienen después. */
@@ -112,6 +131,12 @@ export function createApiRouter(deps: ApiDeps): Router {
     comprobantes,
     cookies,
     limiters,
+    turnos,
+    clientes,
+    fotos,
+    gastosFijos,
+    caja,
+    exportar,
   } = deps;
   const api = Router();
 
@@ -144,11 +169,21 @@ export function createApiRouter(deps: ApiDeps): Router {
     api.use('/turnos', publicTurnosRouter({ bookings, limiter: limiters.seguimiento }));
   }
   api.use('/internal', internalRouter({ cronSecret: config.recordatorios.cronSecret, recordatorios }));
+  // Errores del panel sin sesión (pantalla de login): rate limit estricto por IP.
+  api.use('/errores-cliente', publicErroresClienteRouter({ logger, limiter: limiters.erroresClientePublico }));
   api.use('/auth', authRouter({ auth, cookies, loginLimiter: limiters.loginFailures, requireSession: withSession }));
   // Todo lo que cuelga de /admin exige sesión, existan o no las rutas (así no se revela cuáles existen).
   api.use('/admin', withSession);
+  api.use('/admin/lavados/:id/fotos', adminFotosRouter({ fotos, limiter: limiters.fotos }));
   api.use('/admin/lavados', adminLavadosRouter({ lavados, now, limiter: limiters.lavados }));
-  api.use('/admin/bookings', adminBookingsRouter({ bookings, agenda }));
+  api.use('/admin/bookings', adminBookingsRouter({ bookings, agenda, fotos }));
+  api.use('/admin/turnos', adminTurnosRouter({ turnos, now }));
+  api.use('/admin/clientes', adminClientesRouter({ clientes }));
+  api.use('/admin/fidelizacion', adminFidelizacionRouter({ clientes }));
+  api.use('/admin/gastos-fijos', adminGastosFijosRouter({ gastosFijos }));
+  api.use('/admin/caja', adminCajaRouter({ caja }));
+  api.use('/admin/exportar', adminExportarRouter({ exportar, estadisticas, limiter: limiters.pdf }));
+  api.use('/admin/errores-cliente', adminErroresClienteRouter({ logger, limiter: limiters.erroresCliente }));
   api.use('/admin/agenda', adminAgendaRouter({ agenda, disponibilidad }));
   api.use('/admin/disponibilidad', adminDisponibilidadRouter({ disponibilidad }));
   api.use('/admin/perfil', adminPerfilRouter({

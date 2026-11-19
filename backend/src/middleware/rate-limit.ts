@@ -32,7 +32,7 @@ export interface RateLimiters {
   loginFailures: RequestHandler[];
   /** GET /api/turnos/:id: seguimiento del turno (contra el barrido de ids). Cuentan todos los pedidos, también los 404. */
   seguimiento: RequestHandler;
-  /** GET de los PDF de presupuestos y comprobantes: cuesta CPU generarlos. */
+  /** GET de los PDF de presupuestos y comprobantes y de los CSV: cuesta CPU generarlos. */
   pdf: RequestHandler;
   /**
    * PATCH /api/admin/perfil con contraseña: máx. 5 intentos por USUARIO cada 15 min (correctos o no). Cada intento es
@@ -50,6 +50,12 @@ export interface RateLimiters {
    * procesarlo: responde 200 en vez de 201 y ahí se descuenta, así la cola que se vacía al volver la señal no se frena.
    */
   lavados: RequestHandler;
+  /** POST /api/admin/errores-cliente: por usuario de la sesión (detrás de requireSession). */
+  erroresCliente: RequestHandler;
+  /** POST /api/errores-cliente (sin sesión): por IP, estricto. */
+  erroresClientePublico: RequestHandler;
+  /** POST /api/admin/lavados/:id/fotos (pedir una URL de subida): por usuario de la sesión. */
+  fotos: RequestHandler;
 }
 
 const LOGIN_FALLIDO_MESSAGE = 'Hiciste demasiados intentos fallidos. Esperá unos minutos antes de volver a probar.';
@@ -73,6 +79,12 @@ function traePassword(body: unknown): boolean {
   if (typeof body !== 'object' || body === null) return false;
   return 'passwordActual' in body || 'passwordNueva' in body;
 }
+
+/** Clave por persona: el usuario que dejó requireSession en res.locals (un id de perfil, no una IP). */
+const porUsuario: Options['keyGenerator'] = (_req, res) => {
+  const usuario = (res.locals as { usuario?: { id?: unknown } }).usuario;
+  return typeof usuario?.id === 'string' ? `usuario:${usuario.id}` : 'usuario:desconocido';
+};
 
 /**
  * Los contadores viven en memoria del proceso (alcanza para una sola instancia; si el backend se escala a
@@ -120,5 +132,12 @@ export function createRateLimiters(rules: AppConfig['rateLimits']): RateLimiters
       skipSuccessfulRequests: true,
       requestWasSuccessful: (req, res) => req.method === 'POST' && res.statusCode === 200,
     }),
+    erroresCliente: createLimiter(rules.erroresCliente, 'El panel mandó demasiados errores seguidos.', {
+      keyGenerator: porUsuario,
+    }),
+    fotos: createLimiter(rules.fotos, 'Pediste demasiadas subidas de fotos seguidas. Esperá unos minutos.', {
+      keyGenerator: porUsuario,
+    }),
+    erroresClientePublico: createLimiter(rules.erroresClientePublico, 'El panel mandó demasiados errores seguidos.'),
   };
 }

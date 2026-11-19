@@ -68,14 +68,14 @@ export class PostgresPushRepository implements PushRepository {
     }));
   }
 
-  async destinosConRol(roles: readonly Rol[]): Promise<DestinoPush[]> {
+  async destinosConRol(roles: readonly Rol[], excluirPerfilId: string | null = null): Promise<DestinoPush[]> {
     const { rows } = await this.sql.query(
       `SELECT s.id::text AS id, s.endpoint, s.p256dh, s.auth
        FROM buddys.push_suscripciones AS s
        JOIN buddys.perfiles AS p ON p.id = s.perfil_id
-       WHERE p.activo AND p.eliminado_at IS NULL AND p.rol_id = ANY($1::text[])
+       WHERE p.activo AND p.eliminado_at IS NULL AND p.rol_id = ANY($1::text[]) AND ($2::uuid IS NULL OR p.id <> $2::uuid)
        ORDER BY s.created_at, s.id`,
-      [roles],
+      [roles, excluirPerfilId !== null && isUuid(excluirPerfilId) ? excluirPerfilId : null],
     );
     return rows.map((row) => ({
       id: str(row, 'id'),

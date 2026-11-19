@@ -75,7 +75,10 @@ export class PostgresPerfilRepository implements PerfilRepository {
                OR EXISTS (SELECT 1 FROM buddys.gastos AS g WHERE g.creado_por = p.id)
                OR EXISTS (SELECT 1 FROM buddys.movimientos_stock AS m WHERE m.perfil_id = p.id)
                OR EXISTS (SELECT 1 FROM buddys.presupuestos AS pr WHERE pr.creado_por = p.id)
-               OR EXISTS (SELECT 1 FROM buddys.comprobantes AS c WHERE c.creado_por = p.id)) AS tiene_historial
+               OR EXISTS (SELECT 1 FROM buddys.comprobantes AS c WHERE c.creado_por = p.id)
+               OR EXISTS (SELECT 1 FROM buddys.gastos_fijos AS gf WHERE gf.perfil_id = p.id OR gf.creado_por = p.id)
+               OR EXISTS (SELECT 1 FROM buddys.cierres_caja AS cc WHERE cc.cerrado_por = p.id)
+               OR EXISTS (SELECT 1 FROM buddys.lavado_fotos AS lf WHERE lf.creado_por = p.id)) AS tiene_historial
        FROM buddys.perfiles AS p
        ORDER BY p.created_at, p.id`,
     );
@@ -90,7 +93,10 @@ export class PostgresPerfilRepository implements PerfilRepository {
                OR EXISTS (SELECT 1 FROM buddys.gastos AS g WHERE g.creado_por = p.id)
                OR EXISTS (SELECT 1 FROM buddys.movimientos_stock AS m WHERE m.perfil_id = p.id)
                OR EXISTS (SELECT 1 FROM buddys.presupuestos AS pr WHERE pr.creado_por = p.id)
-               OR EXISTS (SELECT 1 FROM buddys.comprobantes AS c WHERE c.creado_por = p.id)) AS tiene_historial
+               OR EXISTS (SELECT 1 FROM buddys.comprobantes AS c WHERE c.creado_por = p.id)
+               OR EXISTS (SELECT 1 FROM buddys.gastos_fijos AS gf WHERE gf.perfil_id = p.id OR gf.creado_por = p.id)
+               OR EXISTS (SELECT 1 FROM buddys.cierres_caja AS cc WHERE cc.cerrado_por = p.id)
+               OR EXISTS (SELECT 1 FROM buddys.lavado_fotos AS lf WHERE lf.creado_por = p.id)) AS tiene_historial
        FROM buddys.perfiles AS p
        WHERE p.id = $1::uuid`,
       [id],

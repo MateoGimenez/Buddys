@@ -1,0 +1,93 @@
+/* Insumos: movimientos (los automáticos marcados) y lo que usa cada servicio. */
+
+.movimientos {
+  padding-top: 6px;
+  border-top: var(--grosor-fino) dashed var(--linea);
+}
+
+.etiqueta-auto {
+  background: var(--carbon-claro);
+  color: var(--carbon);
+}
+
+.movimiento-cantidad {
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ok);
+}
+
+.movimiento-cantidad[data-sale] {
+  color: var(--tinta);
+}
+
+.receta {
+  align-items: stretch;
+}
+
+.receta-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radio-chico);
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.receta-cabeza:hover {
+  background: var(--carbon-claro);
+}
+
+.receta-flecha {
+  flex: none;
+  color: var(--tinta-3);
+  transition: transform var(--t-estado) var(--curva);
+}
+
+.receta-cabeza[aria-expanded='true'] .receta-flecha {
+  transform: rotate(180deg);
+}
+
+.receta-cuerpo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px 4px 8px;
+}
+
+.receta-insumos {
+  margin: 0;
+  padding-inline-start: 18px;
+  color: var(--tinta-2);
+}
+
+.receta-insumos strong {
+  color: var(--tinta);
+}
+
+.receta-editor {
+  inline-size: 100%;
+}
+
+.receta-renglon {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: var(--grosor-fino) dashed var(--linea);
+}
+
+.receta-quitar {
+  align-self: flex-end;
+}

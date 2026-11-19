@@ -64,6 +64,7 @@ async function main(): Promise<void> {
     repositories: database.repositories,
     checkDatabase: database.checkDatabase,
     logger,
+    tareasProgramadas: true,
   });
   const server: Server = app.listen(config.port, config.host);
   // Timeouts contra conexiones lentas que tienen el socket ocupado (slowloris). El cuerpo tiene además su propio

@@ -73,7 +73,8 @@ async function receta(admin: Client, servicio: string, vehiculo: string | null, 
 }
 
 async function lavar(client: Client, servicioIds: string[], vehiculoTipo = 'auto'): Promise<string> {
-  const r = await client.post('/api/admin/lavados', { servicioIds, vehiculoTipo });
+  // Con monto: sin él sale además el aviso "lavado sin monto" a los encargados (mejoras 2026-11-15), que acá no se mide.
+  const r = await client.post('/api/admin/lavados', { servicioIds, vehiculoTipo, monto: 1000 });
   expect(r.status, JSON.stringify(r.body)).toBe(201);
   return String(r.body.lavado.id);
 }

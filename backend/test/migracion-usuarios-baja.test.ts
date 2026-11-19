@@ -104,11 +104,16 @@ describe('migración usuarios_baja', () => {
       `SELECT conname, confdeltype, convalidated FROM pg_constraint
        WHERE contype = 'f' AND confrelid = 'buddys.perfiles'::regclass ORDER BY conname`,
     );
+    // Las de las mejoras 20261115* siguen en SET NULL acá: las pasa a RESTRICT 20261119100000_unir_ramas.
     expect(fks.rows).toEqual([
       { conname: 'bookings_registrado_por_fkey', confdeltype: 'r', convalidated: true },
       { conname: 'bookings_trabajador_id_fkey', confdeltype: 'r', convalidated: true },
+      { conname: 'cierres_caja_cerrado_por_fkey', confdeltype: 'n', convalidated: true },
       { conname: 'comprobantes_creado_por_fkey', confdeltype: 'r', convalidated: true },
       { conname: 'gastos_creado_por_fkey', confdeltype: 'r', convalidated: true },
+      { conname: 'gastos_fijos_creado_por_fkey', confdeltype: 'n', convalidated: true },
+      { conname: 'gastos_fijos_perfil_fkey', confdeltype: 'n', convalidated: true },
+      { conname: 'lavado_fotos_creado_por_fkey', confdeltype: 'n', convalidated: true },
       { conname: 'movimientos_stock_perfil_fkey', confdeltype: 'r', convalidated: true },
       { conname: 'presupuestos_creado_por_fkey', confdeltype: 'r', convalidated: true },
       // Los dispositivos no son historial: siguen en cascada.

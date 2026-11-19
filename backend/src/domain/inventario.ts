@@ -60,6 +60,8 @@ export interface Movimiento {
   nota: string | null;
   persona: { id: string; nombre: string } | null;
   turnoId: string | null;
+  /** true = lo generó la receta de un lavado (origen = receta): su descuento o su devolución. */
+  automatico: boolean;
   createdAt: string;
 }
 

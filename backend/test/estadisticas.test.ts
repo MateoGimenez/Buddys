@@ -371,6 +371,8 @@ describe('GET /api/admin/estadisticas', () => {
       cancelados: 1,
       ingresos: 80000,
       gastos: 0,
+      gastosFijos: 0,
+      descuentos: 0,
       gananciaNeta: 80000,
       margen: 1,
       ticketPromedio: 40000,

@@ -30,11 +30,16 @@ async function pglite(): Promise<PgliteDatabase> {
 
 const TABLES = [
   'bookings',
+  'cierres_caja',
   'comprobantes',
   'dias_especiales',
+  'fidelizacion',
+  'fotos_a_borrar',
   'gastos',
+  'gastos_fijos',
   'horario_semanal',
   'insumos',
+  'lavado_fotos',
   'lavado_servicios',
   'metas_mensuales',
   'movimientos_stock',

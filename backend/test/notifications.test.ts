@@ -30,6 +30,13 @@ const BOOKING: Booking = {
   registradoPor: null,
   formaPago: null,
   servicios: [{ id: 'lavado-premium', nombre: 'Lavado Premium', precioLista: null }],
+  etapa: null,
+  etapaDesde: null,
+  descuento: 0,
+  descuentoMotivo: null,
+  sena: null,
+  saldo: null,
+  whatsappListo: null,
   createdAt: '2026-10-16T15:00:00.000Z',
   updatedAt: '2026-10-16T15:00:00.000Z',
 };

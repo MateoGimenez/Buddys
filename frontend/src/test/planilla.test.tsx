@@ -113,7 +113,7 @@ describe('Planilla del día', () => {
     await user.click((await screen.findAllByRole('button', { name: 'Corregir' }))[0] as HTMLElement);
     const monto = screen.getByLabelText('Monto cobrado');
     await user.clear(monto);
-    expect(monto).toHaveAccessibleDescription('Al guardar se borra el monto cargado ($ 12.000).');
+    expect(monto).toHaveAccessibleDescription('Al guardar se borra el monto cargado ($ 12.000).');
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
     await screen.findAllByRole('button', { name: 'Corregir' });
     expect(api.de('PATCH', '/api/admin/bookings/l1').map((p) => p.body)).toEqual([{ monto: null }]);

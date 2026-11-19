@@ -24,7 +24,8 @@ export default defineConfig({
         description: 'Panel del lavadero: registrar lavados, planilla del día y números.',
         lang: 'es-AR',
         dir: 'ltr',
-        start_url: '/registrar',
+        // '/' lleva a Hoy (encargados) o a Registrar (empleados).
+        start_url: '/',
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
@@ -51,6 +52,18 @@ export default defineConfig({
       },
     }),
   ],
+  // Celulares viejos del lavadero: Android 8+ con Chrome 80 o más y iPhone con iOS 15+ (Safari 15). Por defecto Vite 8
+  // apunta a navegadores de 2023 (Chrome 111, Safari 16.4) y dejaría afuera a los iPhone con iOS 15.
+  //  - target: la sintaxis de JS se baja hasta ahí (??=, campos de clase, etc.). Las APIs no se agregan: el código
+  //    evita las que no existen ahí (Array.at, structuredClone, randomUUID sin https...).
+  //  - cssTarget: lightningcss reescribe lo moderno (inset, propiedades lógicas, anidado) para esos navegadores.
+  // No hace falta @vitejs/plugin-legacy: todos estos navegadores cargan módulos ES. Medido: sumaba 57 kB gzip de
+  // polyfills y un segundo bundle de 134 kB gzip sin ganar ningún navegador de la lista. Detalle en
+  // .impeccable/surfaces/frontend-src.md ("Compatibilidad").
+  build: {
+    target: ['es2020', 'chrome80', 'safari15', 'firefox78', 'edge88'],
+    cssTarget: ['chrome80', 'safari15', 'firefox78', 'edge88'],
+  },
   server: {
     port: 5173,
     strictPort: true,
@@ -67,11 +80,20 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Solo los de unidad: e2e/ es de Playwright (npm run e2e).
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     // En los tests no hay service worker: el aviso de versión nueva usa un registro falso.
     alias: { 'virtual:pwa-register/react': fileURLToPath(new URL('./src/test/pwaFalso.ts', import.meta.url)) },
     css: false,
     restoreMocks: true,
+    // Los tests de pantallas (jsdom + user-event) con la suite entera en paralelo tardan varios segundos cada uno: con
+    // los 5 s por defecto, los formularios largos (caja, multiservicio, registrar, recetas, agenda con seña) cortaban
+    // por tiempo según la carga de la máquina. Margen fijo para todos y la mitad de los núcleos (jsdom es pesado:
+    // más workers que eso solo se pisan entre ellos). La espera de findBy*/waitFor está en src/test/setup.ts.
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
+    maxWorkers: '50%',
   },
 });

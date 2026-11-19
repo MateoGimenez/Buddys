@@ -1,0 +1,312 @@
+/* ------------------------------------------------------------------ Talón: el lavado recién registrado */
+
+.talon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 14px 16px;
+  background: var(--canario);
+  border: var(--grosor) solid var(--canario-borde);
+  border-top: 3px dashed var(--tinta-3);
+  border-radius: 0 0 var(--radio) var(--radio);
+  animation: arrancar 460ms var(--curva);
+  transform-origin: top left;
+}
+
+/* El sello del talón: un círculo que se estampa y la tilde que se dibuja adentro. */
+.talon-sello {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 50%;
+  background: var(--ok);
+  color: var(--sobre-ok);
+  animation: estampar 420ms var(--curva) 120ms both;
+}
+
+.talon-tilde path {
+  stroke-width: 3.2;
+  animation: dibujar 280ms ease-out 300ms both;
+}
+
+.talon-icono {
+  flex: none;
+  color: var(--ok);
+}
+
+.talon-cuerpo {
+  flex: 1 1 180px;
+}
+
+.talon-titulo {
+  font-weight: 750;
+}
+
+.talon-detalle {
+  color: var(--tinta-2);
+}
+
+.talon {
+  position: relative;
+  overflow: hidden;
+}
+
+.talon[data-en-cola] .talon-icono {
+  color: var(--alerta);
+}
+
+.talon-cola {
+  font-weight: 650;
+  color: var(--alerta);
+}
+
+/* Lavado deshecho: la copia rosa, la de las correcciones. */
+.talon-borrado {
+  background: var(--rosa-claro);
+  border-color: var(--rosa);
+}
+
+.talon-borrado .talon-icono {
+  color: var(--rosa-fuerte);
+}
+
+.talon-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.talon-deshacer {
+  border-color: var(--tinta);
+  background: var(--papel);
+}
+
+.talon-cuenta {
+  min-inline-size: 3.2ch;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--tinta);
+  color: var(--sobre-tinta);
+  font-size: 0.875rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  text-align: center;
+}
+
+/* El plazo para deshacer se consume como una tira por el borde de abajo del talón. */
+.talon-plazo {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  block-size: 5px;
+  background: var(--plazo-pista);
+}
+
+.talon-plazo span {
+  display: block;
+  block-size: 100%;
+  background: var(--tinta);
+  transform-origin: left center;
+  transition: transform 200ms linear;
+}
+
+.talon-error,
+.talon-fotos {
+  flex: 1 1 100%;
+}
+
+.talon-fotos {
+  padding-top: 10px;
+  border-top: var(--grosor-fino) solid var(--canario-borde);
+}
+
+/* La hoja se arranca por el troquel: se descubre de arriba hacia abajo, con un leve giro, y se asienta. */
+@keyframes arrancar {
+  0% {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(-10px) rotate(-1.2deg);
+  }
+
+  65% {
+    clip-path: inset(0);
+    transform: translateY(2px) rotate(0.3deg);
+  }
+
+  100% {
+    clip-path: inset(0);
+    transform: none;
+  }
+}
+
+@keyframes estampar {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes dibujar {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.talon-tilde path {
+  stroke-dashoffset: 0;
+}
+
+.servicios-sacados {
+  padding: 8px 12px;
+  border-radius: var(--radio-chico);
+  background: var(--alerta-claro);
+  color: var(--alerta);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  animation: asomar var(--t-estado) var(--curva);
+}
+
+/* Resumen de lo elegido, arriba del botón y al alcance del pulgar. */
+.pie-resumen {
+  margin-bottom: 8px;
+  text-align: center;
+  font-weight: 650;
+  color: var(--tinta);
+}
+
+.pie-resumen-cuenta {
+  display: inline-block;
+  animation: latir-una 240ms var(--curva);
+}
+
+.pie-resumen-consultar {
+  color: var(--alerta);
+}
+
+@keyframes latir-una {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* "Repetir el último": la copia del lavado anterior, lista para volver a usar. Va arriba de todo, al alcance del
+   pulgar en la primera pantalla; un toque precarga vehículo y servicios. */
+.repetir-zona {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repetir {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 56px;
+  padding: 8px 14px;
+  border: var(--grosor) solid var(--linea-fuerte);
+  border-top-style: dashed;
+  border-radius: 2px 2px var(--radio-chico) var(--radio-chico);
+  background: var(--canario);
+  color: var(--tinta);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 150ms ease-out,
+    transform var(--t-toque) ease-out;
+}
+
+.repetir:hover {
+  border-color: var(--tinta);
+}
+
+.repetir:active {
+  transform: scale(0.98);
+}
+
+.repetir-icono {
+  flex: none;
+  color: var(--carbon);
+}
+
+.repetir-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.repetir-titulo {
+  font-weight: 700;
+}
+
+.repetir-detalle {
+  font-size: 0.9375rem;
+  color: var(--tinta-2);
+  overflow-wrap: anywhere;
+}
+
+.repetir-aviso {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ok);
+}
+
+
+/* Descuento: el botón para abrirlo queda pegado al monto, del lado del pulgar. */
+.registrar-descuento {
+  align-self: flex-start;
+  margin-top: -8px;
+}
+
+.descuento {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Cliente conocido por la patente: una anotación al margen del remito. */
+.conocido {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radio-chico);
+  background: var(--carbon-claro);
+  color: var(--tinta);
+}
+
+.conocido-titulo {
+  font-weight: 750;
+}
+
+.conocido-premio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-weight: 700;
+}

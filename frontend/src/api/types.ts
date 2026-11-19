@@ -4,6 +4,10 @@ export type Rol = 'superadmin' | 'admin' | 'empleado';
 export type VehiculoTipo = 'auto' | 'suv' | 'pickup' | 'moto';
 export type Franja = 'manana' | 'tarde';
 export type EstadoTurno = 'pendiente' | 'confirmado' | 'completado' | 'cancelado';
+/** Dónde está el auto de un lavado de mostrador: llega (espera), se lava, queda listo y se entrega. */
+export type Etapa = 'espera' | 'lavando' | 'listo' | 'entregado';
+/** En el orden del lavadero. */
+export const ETAPAS: readonly Etapa[] = ['espera', 'lavando', 'listo', 'entregado'];
 
 /** Orden canónico: el de los selectores, las tablas de precios y los textos. */
 export const VEHICULOS: readonly VehiculoTipo[] = ['auto', 'suv', 'pickup', 'moto'];
@@ -39,7 +43,8 @@ export interface Turno {
   email: string | null;
   vehiculoTipo: VehiculoTipo;
   vehiculoModelo: string | null;
-  origen: 'web' | 'mostrador';
+  /** 'panel' = turno que cargó un encargado desde el panel. */
+  origen: 'web' | 'mostrador' | 'panel';
   /** El servicio principal (el primero de `servicios`). */
   servicioId: string;
   /** Todos los servicios del lavado, en orden. precioLista null para el empleado o si el servicio era "Consultá". */
@@ -59,6 +64,20 @@ export interface Turno {
   trabajador: Persona | null;
   /** Quién lo registró en el panel. null en los turnos de la web (o si no hay dato). Lo reciben todos los roles. */
   registradoPor: Persona | null;
+  /** Solo lavados de mostrador; null en turnos de la web o del panel. */
+  etapa: Etapa | null;
+  /** Desde cuándo está en esa etapa (ISO UTC). null si etapa es null. */
+  etapaDesde: string | null;
+  /** Pesos descontados (0 = sin descuento). null para el empleado. */
+  descuento: number | null;
+  /** null sin descuento o para el empleado. */
+  descuentoMotivo: string | null;
+  /** Seña del turno; monto null para el empleado. */
+  sena: { monto: number | null; formaPago: FormaPago | null; fecha: string } | null;
+  /** monto - seña. null sin monto o para el empleado. */
+  saldo: number | null;
+  /** Link de wa.me con el "ya está listo" (lo ven todos los roles). null sin teléfono. */
+  whatsappListo: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,6 +122,11 @@ export interface NuevoLavado {
   vehiculoModelo?: string;
   notasInternas?: string;
   formaPago?: FormaPago | null;
+  /** Por defecto 'entregado' ("ya terminado"); 'espera' = recién llega. */
+  etapa?: Etapa;
+  /** Solo quien ve importes, y solo si es > 0 (con su motivo). */
+  descuento?: number;
+  descuentoMotivo?: string;
   /**
    * uuid que genera el panel por cada envío (el mismo en los reintentos desde la cola sin conexión). Si el backend ya
    * tiene un lavado con ese idLocal del mismo usuario responde 200 con ese lavado (no crea otro); de otra persona, 409.
@@ -130,6 +154,9 @@ export interface CambioTurno {
   formaPago?: FormaPago | null;
   /** Solo quien tiene cobro.corregir. */
   servicioIds?: string[];
+  /** 0 = sin descuento (y sin motivo). Con descuento > 0 el motivo es obligatorio. */
+  descuento?: number;
+  descuentoMotivo?: string | null;
 }
 
 export interface Trabajador {

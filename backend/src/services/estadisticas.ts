@@ -48,7 +48,7 @@ export class EstadisticasService {
     const granularidad = granularidadDe(rango);
     const repo = this.deps.estadisticas;
 
-    const [totales, gastos, conteo, serie, gastosSerie, gastosPorCategoria, porServicio, porDiaSemana] =
+    const [totales, gastos, conteo, serie, gastosSerie, gastosPorCategoria, porServicio, porDiaSemana, fijos] =
       await Promise.all([
         repo.totales(rangosDelResumen(hoy)),
         repo.gastosPorRango([...rangosDelResumen(hoy), { clave: 'periodo', ...rango }]),
@@ -58,6 +58,7 @@ export class EstadisticasService {
         repo.gastosPorCategoria(rango),
         repo.porServicio(rango),
         repo.porDiaSemana(rango),
+        repo.gastosFijos(rango),
       ]);
 
     const total = (clave: string): TotalesConGastos => {
@@ -93,6 +94,8 @@ export class EstadisticasService {
         cancelados: conteo.cancelados,
         ingresos: conteo.ingresos,
         gastos: gastosDelPeriodo,
+        gastosFijos: fijos,
+        descuentos: conteo.descuentos,
         gananciaNeta,
         margen: margen === null ? null : redondear4(margen),
         ticketPromedio: ticket === null ? null : Math.round(ticket),

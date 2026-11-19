@@ -37,6 +37,14 @@ import { RecordatorioService } from './services/recordatorios.js';
 import { ServicioService } from './services/servicios.js';
 import { TallerService } from './services/taller.js';
 import { UsuarioService } from './services/usuarios.js';
+import { AvisoService } from './services/avisos.js';
+import { CajaService } from './services/caja.js';
+import { ClienteService } from './services/clientes.js';
+import { FotoService, type ResultadoConciliacion } from './services/fotos.js';
+import { GastoFijoService } from './services/gastos-fijos.js';
+import { TurnoPanelService } from './services/turnos.js';
+import { StorageFirmadoClient } from './lib/supabase-storage-firmado.js';
+import { BUCKET_FOTOS, CONCILIACION_CADA_MS } from './domain/fotos.js';
 
 export interface AppDeps {
   config: AppConfig;
@@ -61,7 +69,19 @@ export interface AppDeps {
   pushSender?: PushSender;
   /** Plazos para recibir el cuerpo (por defecto 10 s y 30 s la foto; los tests los acortan). */
   plazosCuerpo?: PlazosCuerpo;
+  /**
+   * Programa las tareas de fondo (la conciliación del bucket de fotos: al arrancar y cada hora, con un timer que no
+   * retiene el proceso). Solo index.ts la prende; los tests llaman a `conciliarFotos(app)` a mano.
+   */
+  tareasProgramadas?: boolean;
 }
+
+/** La conciliación del bucket de fotos de esta app (para index.ts y los tests). */
+export function conciliarFotos(app: Express): Promise<ResultadoConciliacion | undefined> {
+  const conciliar = (app.locals as { conciliarFotos?: () => Promise<ResultadoConciliacion | undefined> }).conciliarFotos;
+  return conciliar === undefined ? Promise.resolve(undefined) : conciliar();
+}
+
 
 /**
  * Arma la aplicación Express SIN ponerla a escuchar (index.ts hace el listen; los tests usan supertest).
@@ -86,6 +106,11 @@ export function createApp(deps: AppDeps): Express {
     recetas: recetasRepo,
     presupuestos: presupuestosRepo,
     comprobantes: comprobantesRepo,
+    clientes: clientesRepo,
+    fotos: fotosRepo,
+    gastosFijos: gastosFijosRepo,
+    caja: cajaRepo,
+    exportar,
   } = deps.repositories;
   const push = new PushService({
     repo: pushRepo,
@@ -126,8 +151,20 @@ export function createApp(deps: AppDeps): Express {
   const usuarios = new UsuarioService({ perfiles, admin: supabaseAdmin, storage, logger, now });
   const perfil = new PerfilService({ perfiles, auth: supabaseAuth, admin: supabaseAdmin, storage, logger, now });
   // El aviso de stock bajo (push a admin y superadmin) sale de los lavados, de su corrección y de los movimientos.
-  const agenda = new AgendaService({ bookings, servicios, perfiles, logger, now, avisos: push });
-  const lavados = new LavadoService({ bookings, servicios, perfiles, logger, now, avisos: push });
+  const avisosEquipo = new AvisoService({ push, metas: metasRepo, estadisticas: estadisticasRepo, logger, now });
+  // Fotos de los lavados (función 13): otro cliente de Storage, con URLs firmadas. Sin SUPABASE_SECRET_KEY, apagadas.
+  const storageFotos =
+    secretKey === undefined
+      ? undefined
+      : new StorageFirmadoClient({ url: config.supabase.url, secretKey, bucket: BUCKET_FOTOS }, deps.storageFetch);
+  const fotos = new FotoService({ fotos: fotosRepo, bookings, storage: storageFotos, logger, now });
+  // El aviso de stock bajo (push a admin y superadmin) sale de los lavados, de su corrección y de los movimientos.
+  const agenda = new AgendaService({ bookings, servicios, perfiles, logger, now, avisos: push, avisosEquipo });
+  const lavados = new LavadoService({ bookings, servicios, perfiles, logger, now, avisos: push, avisosEquipo, fotos });
+  const turnos = new TurnoPanelService({ bookings, servicios, logger, now });
+  const clientes = new ClienteService({ clientes: clientesRepo, logger, now });
+  const gastosFijos = new GastoFijoService({ gastosFijos: gastosFijosRepo, perfiles, logger, now });
+  const caja = new CajaService({ caja: cajaRepo, logger, now });
   const estadisticas = new EstadisticasService({ estadisticas: estadisticasRepo, now });
   const servicioService = new ServicioService({ servicios, logger, now });
   const disponibilidadService = new DisponibilidadService({ disponibilidad, logger, now });
@@ -195,11 +232,23 @@ export function createApp(deps: AppDeps): Express {
       comprobantes,
       cookies,
       limiters,
+      turnos,
+      clientes,
+      fotos,
+      gastosFijos,
+      caja,
+      exportar,
     }),
   );
 
 
   app.use(notFoundHandler);
   app.use(errorHandler(logger));
+
+  app.locals.conciliarFotos = () => fotos.conciliar();
+  if (deps.tareasProgramadas === true && fotos.disponible) {
+    void fotos.conciliar();
+    setInterval(() => void fotos.conciliar(), CONCILIACION_CADA_MS).unref();
+  }
   return app;
 }

@@ -75,6 +75,13 @@ describe('turnos', () => {
       formaPago: null,
       // El trigger bookings_servicio_principal le dio su fila en lavado_servicios (pulido: "Consultá").
       servicios: [{ id: 'pulido', nombre: 'Pulido', precioLista: null }],
+      etapa: null,
+      etapaDesde: null,
+      descuento: 0,
+      descuentoMotivo: null,
+      sena: null,
+      saldo: null,
+      whatsappListo: expect.stringMatching(/^https:\/\/wa\.me\/\d+\?text=/) as unknown,
       createdAt: '2026-10-16T15:00:00.000Z',
       updatedAt: '2026-10-16T15:00:00.000Z',
     });

@@ -1,0 +1,69 @@
+/* ------------------------------------------------------------------ Encabezados */
+
+.pagina-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.pagina-encabezado h1 {
+  font-size: 1.625rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  letter-spacing: -0.01em;
+}
+
+.encabezado-fecha {
+  inline-size: 100%;
+  color: var(--tinta-3);
+  font-size: 0.9375rem;
+  margin-top: -8px;
+}
+
+.encabezado-fecha::first-letter {
+  text-transform: uppercase;
+}
+
+.bloque-titulo {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.nota-chica {
+  font-size: 0.875rem;
+  color: var(--tinta-3);
+}
+
+.nota-ok {
+  color: var(--ok);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+/* ------------------------------------------------------------------ Hojas */
+
+.hoja {
+  background: var(--papel);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 16px;
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bloque-cabeza {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagina-encabezado h1:focus {
+  outline: none;
+}

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Boxes,
+  CalendarDays,
   ClipboardList,
   FileText,
   Menu,
@@ -8,11 +9,16 @@ import {
   Receipt,
   Tags,
   Users,
+  Wallet,
+  Contact,
+  Sun,
   type LucideIcon,
 } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSesion, useUsuario } from '../session/SessionContext';
 import { Campanita } from './Campanita';
+import { ErrorBoundary } from './ErrorBoundary';
 import { MenuCuenta } from './MenuCuenta';
 import { Senal } from './Senal';
 
@@ -28,9 +34,13 @@ export interface Seccion {
 }
 
 export const SECCIONES: Seccion[] = [
+  { ruta: '/hoy', nombre: 'Hoy', icono: Sun, capacidad: 'estadisticas.completas', principal: true, descripcion: 'Caja, meta y autos en el lavadero' },
   { ruta: '/registrar', nombre: 'Registrar', icono: PlusCircle, capacidad: 'lavados.registrar', principal: true, descripcion: 'Anotar un lavado' },
   { ruta: '/planilla', nombre: 'Planilla', icono: ClipboardList, capacidad: 'turnos.ver', principal: true, descripcion: 'Los lavados del día' },
   { ruta: '/numeros', nombre: 'Números', icono: BarChart3, capacidad: 'estadisticas.propias', principal: true, descripcion: 'Ingresos, metas y seguimiento' },
+  { ruta: '/agenda', nombre: 'Agenda', icono: CalendarDays, capacidad: 'turnos.ver', descripcion: 'Turnos largos y señas' },
+  { ruta: '/caja', nombre: 'Caja', icono: Wallet, capacidad: 'caja.cerrar', descripcion: 'Contar y cerrar la caja del día' },
+  { ruta: '/clientes', nombre: 'Clientes', icono: Contact, capacidad: 'turnos.clientes', descripcion: 'Historial, sellos e inactivos' },
   { ruta: '/servicios', nombre: 'Servicios', icono: Tags, capacidad: 'catalogo.ver', descripcion: 'Precios y vehículos' },
   { ruta: '/insumos', nombre: 'Insumos', icono: Boxes, capacidad: 'inventario.ver', descripcion: 'Stock y uso de productos' },
   { ruta: '/gastos', nombre: 'Gastos', icono: Receipt, capacidad: 'finanzas.gastos', descripcion: 'Lo que se gasta en el mes' },
@@ -52,6 +62,22 @@ export function Layout() {
   const { puede } = useSesion();
   const secciones = useSecciones();
   const principales = secciones.filter((s) => s.principal);
+  const { pathname } = useLocation();
+  const primeraVez = useRef(true);
+
+  // Al cambiar de sección, el foco va al título de la pantalla nueva: el lector de pantalla la anuncia y el teclado
+  // sigue desde ahí (si no, quedaría en la pestaña que se tocó). Al abrir la app no se mueve.
+  useEffect(() => {
+    if (primeraVez.current) {
+      primeraVez.current = false;
+      return;
+    }
+    const titulo = document.querySelector<HTMLElement>('#contenido h1') ?? document.getElementById('contenido');
+    if (!titulo) return;
+    if (!titulo.hasAttribute('tabindex')) titulo.setAttribute('tabindex', '-1');
+    titulo.focus({ preventScroll: true });
+  }, [pathname]);
+
 
   return (
     <div className="app">
@@ -81,7 +107,9 @@ export function Layout() {
 
       <main id="contenido" className="contenido" tabIndex={-1}>
         <Senal usuarioId={usuario.id} />
-        <Outlet />
+        <ErrorBoundary clave={pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       <nav className="tabs" aria-label="Secciones principales">

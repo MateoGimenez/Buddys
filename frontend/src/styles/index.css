@@ -1,0 +1,41 @@
+/* Panel Buddys Wash Detail: todos los estilos, en el orden en que se aplican (el orden importa: lo de abajo pisa a lo
+   de arriba con la misma especificidad).
+   - styles/: lo común (tokens de color y temas, base, estructura, componentes de ui.tsx, listas, movimiento).
+   - components/<componente>.css y pages/<pantalla>/<pantalla>.css: lo propio de cada componente o pantalla.
+   Una pantalla nueva suma su archivo en el bloque "Pantallas", siempre ANTES de movimiento.css (que va último: apaga
+   las animaciones con "reducir movimiento"). Colores: solo con las variables de tokens.css, nunca hex sueltos. */
+
+@import './tokens.css';
+@import './base.css';
+@import './estructura.css';
+@import './hojas.css';
+@import './botones.css';
+@import './formularios.css';
+@import './avisos.css';
+@import './navegador.css';
+@import './dialogo.css';
+@import './listas.css';
+@import '../components/elegir-servicios.css';
+@import '../components/etapa-auto.css';
+@import '../components/fotos.css';
+
+/* Pantallas */
+@import '../pages/registrar/registrar.css';
+@import '../pages/planilla/planilla.css';
+@import '../pages/numeros/numeros.css';
+@import '../pages/servicios/servicios.css';
+@import '../pages/mas/mas.css';
+@import '../pages/login/login.css';
+@import '../pages/caja/caja.css';
+@import '../pages/agenda/agenda.css';
+@import '../pages/gastos/gastos.css';
+@import '../pages/insumos/insumos.css';
+@import '../components/fallo.css';
+@import '../pages/hoy/hoy.css';
+@import '../pages/clientes/clientes.css';
+@import './tanda-03-06.css';
+
+@import './contraste.css';
+
+/* Siempre último */
+@import './movimiento.css';

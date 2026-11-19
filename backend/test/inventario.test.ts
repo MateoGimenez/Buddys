@@ -4,7 +4,7 @@ import { closeAllContexts, createClient, createTestContext, loginAs } from './he
 afterEach(closeAllContexts);
 
 const CLAVES_INSUMO = ['activo', 'bajoStock', 'categoria', 'costoUnitario', 'id', 'nombre', 'stock', 'stockMinimo', 'unidad', 'updatedAt', 'valorEnStock'];
-const CLAVES_MOVIMIENTO = ['cantidad', 'costoTotal', 'createdAt', 'id', 'nota', 'persona', 'proveedor', 'tipo', 'turnoId'];
+const CLAVES_MOVIMIENTO = ['automatico', 'cantidad', 'costoTotal', 'createdAt', 'id', 'nota', 'persona', 'proveedor', 'tipo', 'turnoId'];
 
 async function equipo(now?: Date) {
   const context = await createTestContext(now === undefined ? {} : { now });

@@ -67,7 +67,7 @@ export interface DestinoPush {
 /** Contenido del aviso: nunca nombre, teléfono, email, vehículo ni comentario. */
 export interface PayloadPush {
   /** Qué aviso es: el service worker del panel lo usa (si viene) para elegir el ícono y agrupar las notificaciones. */
-  tipo: 'turno' | 'stock';
+  tipo: 'turno' | 'stock' | 'equipo';
   titulo: string;
   cuerpo: string;
   /** Cantidad de turnos pendientes (para el globito del ícono). */
@@ -86,8 +86,8 @@ export interface PushRepository {
   borrarPorEndpoint(endpoint: string): Promise<boolean>;
   /** Dispositivos de las personas ACTIVAS del panel. */
   destinosActivos(): Promise<DestinoPush[]>;
-  /** Dispositivos de las personas ACTIVAS (y no dadas de baja) con uno de esos roles. */
-  destinosConRol(roles: readonly Rol[]): Promise<DestinoPush[]>;
+  /** Dispositivos de las personas ACTIVAS (y no dadas de baja) con uno de esos roles, menos los de `excluirPerfilId`. */
+  destinosConRol(roles: readonly Rol[], excluirPerfilId?: string | null): Promise<DestinoPush[]>;
   /** Borra dispositivos por id (el servicio de push respondió 404/410). Devuelve cuántos borró. */
   borrarPorIds(ids: readonly string[]): Promise<number>;
   /** Marca el último aviso entregado. */

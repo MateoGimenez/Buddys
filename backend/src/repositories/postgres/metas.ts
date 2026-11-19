@@ -52,6 +52,11 @@ export class PostgresMetaRepository implements MetaRepository {
          VALUES ($1::date, $2::int, $3::int)
          ON CONFLICT (mes) DO UPDATE
            SET ingresos_objetivo = EXCLUDED.ingresos_objetivo, trabajos_objetivo = EXCLUDED.trabajos_objetivo,
+               -- Una meta nueva se puede volver a avisar como cumplida (migración avisos_meta).
+               cumplida_avisada_at = CASE
+                 WHEN buddys.metas_mensuales.ingresos_objetivo IS DISTINCT FROM EXCLUDED.ingresos_objetivo
+                   OR buddys.metas_mensuales.trabajos_objetivo IS DISTINCT FROM EXCLUDED.trabajos_objetivo
+                 THEN NULL ELSE buddys.metas_mensuales.cumplida_avisada_at END,
                updated_at = now()
          RETURNING to_char(mes, 'YYYY-MM') AS mes, ingresos_objetivo, trabajos_objetivo`,
         [`${mes}-01`, mezcla.ingresosObjetivo, mezcla.trabajosObjetivo],
@@ -60,6 +65,16 @@ export class PostgresMetaRepository implements MetaRepository {
       if (!row) throw new Error('El guardado de la meta no devolvió fila');
       return toMeta(row);
     });
+  }
+
+  async marcarCumplidaAvisada(mes: string, now: Date): Promise<boolean> {
+    // El que la marca es el único que avisa (aunque dos lavados lleguen a la vez).
+    const { rowCount } = await this.sql.query(
+      `UPDATE buddys.metas_mensuales SET cumplida_avisada_at = $2::timestamptz
+       WHERE mes = $1::date AND cumplida_avisada_at IS NULL`,
+      [`${mes}-01`, now.toISOString()],
+    );
+    return rowCount > 0;
   }
 
   async borrar(mes: string): Promise<boolean> {

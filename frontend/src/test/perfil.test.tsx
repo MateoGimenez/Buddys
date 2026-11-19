@@ -114,11 +114,11 @@ describe('header: menú de la cuenta', () => {
     ] as Permisos['capacidades'];
     apiFalsa({ ...sesionAdmin(), 'GET /api/admin/permisos': { status: 200, body: tabla } });
     const { user } = renderApp('/perfil');
+    // La ruta tampoco existe: vuelve al inicio del encargado (Hoy).
+    expect(await screen.findByRole('heading', { name: 'Hoy', level: 1 })).toBeInTheDocument();
     await user.click(await botonCuenta());
     expect(screen.queryByRole('menuitem', { name: 'Mi perfil' })).toBeNull();
     expect(screen.getByRole('menuitem', { name: 'Cerrar sesión' })).toBeInTheDocument();
-    // La ruta tampoco existe: vuelve a Registrar.
-    expect(screen.getByRole('heading', { name: 'Registrar lavado' })).toBeInTheDocument();
   });
 
   it('el empleado también tiene su menú y su perfil', async () => {

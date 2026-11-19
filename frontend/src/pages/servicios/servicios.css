@@ -1,0 +1,28 @@
+/* ------------------------------------------------------------------ Servicios (catálogo) por categoría */
+
+.categoria {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.categoria-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  font-size: 1rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: var(--grosor) solid var(--tinta);
+}
+
+.categoria-cuenta {
+  font-size: 0.875rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  color: var(--tinta-2);
+}

@@ -85,6 +85,25 @@ describe('flujo completo: cobro, estadísticas, empleado, baja de la persona y v
 
 /* ---------- Respuestas reales de la API (contrato para un frontend futuro) ---------- */
 
+/** Supabase Storage falso para las fotos (sin red): firma subidas y lecturas con un token fijo. */
+const storageFalso = ((input: string, init?: RequestInit) => {
+  if (init?.method === 'HEAD') {
+    return Promise.resolve(new Response(null, { status: 200, headers: { 'content-length': '523000', 'content-type': 'image/webp' } }));
+  }
+  const ruta = input.replace(/^https:\/\/[^/]+\/storage\/v1/, '');
+  if (ruta.startsWith('/object/upload/sign/')) return Promise.resolve(Response.json({ url: `${ruta}?token=token-de-subida` }));
+  // Firma en lote (fotos de perfil): POST /object/sign/<bucket> { expiresIn, paths }.
+  const lote = /^\/object\/sign\/([a-z-]+)$/.exec(ruta);
+  if (lote !== null) {
+    const { paths } = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as { paths: string[] };
+    return Promise.resolve(
+      Response.json(paths.map((p) => ({ path: p, signedURL: `/object/sign/${String(lote[1])}/${p}?token=token-de-lectura`, error: null }))),
+    );
+  }
+  if (ruta.startsWith('/object/sign/')) return Promise.resolve(Response.json({ signedURL: `${ruta}?token=token-de-lectura` }));
+  return Promise.resolve(Response.json([]));
+}) as typeof fetch;
+
 const FIXTURES = path.join(BACKEND_ROOT, 'test', 'fixtures', 'respuestas-api.json');
 
 /** Ids y fechas de hora aleatorios se reemplazan por valores estables, en orden de aparición. */
@@ -101,7 +120,7 @@ function normalizar(valor: unknown): unknown {
 
 describe('respuestas reales del backend (contrato de la API)', () => {
   it('coinciden con las guardadas en test/fixtures/respuestas-api.json (ACTUALIZAR_FIXTURES=1 las regenera)', async () => {
-    const context = await createTestContext();
+    const context = await createTestContext({ storageFetch: storageFalso });
     const ana = await addUser(context, { email: 'ana@t.test', rol: 'admin', nombre: 'Ana' });
     const beto = await addUser(context, { email: 'beto@t.test', rol: 'empleado', nombre: 'Beto' });
     await addUser(context, { email: 'sin@t.test', rol: 'empleado', nombre: null });
@@ -276,6 +295,84 @@ describe('respuestas reales del backend (contrato de la API)', () => {
     cap('error403ServiciosEmpleado', await empleado.patch(`/api/admin/bookings/${idVarios}`, { servicioIds: ['pulido'] }));
     cap('lavadosDiaVariosEmpleado', await empleado.get('/api/admin/lavados'));
     cap('comprobanteVarios', await admin.post(`/api/admin/bookings/${idVarios}/comprobante`, {}));
+
+    // Mejoras del contrato 2026-11-15 (reportes/2026-11-15_03_contrato-mejoras.md). Al final: no mueve nada de arriba.
+    await addUser(context, { email: 'duena@t.test', rol: 'superadmin', nombre: 'Dueña' });
+    const dueno = await loginClient(context, 'duena@t.test');
+    const cliente = { nombre: 'Juan Pérez', telefono: '0380 15-4123456', vehiculoModelo: 'Gol AB123CD' };
+    // 9. Etapas
+    const enEspera = await empleado.post('/api/admin/lavados', { ...lavado, ...cliente, monto: 9000, etapa: 'espera' });
+    cap('lavadoCreaEnEspera', enEspera);
+    const idEspera = String(enEspera.body.lavado.id);
+    cap('lavadoEtapaListo', await empleado.patch(`/api/admin/lavados/${idEspera}/etapa`, { etapa: 'listo' }));
+    cap('lavadosEnCurso', await empleado.get('/api/admin/lavados/en-curso'));
+    cap('error403EtapaAjena', await otroEmpleado.patch(`/api/admin/lavados/${idEspera}/etapa`, { etapa: 'lavando' }));
+    cap('error400Etapa', await admin.patch(`/api/admin/lavados/${idEspera}/etapa`, { etapa: 'volando' }));
+    // 12. Descuentos
+    const conDescuento = await admin.post('/api/admin/lavados', { ...lavado, ...cliente, monto: 8000, descuento: 2000, descuentoMotivo: 'Cliente frecuente', formaPago: 'efectivo' });
+    cap('lavadoConDescuento', conDescuento);
+    cap('error400DescuentoSinMotivo', await admin.post('/api/admin/lavados', { ...lavado, monto: 8000, descuento: 2000 }));
+    cap('error403DescuentoEmpleado', await empleado.post('/api/admin/lavados', { ...lavado, monto: 8000, descuento: 2000, descuentoMotivo: 'x' }));
+    cap('patchDescuento', await admin.patch(`/api/admin/bookings/${String(conDescuento.body.lavado.id)}`, { descuento: 1000, descuentoMotivo: 'Promo' }));
+    // 8. Turnos con seña
+    const turnoPanel = { ...cliente, telefono: '+54 9 380 412-3456', vehiculoTipo: 'auto', servicioIds: ['pulido', 'encerado'], fecha: '2026-10-20', franja: 'manana', sena: { monto: 20000, formaPago: 'transferencia' } };
+    const conSena = await admin.post('/api/admin/turnos', turnoPanel);
+    cap('turnoConSenaCrea', conSena);
+    const idSena = String(conSena.body.turno.id);
+    cap('error403TurnoEmpleado', await empleado.post('/api/admin/turnos', turnoPanel));
+    cap('turnoConSenaEmpleadoLista', await empleado.get('/api/admin/agenda?desde=2026-10-20&hasta=2026-10-20'));
+    cap('senaPut', await admin.put(`/api/admin/turnos/${idSena}/sena`, { monto: 25000, formaPago: 'efectivo' }));
+    cap('error400Sena', await admin.put(`/api/admin/turnos/${idSena}/sena`, { monto: 0, formaPago: 'bitcoin' }));
+    cap('error400MontoMenorSena', await admin.patch(`/api/admin/bookings/${idSena}`, { estado: 'completado', monto: 10000 }));
+    cap('turnoCompletaConSena', await admin.patch(`/api/admin/bookings/${idSena}`, { estado: 'completado', monto: 60000 }));
+    // 6 y 14. Clientes
+    cap('clienteHistorialTelefonoAdmin', await admin.get('/api/admin/clientes/historial?telefono=3804123456'));
+    cap('clienteHistorialPatenteEmpleado', await empleado.get('/api/admin/clientes/historial?patente=ab-123-cd'));
+    cap('error404Cliente', await admin.get('/api/admin/clientes/historial?patente=ZZZ999'));
+    cap('error400ClienteDosClaves', await admin.get('/api/admin/clientes/historial?patente=AB123CD&telefono=3804123456'));
+    cap('busquedaPatente', await empleado.get('/api/admin/bookings?q=ab%20123%20cd&limit=2'));
+    cap('fidelizacionGet', await empleado.get('/api/admin/fidelizacion'));
+    cap('fidelizacionPut', await dueno.put('/api/admin/fidelizacion', { sellosCada: 8, premio: 'descuento', premioPorcentaje: 50, inactivosDias: 30 }));
+    cap('error403FidelizacionAdmin', await admin.put('/api/admin/fidelizacion', { sellosCada: 8, premio: 'gratis', inactivosDias: 30 }));
+    await admin.post('/api/admin/lavados', { ...lavado, nombre: 'Ana Gómez', telefono: '3804111111', vehiculoModelo: 'Corsa', fecha: '2026-09-15' });
+    cap('clientesInactivos', await admin.get('/api/admin/clientes/inactivos'));
+    cap('error403InactivosEmpleado', await empleado.get('/api/admin/clientes/inactivos'));
+    // 10. Gastos fijos
+    const fijo = await dueno.post('/api/admin/gastos-fijos', { concepto: 'Sueldo de Beto', monto: 300000, categoria: 'sueldos', perfilId: String(lavadoEmpleado.body.lavado.trabajador.id), desde: '2026-10' });
+    cap('gastoFijoCrea', fijo);
+    await dueno.post('/api/admin/gastos-fijos', { concepto: 'Alquiler del local', monto: 150000, categoria: 'alquiler' });
+    cap('gastosFijosLista', await admin.get('/api/admin/gastos-fijos'));
+    cap('gastoFijoDesactiva', await dueno.patch(`/api/admin/gastos-fijos/${String(fijo.body.gastoFijo.id)}`, { activo: false }));
+    cap('error403GastoFijoAdmin', await admin.post('/api/admin/gastos-fijos', { concepto: 'x', monto: 1, categoria: 'otros' }));
+    cap('error403GastosFijosEmpleado', await empleado.get('/api/admin/gastos-fijos'));
+    cap('estadisticasConFijos', await admin.get('/api/admin/estadisticas?desde=2026-10-01&hasta=2026-10-16'));
+    // 11. Caja
+    cap('cajaAbierta', await admin.get('/api/admin/caja'));
+    cap('cajaCierra', await admin.put('/api/admin/caja/2026-10-16', { contado: { efectivo: 30000, transferencia: 15000 }, nota: 'Faltan 500 de cambio' }));
+    cap('cajaCerrada', await admin.get('/api/admin/caja?fecha=2026-10-16'));
+    cap('cajaCierres', await admin.get('/api/admin/caja/cierres'));
+    cap('error403CajaEmpleado', await empleado.get('/api/admin/caja'));
+    cap('error403CajaReabrirAdmin', await admin.put('/api/admin/caja/2026-10-16', { contado: { efectivo: 1 } }));
+    cap('error400Caja', await admin.put('/api/admin/caja/2026-10-15', { contado: { transferencia: 5 } }));
+    // 13. Fotos (Storage falso)
+    const fotos = `/api/admin/lavados/${idEspera}/fotos`;
+    const subidaFoto = await empleado.post(fotos, { tipo: 'antes', contentType: 'image/webp', tamano: 523000 });
+    cap('fotoSubida', subidaFoto);
+    cap('fotoConfirmada', await empleado.post(`${fotos}/${String(subidaFoto.body.foto.id)}/confirmar`));
+    // Un segundo entre subidas: el orden de la lista (created_at) no depende de ids al azar.
+    for (let i = 0; i < 5; i++) {
+      context.clock.current = new Date(context.clock.current.getTime() + 1000);
+      await admin.post(fotos, { tipo: 'despues', contentType: 'image/jpeg', tamano: 400000 });
+    }
+    cap('fotosLista', await empleado.get(fotos));
+    cap('error409FotosMaximo', await admin.post(fotos, { tipo: 'antes', contentType: 'image/webp', tamano: 1000 }));
+    cap('error403FotoBorrarAjena', await otroEmpleado.delete(`${fotos}/${String(subidaFoto.body.foto.id)}`));
+    cap('error400FotoTipo', await admin.post(`/api/admin/lavados/${idEspera}/fotos`, { tipo: 'antes', contentType: 'image/png', tamano: 1000 }));
+    // 16 y 26.
+    cap('error403ExportarEmpleado', await empleado.get('/api/admin/exportar/planilla.csv?desde=2026-10-01&hasta=2026-10-31'));
+    cap('errorClienteRegistrado', await empleado.post('/api/admin/errores-cliente', { mensaje: 'TypeError: x is undefined', url: '/admin/planilla', userAgent: 'Mozilla/5.0', version: '1.0.0' }));
+    cap('error400ErrorCliente', await createClient(context.app).post('/api/errores-cliente', { mensaje: '' }));
+    cap('permisosAdminMejoras', await admin.get('/api/admin/permisos'));
 
     // Gestión de usuarios (contrato 2026-11-17_03): Ana es admin (gestiona solo empleados). Al final: dar de baja a Beto
     // no mueve nada de arriba.

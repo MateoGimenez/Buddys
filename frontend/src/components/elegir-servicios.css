@@ -1,0 +1,185 @@
+/* ------------------------------------------------------------------ Servicios del lavado (elegir varios) */
+
+.servicios {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.servicios > legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-weight: 650;
+}
+
+.servicios-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* El nombre de la categoría, como la cabecera de una columna del talonario: queda pegado arriba mientras se baja
+   por sus servicios, así con 14 servicios nunca se pierde en qué parte de la lista está el pulgar. */
+.servicios-categoria {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: 32px;
+  padding-block: 4px;
+  font-size: 0.8125rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tinta-2);
+  border-bottom: var(--grosor) dashed var(--linea);
+}
+
+.servicios[data-pegajoso] .servicios-categoria {
+  position: sticky;
+  top: var(--barra-alto);
+  z-index: 3;
+  margin-inline: -4px;
+  padding-inline: 4px;
+  background: var(--papel);
+}
+
+.servicios-categoria[data-frecuentes] {
+  color: var(--tinta);
+}
+
+.servicios-fichas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .servicios-fichas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ficha {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-areas: 'casilla texto' 'casilla precio';
+  align-content: center;
+  column-gap: 10px;
+  min-block-size: 60px;
+  padding: 10px 10px 10px 12px;
+  border: var(--grosor) solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  background: var(--papel);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    transform var(--t-toque) ease-out;
+}
+
+.ficha input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ficha:hover:not([data-elegida]) {
+  background: var(--carbon-claro);
+}
+
+.ficha:active {
+  transform: scale(0.97);
+}
+
+/* Igual que en .opcion (formularios.css): :focus-within donde no hay :has(). */
+.ficha:focus-within {
+  outline: 3px solid var(--carbon);
+  outline-offset: 2px;
+}
+
+@supports selector(:has(*)) {
+  .ficha:focus-within:not(:has(input:focus-visible)) {
+    outline: none;
+  }
+}
+
+.ficha[data-elegida] {
+  border-color: var(--tinta);
+  background: var(--rosa-claro);
+  box-shadow: inset 0 0 0 1px var(--tinta);
+}
+
+.ficha[data-deshabilitada] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ficha-casilla {
+  grid-area: casilla;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border: var(--grosor) solid var(--tinta-3);
+  border-radius: 6px;
+  background: var(--papel);
+  color: var(--sobre-tinta);
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.ficha[data-elegida] .ficha-casilla {
+  border-color: var(--tinta);
+  background: var(--tinta);
+}
+
+.ficha-texto {
+  grid-area: texto;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.ficha-precio {
+  grid-area: precio;
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+}
+
+.ficha-precio[data-consultar] {
+  color: var(--alerta);
+  font-weight: 600;
+}
+
+/* La tilde se dibuja como con birome: el trazo avanza de la base a la punta. */
+.tilde {
+  display: block;
+  overflow: visible;
+}
+
+.tilde path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 180ms ease-in;
+}
+
+.ficha[data-elegida] .tilde path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 220ms var(--curva) 40ms;
+}

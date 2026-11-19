@@ -38,11 +38,17 @@ const SOLO_ENCARGADOS = new Set([
   'inventario.gestionar',
   'inventario.recetas',
   'inventario.consumo',
+  // Mejoras (contrato 2026-11-15, permisosAdminMejoras).
+  'caja.cerrar',
+  'finanzas.gastos_fijos',
+  'finanzas.exportar',
+  'turnos.crear',
 ]);
 
 function nivelPorRol(usuario: Usuario, capacidad: string): NivelPermiso {
   // Equipo: el superadmin gestiona a todos; el admin, solo a los empleados.
   if (capacidad === 'usuarios.gestionar') return usuario.rol === 'superadmin' ? 'si' : usuario.rol === 'admin' ? 'parcial' : 'no';
+  if (capacidad === 'caja.reabrir') return usuario.rol === 'superadmin' ? 'si' : 'no';
   if (SOLO_ENCARGADOS.has(capacidad)) return usuario.rol !== 'empleado' ? 'si' : 'no';
   return 'si';
 }

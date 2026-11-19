@@ -164,11 +164,13 @@ describe(`migración ${NUEVA}: bucket avatares privado (B2)`, () => {
     );
     expect(b.rows).toEqual([
       { id: 'avatares', public: false, file_size_limit: 262144, allowed_mime_types: ['image/webp'] },
+      // El de las fotos de los lavados (20261115150000_storage_bucket_fotos), que esta migración no toca.
+      { id: 'lavados-fotos', public: false, file_size_limit: 1572864, allowed_mime_types: ['image/jpeg', 'image/webp'] },
       { id: 'publico', public: true, file_size_limit: null, allowed_mime_types: null },
     ]);
-    // No toca objetos ni crea policies.
+    // No toca objetos ni crea policies (la única es la restrictiva del bucket de fotos de lavados, de 20261115150000).
     expect((await pg.query<{ n: number }>('SELECT count(*)::int AS n FROM storage.objects')).rows).toEqual([{ n: 1 }]);
-    const policies = await pg.query<{ n: number }>("SELECT count(*)::int AS n FROM pg_policies WHERE schemaname = 'storage'");
+    const policies = await pg.query<{ n: number }>("SELECT count(*)::int AS n FROM pg_policies WHERE schemaname = 'storage' AND policyname <> 'lavados_fotos_sin_acceso_api'");
     expect(policies.rows[0]?.n).toBe(0);
   });
 
@@ -176,6 +178,6 @@ describe(`migración ${NUEVA}: bucket avatares privado (B2)`, () => {
     const pg = await baseAntes(STORAGE_STUB);
     await pg.query("DELETE FROM storage.buckets WHERE id = 'avatares'");
     await aplicarNueva(pg);
-    expect((await pg.query<{ n: number }>('SELECT count(*)::int AS n FROM storage.buckets')).rows).toEqual([{ n: 0 }]);
+    expect((await pg.query<{ n: number }>("SELECT count(*)::int AS n FROM storage.buckets WHERE id = 'avatares'")).rows).toEqual([{ n: 0 }]);
   });
 });

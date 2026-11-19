@@ -77,10 +77,36 @@ export const CAPACIDADES = [
     },
   },
   {
+    id: 'lavados.etapa',
+    grupo: 'Lavados',
+    texto: 'Mover un lavado de etapa (espera, lavando, listo, entregado) y avisarle al cliente que está listo',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'parcial' },
+    matiz: { empleado: 'Solo sus lavados: los que lavó o registró él' },
+  },
+  {
+    id: 'fotos.subir',
+    grupo: 'Lavados',
+    texto: 'Subir y ver las fotos antes/después de un lavado o turno',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
+  },
+  {
+    id: 'fotos.borrar',
+    grupo: 'Lavados',
+    texto: 'Borrar una foto de un lavado o turno',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'parcial' },
+    matiz: { empleado: 'Solo una que subió él, hasta 5 minutos después de subirla' },
+  },
+  {
     id: 'turnos.ver',
     grupo: 'Turnos',
     texto: 'Ver los turnos y la agenda',
     roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
+  },
+  {
+    id: 'turnos.crear',
+    grupo: 'Turnos',
+    texto: 'Crear turnos desde el panel para trabajos largos y cargarles la seña',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
     id: 'turnos.estado',
@@ -114,6 +140,18 @@ export const CAPACIDADES = [
     roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
   },
   {
+    id: 'clientes.inactivos',
+    grupo: 'Turnos',
+    texto: 'Ver los clientes que no vienen hace tiempo, con su link de WhatsApp',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
+  },
+  {
+    id: 'fidelizacion.configurar',
+    grupo: 'Turnos',
+    texto: 'Configurar la tarjeta de sellos (cada cuántos lavados hay premio) y cuándo un cliente está inactivo',
+    roles: { superadmin: 'si', admin: 'no', empleado: 'no' },
+  },
+  {
     id: 'cobro.registrar',
     grupo: 'Cobro',
     texto: 'Registrar cuánto se cobró por un trabajo y quién lo hizo',
@@ -123,8 +161,20 @@ export const CAPACIDADES = [
   {
     id: 'cobro.corregir',
     grupo: 'Cobro',
-    texto: 'Corregir el monto, la forma de pago y los servicios de un turno',
+    texto: 'Corregir el monto, el descuento, la forma de pago y los servicios de un turno',
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
+  },
+  {
+    id: 'caja.cerrar',
+    grupo: 'Cobro',
+    texto: 'Ver la caja del día y cerrarla con el arqueo (lo contado por forma de pago)',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
+  },
+  {
+    id: 'caja.reabrir',
+    grupo: 'Cobro',
+    texto: 'Corregir o reabrir un cierre de caja ya hecho',
+    roles: { superadmin: 'si', admin: 'no', empleado: 'no' },
   },
   {
     id: 'catalogo.ver',
@@ -169,9 +219,22 @@ export const CAPACIDADES = [
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
+    id: 'finanzas.gastos_fijos',
+    grupo: 'Finanzas',
+    texto: 'Cargar los gastos fijos de cada mes (sueldos, alquiler, servicios)',
+    roles: { superadmin: 'si', admin: 'parcial', empleado: 'no' },
+    matiz: { admin: 'Solo los ve: los carga y los cambia el superadmin' },
+  },
+  {
     id: 'finanzas.metas',
     grupo: 'Finanzas',
     texto: 'Fijar y seguir las metas mensuales',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
+  },
+  {
+    id: 'finanzas.exportar',
+    grupo: 'Finanzas',
+    texto: 'Exportar a Excel (CSV) la planilla, los gastos y las estadísticas',
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
@@ -236,10 +299,22 @@ export const CAPACIDADES = [
     roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
   },
   {
+    id: 'perfil.propio',
+    grupo: 'Usuarios',
+    texto: 'Ver y editar su propio perfil: nombre, foto de perfil y contraseña',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
+  },
+  {
     id: 'push.activar',
     grupo: 'Avisos',
     texto: 'Activar los avisos en su propio dispositivo (turnos nuevos y, para admin y superadmin, stock bajo)',
     roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
+  },
+  {
+    id: 'push.equipo',
+    grupo: 'Avisos',
+    texto: 'Recibir los avisos del encargado: lavado registrado sin monto y meta del mes cumplida',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
 ] as const satisfies readonly Capacidad[];
 
@@ -434,9 +509,89 @@ export function puedeVerCostosInventario(rol: Rol): boolean {
 }
 
 /**
- * El turno tal como lo ve ese rol: el empleado nunca recibe importes: ni el monto ni el precio de lista de cada
- * servicio (siempre null, aunque el turno los tenga). Se aplica a TODA respuesta del panel que devuelva turnos
- * (listado, agenda, lavados, PATCH).
+ * Mover un lavado de etapa: admin y superadmin, cualquiera; el empleado, los suyos (los que lavó o registró él).
+ */
+export function puedeCambiarEtapa(
+  rol: Rol,
+  actorId: string,
+  lavado: { trabajador: { id: string } | null; registradoPor: string | null },
+): boolean {
+  const nivel = nivelDe(rol, 'lavados.etapa');
+  if (nivel === 'si') return true;
+  if (nivel === 'no') return false;
+  return lavado.trabajador?.id === actorId || lavado.registradoPor === actorId;
+}
+
+/** Crear turnos desde el panel (con seña) y cargar o corregir la seña de un turno. */
+export function puedeCrearTurnos(rol: Rol): boolean {
+  return nivelDe(rol, 'turnos.crear') === 'si';
+}
+
+/** Ver los clientes inactivos (con su link de WhatsApp). */
+export function puedeVerInactivos(rol: Rol): boolean {
+  return nivelDe(rol, 'clientes.inactivos') === 'si';
+}
+
+/** Configurar la tarjeta de sellos y los días de inactividad. Verla: todos los roles. */
+export function puedeConfigurarFidelizacion(rol: Rol): boolean {
+  return nivelDe(rol, 'fidelizacion.configurar') === 'si';
+}
+
+/** Ver los gastos fijos (admin y superadmin): tienen importes. */
+export function puedeVerGastosFijos(rol: Rol): boolean {
+  return nivelDe(rol, 'finanzas.gastos_fijos') !== 'no';
+}
+
+/** Cargar, cambiar y borrar gastos fijos: solo el superadmin. */
+export function puedeEditarGastosFijos(rol: Rol): boolean {
+  return nivelDe(rol, 'finanzas.gastos_fijos') === 'si';
+}
+
+/** Ver la caja del día y cerrarla (un día que todavía no tiene cierre). */
+export function puedeCerrarCaja(rol: Rol): boolean {
+  return nivelDe(rol, 'caja.cerrar') === 'si';
+}
+
+/** Corregir o reabrir (borrar) un cierre de caja ya hecho. */
+export function puedeReabrirCaja(rol: Rol): boolean {
+  return nivelDe(rol, 'caja.reabrir') === 'si';
+}
+
+/** Subir y ver fotos de un lavado o turno: todos los roles (todos ven todos los turnos). */
+export function puedeSubirFotos(rol: Rol): boolean {
+  return nivelDe(rol, 'fotos.subir') === 'si';
+}
+
+/** Minutos que tiene quien subió una foto para borrarla él mismo. */
+export const PLAZO_BORRAR_FOTO_MINUTOS = 5;
+
+/** ¿Puede borrar esta foto ahora? Admin y superadmin, siempre; el empleado, la suya hasta 5 minutos después. */
+export function puedeBorrarFoto(rol: Rol, actorId: string, foto: { creadaPor: string | null; createdAt: string }, now: Date): boolean {
+  const nivel = nivelDe(rol, 'fotos.borrar');
+  if (nivel === 'si') return true;
+  if (nivel === 'no' || foto.creadaPor !== actorId) return false;
+  return now.getTime() <= Date.parse(foto.createdAt) + PLAZO_BORRAR_FOTO_MINUTOS * 60_000;
+}
+
+/** Ver y editar el propio perfil (nombre, foto y contraseña): todos los roles, solo el suyo. */
+export function puedeEditarPerfilPropio(rol: Rol): boolean {
+  return nivelDe(rol, 'perfil.propio') === 'si';
+}
+
+/** Exportar a CSV la planilla, los gastos y las estadísticas (llevan importes). */
+export function puedeExportar(rol: Rol): boolean {
+  return nivelDe(rol, 'finanzas.exportar') === 'si';
+}
+
+/** Recibir los avisos push del encargado (lavado sin monto, meta cumplida). */
+export function recibeAvisosDeEquipo(rol: Rol): boolean {
+  return nivelDe(rol, 'push.equipo') === 'si';
+}
+
+/**
+ * El turno tal como lo ve ese rol: el empleado nunca recibe importes: ni el monto, ni el precio de lista de cada
+ * servicio, ni el descuento (ni su motivo), ni el monto de la seña, ni el saldo (siempre null, aunque el turno los
+ * tenga). Se aplica a TODA respuesta del panel que devuelva turnos (listado, agenda, lavados, PATCH, historial).
  */
 export function vistaDeTurno(rol: Rol, booking: Booking): Booking {
   if (puedeVerImportes(rol)) return booking;
@@ -444,5 +599,9 @@ export function vistaDeTurno(rol: Rol, booking: Booking): Booking {
     ...booking,
     monto: null,
     servicios: booking.servicios.map((servicio) => ({ ...servicio, precioLista: null })),
+    descuento: null,
+    descuentoMotivo: null,
+    sena: booking.sena === null ? null : { ...booking.sena, monto: null },
+    saldo: null,
   };
 }

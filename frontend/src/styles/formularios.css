@@ -1,0 +1,501 @@
+/* ------------------------------------------------------------------ Formularios */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.campo > label,
+.segmentado legend,
+.grupo-checks legend,
+.items legend,
+.dato-fijo-etiqueta {
+  font-weight: 650;
+  font-size: 0.9375rem;
+  color: var(--tinta);
+  padding: 0;
+}
+
+.entrada {
+  display: flex;
+  align-items: center;
+  background: var(--papel);
+  border: var(--grosor) solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  transition: border-color 150ms ease-out;
+}
+
+.entrada:focus-within {
+  border-color: var(--carbon);
+  box-shadow: 0 0 0 3px var(--carbon-claro);
+}
+
+.entrada[data-invalido] {
+  border-color: var(--peligro);
+}
+
+.entrada input,
+.entrada select,
+.entrada textarea {
+  flex: 1;
+  min-width: 0;
+  min-block-size: 48px;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--tinta);
+  font: inherit;
+  font-size: 1.0625rem;
+  caret-color: var(--carbon);
+}
+
+.entrada input:focus,
+.entrada select:focus,
+.entrada textarea:focus {
+  outline: none;
+}
+
+.entrada textarea {
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.entrada input::placeholder {
+  color: var(--tinta-3);
+}
+
+.entrada select {
+  appearance: none;
+  padding-inline-end: 40px;
+  background-color: var(--papel);
+  background-image: var(--flecha-select);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.entrada select:disabled {
+  cursor: not-allowed;
+  color: var(--tinta-3);
+}
+
+/* La lista desplegada de un select la dibuja el sistema: en Windows/Chrome con tema oscuro, si no se le dan colores
+   propios, sale con fondo blanco y la letra clara heredada (no se lee). Fondo y letra explícitos en los tres temas,
+   también para lo elegido y lo deshabilitado. color-scheme sale del tema (tokens.css) para que el sistema dibuje la
+   barra de desplazamiento y el resaltado acordes. */
+select {
+  color-scheme: inherit;
+  background-color: var(--papel);
+  color: var(--tinta);
+}
+
+select option,
+select optgroup {
+  background-color: var(--papel);
+  color: var(--tinta);
+}
+
+select optgroup {
+  font-weight: 700;
+}
+
+select option:checked {
+  background-color: var(--rosa-claro);
+  color: var(--tinta);
+}
+
+select option:disabled {
+  background-color: var(--papel);
+  color: var(--tinta-3);
+}
+
+.con-prefijo .prefijo {
+  padding-inline-start: 12px;
+  font-weight: 650;
+  font-size: 1.0625rem;
+  color: var(--tinta-2);
+}
+
+.con-prefijo input {
+  padding-inline-start: 6px;
+}
+
+.campo-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--peligro);
+  font-size: 0.9375rem;
+  font-weight: 550;
+}
+
+.campo-error svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.campo-ayuda {
+  font-size: 0.875rem;
+  color: var(--tinta-3);
+}
+
+.fila-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.fila-campos-centro {
+  align-items: end;
+}
+
+.dato-fijo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dato-fijo > span:last-child {
+  font-size: 1.0625rem;
+}
+
+/* "Vos, <nombre>" en Registrar, con tu foto al lado. */
+.dato-fijo-quien {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+/* Opciones segmentadas: radios reales con aspecto de casillero */
+
+.segmentado {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.segmentado-opciones {
+  display: grid;
+  gap: 8px;
+}
+
+.segmentado-barra .segmentado-opciones {
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  border: var(--grosor) solid var(--tinta);
+  border-radius: var(--radio-chico);
+  overflow: hidden;
+}
+
+.segmentado-grilla .segmentado-opciones {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.opcion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-block-size: 48px;
+  padding: 8px 10px;
+  cursor: pointer;
+  background: var(--papel);
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 150ms ease-out;
+}
+
+.opcion input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.segmentado-barra .opcion {
+  align-items: center;
+  text-align: center;
+  font-weight: 650;
+}
+
+.segmentado-barra .opcion + .opcion {
+  border-inline-start: var(--grosor) solid var(--tinta);
+}
+
+.segmentado-barra .opcion[data-elegida] {
+  background: var(--tinta);
+  color: var(--sobre-tinta);
+}
+
+/* La marca de la opción elegida es una sola pieza que se desliza (en vez de apagarse una y prenderse otra). */
+.segmentado-barra .segmentado-opciones[data-indicador] {
+  position: relative;
+  isolation: isolate;
+}
+
+.segmentado-barra .segmentado-opciones[data-indicador]::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: calc(100% / var(--n));
+  background: var(--tinta);
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform 240ms var(--curva);
+  z-index: -1;
+}
+
+.segmentado-barra .segmentado-opciones[data-indicador] .opcion {
+  background: transparent;
+  transition: color var(--t-estado) ease-out;
+}
+
+.segmentado-barra .segmentado-opciones[data-indicador] .opcion:hover:not([data-elegida]) {
+  background: var(--carbon-claro);
+}
+
+/* Al tocar, la opción se hunde un poco: el dedo sabe que tocó antes de que cambie nada. */
+.segmentado-grilla .opcion,
+.segmentado-fichas .opcion {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    transform var(--t-toque) ease-out;
+}
+
+.segmentado-grilla .opcion:active,
+.segmentado-fichas .opcion:active {
+  transform: scale(0.97);
+}
+
+.segmentado-grilla .opcion {
+  min-block-size: 72px;
+  border: var(--grosor) solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  padding: 10px 12px;
+}
+
+.segmentado-grilla .opcion[data-elegida] {
+  border-color: var(--tinta);
+  background: var(--rosa-claro);
+  box-shadow: inset 0 0 0 1px var(--tinta);
+}
+
+.segmentado-grilla .opcion[data-elegida]::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 50%;
+  background: var(--rosa-fuerte);
+  border: var(--grosor) solid var(--tinta);
+}
+
+.opcion:hover:not([data-elegida]) {
+  background: var(--carbon-claro);
+}
+
+/* El radio real está invisible encima: el anillo de foco va en la opción. Donde no hay :has() (Chrome < 105,
+   Safari < 15.4) se usa :focus-within, que también aparece al tocar; donde sí hay, solo con teclado. */
+.opcion:focus-within {
+  outline: 3px solid var(--carbon);
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+@supports selector(:has(*)) {
+  .opcion:focus-within:not(:has(input:focus-visible)) {
+    outline: none;
+  }
+}
+
+.opcion[data-deshabilitada] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.opcion-texto {
+  font-weight: 650;
+  line-height: 1.25;
+  padding-inline-end: 14px;
+}
+
+.segmentado-barra .opcion-texto {
+  padding: 0;
+  white-space: nowrap;
+}
+
+/* Cuatro vehículos a 360 px: "Pick-up" entra en una línea. */
+.segmentado-barra .opcion {
+  padding-inline: 4px;
+}
+
+.opcion-detalle {
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+}
+
+/* Fichas (forma de pago): opcionales, se sacan tocando de nuevo. Efectivo y Transferencia, las más usadas,
+   ocupan media fila cada una; Débito, Crédito y Otro, un tercio. */
+.segmentado-fichas .segmentado-opciones {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.segmentado-fichas .opcion {
+  grid-column: span 2;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 52px;
+  padding: 8px 6px;
+  border: var(--grosor) solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  text-align: center;
+}
+
+.segmentado-fichas .opcion:nth-child(-n + 2) {
+  grid-column: span 3;
+}
+
+.segmentado-fichas .opcion-texto {
+  padding: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.segmentado-fichas .opcion[data-elegida] {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--sobre-tinta);
+}
+
+.opcion-marca {
+  flex: none;
+  color: var(--marca-sobre-tinta);
+}
+
+.grupo-checks,
+.items {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  min-width: 0;
+}
+
+.grupo-checks legend,
+.items legend {
+  margin-bottom: 6px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  cursor: pointer;
+  font-weight: 550;
+}
+
+.check input {
+  inline-size: 22px;
+  block-size: 22px;
+  accent-color: var(--tinta);
+  margin: 0;
+}
+
+/* "Más datos" plegado */
+
+.plegable {
+  border-top: var(--grosor) dashed var(--linea);
+  border-bottom: var(--grosor) dashed var(--linea);
+}
+
+.plegable summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'titulo flecha' 'ayuda flecha';
+  align-items: center;
+  min-block-size: 56px;
+  padding-block: 8px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.plegable summary::-webkit-details-marker {
+  display: none;
+}
+
+.plegable summary > span:first-child {
+  grid-area: titulo;
+  font-weight: 650;
+}
+
+.plegable-ayuda {
+  grid-area: ayuda;
+  font-size: 0.875rem;
+  color: var(--tinta-3);
+}
+
+.plegable-flecha {
+  grid-area: flecha;
+  transition: transform 200ms ease-out;
+}
+
+.plegable[open] .plegable-flecha {
+  transform: rotate(180deg);
+}
+
+.plegable-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-block: 4px 18px;
+}
+
+.pie-fijo {
+  position: sticky;
+  bottom: calc(var(--tabs-alto) + 12px + env(safe-area-inset-bottom));
+  z-index: 5;
+  margin-inline: -16px;
+  margin-bottom: -16px;
+  padding: 12px 16px 16px;
+  /* Se funde arriba en pocos píxeles: el resumen de servicios queda sobre papel limpio, sin texto que se vea detrás. */
+  background: linear-gradient(to bottom, var(--papel-transparente), var(--papel) 14px);
+  border-radius: 0 0 var(--radio) var(--radio);
+}
+
+@media (min-width: 900px) {
+  .pie-fijo {
+    bottom: 12px;
+  }
+}
+
+/* Etiquetas largas en la barra (ej. "Según la hora" a 360 px): pueden ir en dos renglones. */
+.opcion-envuelve {
+  display: block;
+  white-space: normal;
+  line-height: 1.15;
+}

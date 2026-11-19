@@ -342,7 +342,11 @@ export function Confirmar({
     if (!d) return;
     if (abierto && !d.open) {
       if (typeof d.showModal === 'function') d.showModal();
-      else d.setAttribute('open', '');
+      else {
+        // Safari < 15.4 no tiene <dialog>: se muestra igual, fijo en el centro (ver .dialogo-sin-modal).
+        d.classList.add('dialogo-sin-modal');
+        d.setAttribute('open', '');
+      }
       // El foco arranca en lo seguro (Cancelar), nunca en la acción que confirma.
       cancelarRef.current?.focus();
     }

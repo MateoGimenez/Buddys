@@ -466,4 +466,37 @@ export async function verifyPostgresSchema(client: SqlClient): Promise<void> {
       'Falta la función buddys_private.sesion_vigente (o el rol no tiene USAGE sobre buddys_private). Aplicá las migraciones.',
     );
   }
+
+  // Las mejoras del contrato 2026-11-15 (migraciones 20261115100000 a 20261115180000, salvo la del bucket de Storage).
+  const mejorasTablas = await client.query(
+    'SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 AND tablename = ANY($2::text[])',
+    [PG_SCHEMA, MEJORAS_TABLES],
+  );
+  const faltanMejoras: string[] = MEJORAS_TABLES.filter(
+    (table) => !mejorasTablas.rows.some((row) => row.tablename === table),
+  );
+  const mejorasColumnas = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'bookings' AND column_name = ANY($2::text[])`,
+    [PG_SCHEMA, MEJORAS_BOOKINGS_COLUMNS],
+  );
+  for (const column of MEJORAS_BOOKINGS_COLUMNS) {
+    if (!mejorasColumnas.rows.some((row) => row.column_name === column)) faltanMejoras.push(`bookings.${column}`);
+  }
+  const funciones = await client.query(
+    `SELECT to_regprocedure('buddys.gastos_fijos_imputados(date,date)') IS NOT NULL AS fijos`,
+  );
+  if (funciones.rows[0]?.fijos !== true) faltanMejoras.push('función gastos_fijos_imputados');
+  if (faltanMejoras.length > 0) {
+    throw new Error(
+      `Faltan objetos de las migraciones 20261115* en buddys (${faltanMejoras.join(', ')}). ` +
+        'Aplicalas en orden (ver README, "Migraciones").',
+    );
+  }
+
 }
+
+/** Tablas de las migraciones 20261115* (caja, gastos fijos, fotos, tarjeta de sellos). */
+const MEJORAS_TABLES = ['gastos_fijos', 'cierres_caja', 'lavado_fotos', 'fotos_a_borrar', 'fidelizacion'] as const;
+/** Columnas de bookings de las migraciones lavados_etapa_descuento y turnos_panel_sena. */
+const MEJORAS_BOOKINGS_COLUMNS = ['etapa', 'etapa_at', 'descuento', 'descuento_motivo', 'sena_monto', 'sena_forma_pago', 'sena_fecha'] as const;

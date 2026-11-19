@@ -43,7 +43,7 @@ describe('Consumo', () => {
     const serie = screen.getByRole('table', { name: 'Lavados por día' });
     expect(within(serie).getAllByRole('row')).toHaveLength(30);
 
-    const filas = within(tabla).getAllByRole('row').map((f) => f.textContent);
+    const filas = within(tabla).getAllByRole('row').map((f) => f.textContent.replaceAll(String.fromCharCode(160), ' '));
     expect(filas).toEqual([
       'InsumoConsumidoCosto',
       'Cera líquida900 ml$ 10.800',

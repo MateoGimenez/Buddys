@@ -1,0 +1,51 @@
+/* ------------------------------------------------------------------ Login e inicio */
+
+.login,
+.pantalla-inicio {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--nav-fondo);
+}
+
+.pantalla-inicio {
+  background: var(--fondo);
+  align-content: center;
+  gap: 24px;
+}
+
+.login-hoja {
+  inline-size: min(420px, 100%);
+  background: var(--papel);
+  border-radius: 0 0 var(--radio) var(--radio);
+  border-top: 3px dashed var(--tinta-3);
+  padding: 28px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--sombra-login);
+}
+
+.login-logo {
+  inline-size: 240px;
+  align-self: center;
+}
+
+.login-titulo {
+  font-size: 1.5rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  text-align: center;
+}
+
+.login-texto,
+.login-pie {
+  text-align: center;
+  color: var(--tinta-2);
+}
+
+.login-pie {
+  font-size: 0.875rem;
+}

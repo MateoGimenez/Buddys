@@ -16,7 +16,7 @@
   const ICONO = '/pwa-192.png';
   // Android usa solo la transparencia del badge: un ícono de un color, chico.
   const BADGE = '/badge-96.png';
-  const TIPOS = ['stock', 'turno'];
+  const TIPOS = ['stock', 'turno', 'equipo'];
 
   function texto(valor, maximo) {
     if (typeof valor !== 'string') return null;

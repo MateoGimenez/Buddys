@@ -36,6 +36,7 @@ import type {
   EstadoPresupuesto,
   Rol,
   Servicio,
+  Trabajador,
   Turno,
   Usuario,
   UsuarioEquipo,
@@ -47,6 +48,9 @@ export const login = (email: string, password: string) =>
 export const quienSoy = () => api<{ usuario: Usuario }>('/api/auth/me');
 export const cerrarSesion = () => api<undefined>('/api/auth/logout', { method: 'POST' });
 export const permisos = () => api<Permisos>('/api/admin/permisos');
+
+/** Personas activas (para elegir a quién va un gasto fijo de sueldo). */
+export const trabajadores = () => api<{ trabajadores: Trabajador[] }>('/api/admin/trabajadores');
 
 // Mi perfil
 export const perfil = () => api<{ perfil: Perfil; fotosDisponibles: boolean }>('/api/admin/perfil');

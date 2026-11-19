@@ -7,6 +7,7 @@ import { getUsuario } from '../middleware/require-session.js';
 import { bookingIdSchema, listBookingsQuerySchema, updateBookingSchema } from '../schemas/admin.js';
 import { parseOrThrow } from '../schemas/common.js';
 import { type AgendaService, NOT_FOUND_MESSAGE } from '../services/agenda.js';
+import type { FotoService } from '../services/fotos.js';
 
 /** Un id con formato inválido no puede existir: se trata igual que uno inexistente (404). */
 function parseBookingId(raw: string): string {
@@ -28,8 +29,8 @@ function parseBookingId(raw: string): string {
  *  - borrar: solo admin y superadmin.
  * El monto es plata: toda respuesta con turnos pasa por vistaDeTurno, que se lo saca al empleado.
  */
-export function adminBookingsRouter(deps: { bookings: BookingRepository; agenda: AgendaService }): Router {
-  const { bookings, agenda } = deps;
+export function adminBookingsRouter(deps: { bookings: BookingRepository; agenda: AgendaService; fotos?: FotoService }): Router {
+  const { bookings, agenda, fotos } = deps;
   const router = Router();
 
   // GET /api/admin/bookings?estado=&q=&cliente=&limit=&offset= => { bookings, total }, más nuevas primero
@@ -63,6 +64,8 @@ export function adminBookingsRouter(deps: { bookings: BookingRepository; agenda:
       throw AppError.forbidden('Con tu rol no podés borrar turnos.');
     }
     const id = parseBookingId(req.params.id);
+    // Las rutas de sus fotos, antes de que el borrado en cascada se lleve las filas (después se borran del bucket).
+    const rutas = await fotos?.rutasDelTurno(id);
     try {
       // Un lavado de mostrador devuelve el stock que descontó su receta (a nombre de quien lo borra).
       if (!(await bookings.delete(id, usuario.id))) throw AppError.notFound(NOT_FOUND_MESSAGE);
@@ -70,6 +73,7 @@ export function adminBookingsRouter(deps: { bookings: BookingRepository; agenda:
       if (error instanceof TurnoConComprobanteError) throw AppError.turnoConComprobante();
       throw error;
     }
+    if (rutas !== undefined) fotos?.borrarArchivos(rutas);
     res.status(204).end();
   });
 

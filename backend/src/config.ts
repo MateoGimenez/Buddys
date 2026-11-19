@@ -131,7 +131,7 @@ export interface AppConfig {
     loginFailuresIp: RateLimitRule;
     /** Consultas de seguimiento de un turno (GET /api/turnos/:id), por IP. */
     seguimiento: RateLimitRule;
-    /** Descarga de PDF (presupuestos y comprobantes), por IP: generarlos cuesta CPU. */
+    /** Descarga de PDF (presupuestos y comprobantes) y de CSV, por IP: generarlos cuesta CPU. */
     pdf: RateLimitRule;
     /** Intentos de cambiar la propia contraseña (PATCH /api/admin/perfil), por USUARIO: el mismo tope que el login. */
     perfilPassword: RateLimitRule;
@@ -139,6 +139,12 @@ export interface AppConfig {
     perfilFoto: RateLimitRule;
     /** Lavados registrados o deshechos (POST y DELETE /api/admin/lavados), por USUARIO. Los reintentos no cuentan. */
     lavados: RateLimitRule;
+    /** Errores del panel con sesión (POST /api/admin/errores-cliente), por usuario. */
+    erroresCliente: RateLimitRule;
+    /** Errores del panel sin sesión (POST /api/errores-cliente, pantalla de login), por IP: estricto. */
+    erroresClientePublico: RateLimitRule;
+    /** Pedidos de URL de subida de fotos (POST /api/admin/lavados/:id/fotos), por usuario. */
+    fotos: RateLimitRule;
   };
   whatsapp: WhatsappConfig;
   recordatorios: RecordatoriosConfig;
@@ -170,6 +176,11 @@ export const DEFAULT_RATE_LIMITS: AppConfig['rateLimits'] = {
   perfilFoto: { windowMs: 15 * 60 * 1000, limit: 10 },
   // Un lavado por minuto ya es mucho para una persona: 60 frena un script o un bucle sin molestar al uso real.
   lavados: { windowMs: 60 * 1000, limit: 60 },
+  // Un panel con un error que se repite no puede llenar el log: 30 cada 10 minutos por persona, 5 cada 15 sin sesión.
+  erroresCliente: { windowMs: 10 * 60 * 1000, limit: 30 },
+  erroresClientePublico: { windowMs: 15 * 60 * 1000, limit: 5 },
+  // Cada URL de subida permite subir hasta 1,5 MB: 20 cada 10 minutos por persona alcanzan para el día a día.
+  fotos: { windowMs: 10 * 60 * 1000, limit: 20 },
 };
 
 /** Largo mínimo de CRON_SECRET: suficiente entropía para que no se pueda adivinar por fuerza bruta. */

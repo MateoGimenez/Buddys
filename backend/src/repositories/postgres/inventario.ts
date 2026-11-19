@@ -68,6 +68,7 @@ function toMovimiento(row: Row): Movimiento {
     nota: strOrNull(row, 'nota'),
     persona: perfilId === null ? null : { id: perfilId, nombre: str(row, 'persona_nombre') },
     turnoId: strOrNull(row, 'turno_id'),
+    automatico: row.automatico === true,
     createdAt: isoTimestamp(row, 'created_at'),
   };
 }
@@ -92,7 +93,7 @@ async function leerMovimiento(sql: SqlClient, id: string): Promise<Movimiento> {
     `SELECT m.id::text AS id, m.tipo, m.cantidad::float8 AS cantidad, m.costo_total, m.proveedor, m.nota,
             m.perfil_id::text AS perfil_id,
             coalesce(nullif(btrim(p.nombre), ''), 'Sin nombre') AS persona_nombre,
-            m.turno_id::text AS turno_id, m.created_at
+            m.turno_id::text AS turno_id, (m.origen = 'receta') AS automatico, m.created_at
      FROM buddys.movimientos_stock m
      LEFT JOIN buddys.perfiles p ON p.id = m.perfil_id
      WHERE m.id = $1::uuid`,
@@ -252,7 +253,7 @@ export class PostgresInventarioRepository implements InventarioRepository {
         `SELECT m.id::text AS id, m.tipo, m.cantidad::float8 AS cantidad, m.costo_total, m.proveedor, m.nota,
                 m.perfil_id::text AS perfil_id,
                 coalesce(nullif(btrim(p.nombre), ''), 'Sin nombre') AS persona_nombre,
-                m.turno_id::text AS turno_id, m.created_at
+                m.turno_id::text AS turno_id, (m.origen = 'receta') AS automatico, m.created_at
          FROM buddys.movimientos_stock m
          LEFT JOIN buddys.perfiles p ON p.id = m.perfil_id
          WHERE m.insumo_id = $1::uuid

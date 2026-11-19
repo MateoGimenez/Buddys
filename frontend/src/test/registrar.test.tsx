@@ -286,7 +286,7 @@ describe('Registrar con varios servicios (catálogo de 14)', () => {
     await user.type(monto(), '20000');
     await user.click(screen.getByRole('checkbox', { name: /Motor/ }));
     expect(monto()).toHaveValue('20.000');
-    expect(monto()).toHaveAccessibleDescription(/Lo cambiaste a mano: la lista da \$ 75\.000/);
+    expect(monto()).toHaveAccessibleDescription(/Lo cambiaste a mano: la lista da \$\s75\.000/);
     await user.click(screen.getByRole('radio', { name: 'SUV' }));
     expect(monto()).toHaveValue('20.000');
   });

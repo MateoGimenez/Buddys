@@ -60,6 +60,9 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       perfilPassword: NO_LIMIT,
       perfilFoto: NO_LIMIT,
       lavados: NO_LIMIT,
+      erroresCliente: NO_LIMIT,
+      erroresClientePublico: NO_LIMIT,
+      fotos: NO_LIMIT,
     },
     whatsapp: { provider: 'none' },
     recordatorios: { cronSecret: undefined, email: undefined, whatsapp: undefined },
@@ -132,6 +135,8 @@ export async function createTestContext(
     pushSender?: PushSender;
     /** Plazos para recibir el cuerpo (por defecto los de producción). */
     plazosCuerpo?: PlazosCuerpo;
+    /** fetch de Supabase Storage (fotos): los tests usan uno falso. */
+    storageFetch?: typeof fetch;
   } = {},
 ): Promise<TestContext> {
   const db = await createPgliteDatabase();
@@ -158,6 +163,7 @@ export async function createTestContext(
     ...(options.fetch && { fetch: options.fetch }),
     ...(options.pushSender && { pushSender: options.pushSender }),
     ...(options.plazosCuerpo && { plazosCuerpo: options.plazosCuerpo }),
+    ...(options.storageFetch && { storageFetch: options.storageFetch }),
   });
   } catch (error) {
     await db.close();

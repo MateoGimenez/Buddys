@@ -20,14 +20,15 @@ describe('Login y sesión', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'clave-de-prueba');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
 
-    expect(await screen.findByRole('heading', { name: 'Registrar lavado' })).toBeInTheDocument();
+    // El encargado arranca en Hoy (el empleado, en Registrar).
+    expect(await screen.findByRole('heading', { name: 'Hoy', level: 1 })).toBeInTheDocument();
     const [login] = api.de('POST', '/api/auth/login');
     expect(login?.body).toEqual({ email: 'buddy@email.com', password: 'clave-de-prueba' });
     expect(login?.headers['Content-Type']).toBe('application/json');
 
     // El superadmin ve todas las secciones, Equipo incluido.
     const riel = screen.getByRole('navigation', { name: 'Secciones' });
-    for (const s of ['Registrar', 'Planilla', 'Números', 'Servicios', 'Insumos', 'Gastos', 'Presupuestos', 'Equipo']) {
+    for (const s of ['Hoy', 'Registrar', 'Planilla', 'Números', 'Clientes', 'Servicios', 'Insumos', 'Gastos', 'Presupuestos', 'Equipo']) {
       expect(within(riel).getByRole('link', { name: s })).toBeInTheDocument();
     }
   });
@@ -90,7 +91,7 @@ describe('Login y sesión', () => {
     renderApp('/gastos');
     expect(await screen.findByRole('heading', { name: 'Registrar lavado' })).toBeInTheDocument();
     const riel = screen.getByRole('navigation', { name: 'Secciones' });
-    for (const s of ['Gastos', 'Presupuestos', 'Equipo']) expect(within(riel).queryByRole('link', { name: s })).toBeNull();
+    for (const s of ['Hoy', 'Gastos', 'Presupuestos', 'Equipo']) expect(within(riel).queryByRole('link', { name: s })).toBeNull();
     for (const s of ['Registrar', 'Planilla', 'Números', 'Servicios', 'Insumos']) expect(within(riel).getByRole('link', { name: s })).toBeInTheDocument();
   });
 

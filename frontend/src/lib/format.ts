@@ -6,9 +6,12 @@ export const ZONA = 'America/Argentina/La_Rioja';
 const pesosFmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 const numeroFmt = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
 
-/** $ 12.500 */
+/** Espacio no separable: "$ 12.500" nunca se parte en dos renglones. */
+const NBSP = ' ';
+
+/** $ 12.500 (con espacio no separable entre el signo y el número) */
 export function pesos(n: number): string {
-  return pesosFmt.format(n).replace(/\s/g, ' ');
+  return pesosFmt.format(n).replace(/\s/g, NBSP);
 }
 
 export function numero(n: number): string {
@@ -248,4 +251,17 @@ export const NOMBRE_UNIDAD: Record<Unidad, [string, string]> = {
 /** "2 litros", "1 unidad", "0,5 litro"… (singular solo para 1, como se dice). */
 export function cantidadConUnidad(n: number, u: Unidad): string {
   return `${numero(n)} ${NOMBRE_UNIDAD[u][n === 1 ? 0 : 1]}`;
+}
+
+/** Las iniciales de un nombre: "Ana López" → "AL", "beto" → "B". Sin nombre, "?". */
+export function iniciales(nombre: string | null | undefined): string {
+  const palabras = (nombre ?? '')
+    .replace(/@.*/, '')
+    .split(/[\s._-]+/)
+    .filter((p) => /\p{L}|\d/u.test(p));
+  const letras = palabras
+    .slice(0, 2)
+    .map((p) => (Array.from(p).find((c) => /\p{L}|\d/u.test(c)) ?? '').toLocaleUpperCase('es-AR'))
+    .join('');
+  return letras || '?';
 }

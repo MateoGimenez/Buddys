@@ -13,7 +13,7 @@ import {
 } from '../domain/push.js';
 import { type InsumoBajo, textoAvisoStock } from '../domain/inventario.js';
 import { ROLES } from '../domain/perfil.js';
-import { puedeVerConsumoInventario } from '../domain/permisos.js';
+import { puedeVerConsumoInventario, recibeAvisosDeEquipo } from '../domain/permisos.js';
 import type { Logger } from '../lib/logger.js';
 import { descripcionTurno } from '../notifications/message.js';
 
@@ -103,6 +103,23 @@ export class PushService implements BookingPushNotifier, StockPushNotifier {
       await this.difundir('Aviso push de stock bajo', destinos, { tipo: 'stock', ...textoAvisoStock(insumos), pendientes });
     } catch {
       this.deps.logger.warn('Aviso push de stock bajo falló (error al leer los dispositivos)');
+    }
+  }
+
+  /**
+   * Aviso a los encargados (lavado sin monto, meta cumplida): a los dispositivos de las personas activas con un rol
+   * que recibe los avisos del equipo (domain/permisos.ts: admin y superadmin), menos a quien lo provocó. Nunca se
+   * rechaza; con el push apagado no hace nada (ni consulta la base). No lleva datos del cliente ni importes.
+   */
+  async avisarEquipo(aviso: { titulo: string; cuerpo: string; url: string }, excluirPerfilId: string | null): Promise<void> {
+    if (!this.disponible) return;
+    try {
+      const destinos = await this.deps.repo.destinosConRol(ROLES.filter(recibeAvisosDeEquipo), excluirPerfilId);
+      if (destinos.length === 0) return;
+      const pendientes = await this.deps.repo.contarPendientes();
+      await this.difundir('Aviso push al equipo', destinos, { tipo: 'equipo', ...aviso, pendientes });
+    } catch {
+      this.deps.logger.warn('Aviso push al equipo falló (error al leer los dispositivos)');
     }
   }
 
