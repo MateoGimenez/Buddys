@@ -269,9 +269,10 @@ export function iniciales(nombre: string | null | undefined): string {
 /** Pesos en poco lugar (el valor arriba de una barra): "$ 850", "$ 175 mil", "$ 1,2 M". */
 export function pesosCortos(n: number): string {
   const abs = Math.abs(n);
-  if (abs >= 1_000_000) return `$ ${(n / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`;
-  if (abs >= 1000) return `$ ${Math.round(n / 1000).toLocaleString('es-AR')} mil`;
-  return `$ ${String(n)}`;
+  // Se decide con lo ya redondeado: 999.600 es "$ 1 M" y no "$ 1.000 mil"; 999,6 es "$ 1 mil" y no "$ 1000".
+  if (Math.round(abs / 1000) >= 1000) return `$ ${(n / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`;
+  if (Math.round(abs) >= 1000) return `$ ${Math.round(n / 1000).toLocaleString('es-AR')} mil`;
+  return `$ ${String(Math.round(n))}`;
 }
 
 /** true si es una fecha YYYY-MM-DD que existe en el calendario (no "2026-13-01" ni "2026-02-31"). Para ?fecha=. */

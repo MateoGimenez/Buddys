@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { esFechaValida, hoy, miles, pesos, slug, sumarDias, ultimoDelMes } from '../lib/format';
+import { esFechaValida, hoy, miles, pesos, pesosCortos, slug, sumarDias, ultimoDelMes } from '../lib/format';
 
 describe('formato', () => {
   it('pesos en es-AR sin decimales', () => {
@@ -56,5 +56,19 @@ describe('esFechaValida (el ?fecha= de Planilla y Cierre de caja)', () => {
     for (const mala of ['2026-13-01', '2026-00-10', '2026-02-31', '2027-02-29', '2026-1-01', 'hoy', '2026-11-19x', '']) {
       expect(esFechaValida(mala), mala).toBe(false);
     }
+  });
+});
+
+describe('pesosCortos (el valor arriba de una barra)', () => {
+  it('pasa de unidad con lo ya redondeado: nunca "$ 1.000 mil" ni "$ 1000"', () => {
+    expect(pesosCortos(0)).toBe('$ 0');
+    expect(pesosCortos(850)).toBe('$ 850');
+    expect(pesosCortos(999.6)).toBe('$ 1 mil');
+    expect(pesosCortos(175_000)).toBe('$ 175 mil');
+    expect(pesosCortos(999_499)).toBe('$ 999 mil');
+    expect(pesosCortos(999_500)).toBe('$ 1 M');
+    expect(pesosCortos(1_250_000)).toBe('$ 1,3 M');
+    expect(pesosCortos(-1600)).toBe('$ -2 mil');
+    expect(pesosCortos(12_345_678_901)).toBe('$ 12.345,7 M');
   });
 });

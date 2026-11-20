@@ -1,7 +1,8 @@
 import type { PlanillaDelDia } from '../../api/types';
 import { Link } from 'react-router-dom';
-import { NOMBRE_PAGO, fechaCorta, hoy, pesos } from '../../lib/format';
+import { NOMBRE_PAGO, fechaCorta, hoy, pesos, sumarDias } from '../../lib/format';
 import { usePuede } from '../../lib/nivel';
+import { DIAS_ATRAS_CAJA } from '../caja/datos';
 import { Cifra } from './Resumen';
 
 /**
@@ -12,7 +13,8 @@ import { Cifra } from './Resumen';
 export function Caja({ datos, veImportes }: { datos: PlanillaDelDia; veImportes: boolean }) {
   const { porFormaPago, total, sinMonto } = datos.resumen;
   const conImportes = veImportes && total !== null;
-  const cierra = usePuede('caja.cerrar');
+  // Más atrás de lo que el cierre deja mirar, /caja abriría la de hoy: ahí no se ofrece el enlace.
+  const cierra = usePuede('caja.cerrar') && datos.fecha >= sumarDias(hoy(), -DIAS_ATRAS_CAJA);
   const titulo = conImportes ? (datos.fecha === hoy() ? 'Cobrado hoy' : `Cobrado el ${fechaCorta(datos.fecha)}`) : 'Cómo pagaron';
   return (
     <section className="caja hoja" aria-labelledby="caja-titulo">

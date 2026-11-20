@@ -84,7 +84,7 @@ export function Barras({
       >
         {serie.map((p) => (
           <span key={p.clave} className="grafico-col" title={`${etiquetaLarga(p.clave, efectivo)}: ${formato(p.valor)}`}>
-            <span className="grafico-relleno" style={{ blockSize: `${(p.valor / max) * 100}%` }}>
+            <span className="grafico-relleno" style={{ blockSize: `${String(Math.max(0, (p.valor / max) * 100))}%` }}>
               {conValores ? <span className="grafico-valor">{corto(p.valor)}</span> : null}
             </span>
           </span>
@@ -94,20 +94,23 @@ export function Barras({
         <span>{primero ? etiqueta(primero.clave, efectivo) : ''}</span>
         <span>{ultimo && ultimo !== primero ? etiqueta(ultimo.clave, efectivo) : ''}</span>
       </div>
-      <table className="solo-lectores">
-        <caption>
-          {titulo}
-          {agrupable && diaria ? `, por ${OPCIONES.find((o) => o.valor === agrupado)?.etiqueta.toLowerCase() ?? 'día'}` : ''}
-        </caption>
-        <tbody>
-          {serie.map((p) => (
-            <tr key={p.clave}>
-              <th scope="row">{etiquetaLarga(p.clave, efectivo)}</th>
-              <td>{formato(p.valor)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* La tabla va dentro de un div oculto: una <table> no respeta el ancho de 1 px y desbordaba la pantalla. */}
+      <div className="solo-lectores">
+        <table>
+          <caption>
+            {titulo}
+            {agrupable && diaria ? `, por ${OPCIONES.find((o) => o.valor === agrupado)?.etiqueta.toLowerCase() ?? 'día'}` : ''}
+          </caption>
+          <tbody>
+            {serie.map((p) => (
+              <tr key={p.clave}>
+                <th scope="row">{etiquetaLarga(p.clave, efectivo)}</th>
+                <td>{formato(p.valor)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

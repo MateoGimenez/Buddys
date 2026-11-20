@@ -8,11 +8,8 @@ import { usePuedeDelTodo } from '../../lib/nivel';
 import { useCarga } from '../../lib/useCarga';
 import { Arqueo } from './Arqueo';
 import { CierreHecho } from './CierreHecho';
-import { conteoDe } from './datos';
+import { DIAS_ATRAS_CAJA as DIAS_ATRAS, conteoDe } from './datos';
 import { Historial } from './Historial';
-
-/** Hasta cuántos días atrás se puede cerrar o mirar una caja (lo limita el backend). */
-const DIAS_ATRAS = 366;
 
 /**
  * Cierre de caja con arqueo: lo contado por forma de pago contra lo esperado (lavados de mostrador, señas cobradas y
@@ -42,6 +39,8 @@ export function PantallaCaja() {
   const [historial, recargarHistorial] = useCarga(() => cierresDeCaja(), []);
 
   const datos = dia.datos?.fecha === fecha ? dia.datos : null;
+  // La planilla del mismo día que se mira (no la de hoy): ahí se carga la forma de pago que falta.
+  const enlacePlanilla = fecha === hoyAR ? '/planilla' : `/planilla?fecha=${fecha}`;
 
   const alCerrar = (c: Cierre) => {
     setConflicto(null);
@@ -103,7 +102,7 @@ export function PantallaCaja() {
       <p className="encabezado-fecha">
         {fecha === hoyAR ? `Hoy, ${fechaLarga(fecha)}` : fechaLarga(fecha)}
         {' · '}
-        <Link to={fecha === hoyAR ? '/planilla' : `/planilla?fecha=${fecha}`}>Ver la planilla de este día</Link>
+        <Link to={enlacePlanilla}>Ver la planilla de este día</Link>
       </p>
 
       {recien ? <Aviso tipo="ok" titulo={recien} /> : null}
@@ -126,7 +125,7 @@ export function PantallaCaja() {
             {datos.esperado.sinIndicar > 0 && !datos.cierre ? (
               <p className="caja-esperado-aviso">
                 {pesos(datos.esperado.sinIndicar)} sin forma de pago.{' '}
-                <Link to="/planilla">Cargala en la planilla</Link> antes de cerrar, así entra en el arqueo.
+                <Link to={enlacePlanilla}>Cargala en la planilla</Link> antes de cerrar, así entra en el arqueo.
               </p>
             ) : null}
           </section>

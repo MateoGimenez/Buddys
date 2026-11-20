@@ -2,7 +2,10 @@ import { FORMAS_PAGO, type FormaPago } from '../../api/types';
 import type { Cierre, Contado } from '../../api/finanzas';
 import { enteroDesdeTexto, miles, pesos } from '../../lib/format';
 
-export type Tono = 'falta' | 'sobra' | 'justo';
+/** Hasta cuántos días atrás se puede cerrar o mirar una caja (lo limita el backend). */
+export const DIAS_ATRAS_CAJA = 366;
+
+export type Tono ='falta' | 'sobra' | 'justo';
 
 export function tonoDe(diferencia: number): Tono {
   if (diferencia < 0) return 'falta';

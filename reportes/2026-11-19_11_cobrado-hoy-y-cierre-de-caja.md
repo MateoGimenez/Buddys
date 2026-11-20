@@ -32,4 +32,5 @@ por forma de pago dentro de la Planilla y la pantalla del cierre del día (arque
 
 - [x] Implementado (Planilla acepta `?fecha=`; "Cierre de caja" en el menú y "Ver la planilla de este día" en el cierre)
 - [x] Typecheck, lint y tests (frontend: 338 tests)
-- [ ] Revisión de pruebas y de seguridad
+- [x] Revisión de pruebas (20/11): "Cargala en la planilla" lleva la fecha del cierre; sin enlace al cierre en planillas de más de 366 días; ?fecha= futura o imposible abre hoy (frontend: 348 tests). Falta la de seguridad
+- [x] Revisión de seguridad (19/11): un hallazgo bajo (`?fecha=` imposible rompía la pantalla), arreglado con `esFechaValida`.

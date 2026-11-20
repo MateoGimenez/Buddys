@@ -166,4 +166,39 @@ describe('"Cobrado hoy" y "Cierre de caja": un nombre para cada cosa (contrato 2
     expect(await screen.findByRole('heading', { name: `Cobrado el ${fechaCorta(DIA)}` })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Cerrar la caja de este día' })).toHaveAttribute('href', `/caja?fecha=${DIA}`);
   });
+
+  it('"Cargala en la planilla" de un día pasado lleva a la planilla de ese día, no a la de hoy', async () => {
+    const DIA = sumarDias(HOY, -3);
+    apiFalsa({
+      ...sesionMejoras('admin'),
+      'GET /api/admin/caja': { status: 200, body: cajaAbierta(DIA) },
+      'GET /api/admin/caja/cierres': { status: 200, body: { cierres: [], total: 0 } },
+    });
+    renderApp(`/caja?fecha=${DIA}`);
+    expect(await screen.findByRole('link', { name: 'Cargala en la planilla' })).toHaveAttribute('href', `/planilla?fecha=${DIA}`);
+  });
+
+  it('la planilla de un día más viejo de lo que el cierre deja mirar no ofrece cerrarla (abriría la caja de hoy)', async () => {
+    const DIA = sumarDias(HOY, -400);
+    apiFalsa({
+      ...sesionMejoras('admin'),
+      'GET /api/admin/lavados': { status: 200, body: planillaAdmin(DIA) },
+    });
+    renderApp(`/planilla?fecha=${DIA}`);
+    expect(await screen.findByRole('heading', { name: `Cobrado el ${fechaCorta(DIA)}` })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Cerrar la caja de este día' })).not.toBeInTheDocument();
+  });
+
+  it('la planilla con ?fecha= futura o imposible abre hoy', async () => {
+    for (const mala of [sumarDias(HOY, 1), '2026-02-30', 'x']) {
+      const api = apiFalsa({
+        ...sesionMejoras('admin'),
+        'GET /api/admin/lavados': { status: 200, body: planillaAdmin(HOY) },
+      });
+      const { unmount } = renderApp(`/planilla?fecha=${encodeURIComponent(mala)}`);
+      expect(await screen.findByRole('heading', { name: 'Cobrado hoy' }), mala).toBeInTheDocument();
+      expect(api.de('GET', '/api/admin/lavados')[0]?.path, mala).toContain(HOY);
+      unmount();
+    }
+  });
 });

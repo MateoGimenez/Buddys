@@ -37,17 +37,20 @@ export function BarrasDivergentes({ titulo, filas, nota }: { titulo: string; fil
         })}
       </ul>
       {nota ? <p className="nota-chica">{nota}</p> : null}
-      <table className="solo-lectores">
-        <caption>{titulo}</caption>
-        <tbody>
-          {filas.map((f) => (
-            <tr key={f.id}>
-              <th scope="row">{f.nombre}</th>
-              <td>{f.texto}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* La tabla va dentro de un div oculto: una <table> no respeta el ancho de 1 px y desbordaba la pantalla. */}
+      <div className="solo-lectores">
+        <table>
+          <caption>{titulo}</caption>
+          <tbody>
+            {filas.map((f) => (
+              <tr key={f.id}>
+                <th scope="row">{f.nombre}</th>
+                <td>{f.texto}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

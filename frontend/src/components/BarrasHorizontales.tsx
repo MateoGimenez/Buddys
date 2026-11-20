@@ -45,26 +45,29 @@ export function BarrasHorizontales({
           </li>
         ))}
       </ul>
-      <table className="solo-lectores">
-        <caption>{titulo}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{columnas[0]}</th>
-            <th scope="col">{columnas[1]}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filas.map((f) => (
-            <tr key={f.id}>
-              <th scope="row">{f.nombre}</th>
-              <td>
-                {f.texto}
-                {f.marca ? ` (${f.marca.texto})` : ''}
-              </td>
+      {/* La tabla va dentro de un div oculto: una <table> no respeta el ancho de 1 px y desbordaba la pantalla. */}
+      <div className="solo-lectores">
+        <table>
+          <caption>{titulo}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{columnas[0]}</th>
+              <th scope="col">{columnas[1]}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filas.map((f) => (
+              <tr key={f.id}>
+                <th scope="row">{f.nombre}</th>
+                <td>
+                  {f.texto}
+                  {f.marca ? ` (${f.marca.texto})` : ''}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

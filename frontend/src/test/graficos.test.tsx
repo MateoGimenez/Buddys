@@ -92,3 +92,77 @@ describe('BarrasDivergentes', () => {
     expect(document.querySelector<HTMLElement>('[data-tono="sobra"] .barras-d-relleno')?.style.inlineSize).toBe('50%');
   });
 });
+
+describe('Casos límite de los gráficos (revisión de pruebas)', () => {
+  const alturas = () => Array.from(document.querySelectorAll<HTMLElement>('.grafico-relleno')).map((r) => r.style.blockSize);
+
+  it('serie vacía, todo en cero y un solo punto: no rompe, no inventa un "mejor" ni ofrece agrupar', () => {
+    const { unmount } = render(<Barras titulo="Lavados" agrupable puntos={[]} formato={String} />);
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(alturas()).toEqual([]);
+    unmount();
+
+    const ceros = render(
+      <Barras titulo="Lavados" agrupable puntos={[{ clave: '2026-11-18', valor: 0 }, { clave: '2026-11-19', valor: 0 }]} formato={String} />,
+    );
+    expect(screen.queryByText(/mejor:/)).toBeNull();
+    expect(alturas()).toEqual(['0%', '0%']);
+    ceros.unmount();
+
+    render(<Barras titulo="Lavados" agrupable puntos={[{ clave: '2026-11-19', valor: 3 }]} formato={String} />);
+    expect(screen.queryByRole('radio')).toBeNull();
+    expect(alturas()).toEqual(['100%']);
+  });
+
+  it('un valor negativo no deja una altura inválida; uno enorme llena la barra', () => {
+    render(
+      <Barras titulo="Ingresos" puntos={[{ clave: '2026-11-18', valor: -5000 }, { clave: '2026-11-19', valor: 9_999_999_999 }]} formato={String} />,
+    );
+    expect(alturas()).toEqual(['0%', '100%']);
+  });
+
+  it('la semana que cruza de año suma diciembre y enero en la del lunes 28/12', async () => {
+    const user = userEvent.setup();
+    render(
+      <Barras
+        titulo="Lavados"
+        agrupable
+        puntos={[
+          { clave: '2026-12-28', valor: 1 },
+          { clave: '2026-12-31', valor: 2 },
+          { clave: '2027-01-01', valor: 3 },
+          { clave: '2027-01-04', valor: 4 },
+        ]}
+        formato={String}
+      />,
+    );
+    await user.click(screen.getByRole('radio', { name: 'Semana' }));
+    expect(filasDe(screen.getByRole('table'))).toEqual([
+      ['Semana del 28 dic', '6'],
+      ['Semana del 4 ene', '4'],
+    ]);
+  });
+
+  it('BarrasHorizontales y BarrasDivergentes: sin filas o con valores fuera de rango, la barra queda entre 0 y 100 %', () => {
+    const vacia = render(<BarrasHorizontales titulo="Nada" filas={[]} />);
+    expect(document.querySelectorAll('.barras-h-fila')).toHaveLength(0);
+    vacia.unmount();
+
+    const h = render(
+      <BarrasHorizontales
+        titulo="Queda"
+        maximo={1}
+        filas={[
+          { id: 'a', nombre: 'Un nombre larguísimo '.repeat(10), valor: -1, texto: '0' },
+          { id: 'b', nombre: 'b', valor: 7, texto: '7' },
+        ]}
+      />,
+    );
+    // max se ajusta al mayor valor (7): ninguna barra se pasa del 100 %, la negativa queda en 0.
+    expect(Array.from(document.querySelectorAll<HTMLElement>('.barras-h-relleno')).map((r) => r.style.inlineSize)).toEqual(['0%', '100%']);
+    h.unmount();
+
+    render(<BarrasDivergentes titulo="Todo justo" filas={[{ id: '1', nombre: '19 nov', valor: 0, texto: 'Cierra justo' }]} />);
+    expect(document.querySelector('.barras-d-fila')).toHaveAttribute('data-tono', 'justo');
+  });
+});
