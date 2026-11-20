@@ -1,4 +1,4 @@
-import type { Franja, FormaPago, VehiculoTipo, Rol, Servicio } from '../api/types';
+import type { Franja, FormaPago, VehiculoTipo, Rol, Servicio, Unidad } from '../api/types';
 
 /** Zona horaria del taller (la misma que usa el backend para "hoy"). */
 export const ZONA = 'America/Argentina/La_Rioja';
@@ -6,9 +6,12 @@ export const ZONA = 'America/Argentina/La_Rioja';
 const pesosFmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 const numeroFmt = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 });
 
-/** $ 12.500 */
+/** Espacio no separable: "$ 12.500" nunca se parte en dos renglones. */
+const NBSP = ' ';
+
+/** $ 12.500 (con espacio no separable entre el signo y el número) */
 export function pesos(n: number): string {
-  return pesosFmt.format(n).replace(/\s/g, ' ');
+  return pesosFmt.format(n).replace(/\s/g, NBSP);
 }
 
 export function numero(n: number): string {
@@ -78,6 +81,16 @@ export function nombreMes(fecha: string): string {
   return new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
     comoFecha(`${fecha.slice(0, 7)}-15`),
   );
+}
+
+/** Día y mes de un ISO en La Rioja, "17/11". */
+export function diaMesDeIso(iso: string): string {
+  return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', timeZone: ZONA }).format(new Date(iso));
+}
+
+/** Para buscar: sin mayúsculas ni acentos ("Lucía" y "lucia" son lo mismo). */
+export function paraBuscar(texto: string): string {
+  return texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
 }
 
 /** Hora local de un ISO, "14:05". */
@@ -222,4 +235,51 @@ export function franjaSegunHora(ahora: Date = new Date()): Franja {
     new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: ZONA }).format(ahora),
   );
   return h % 24 < HORA_TARDE ? 'manana' : 'tarde';
+}
+
+/** Cómo se dice cada unidad de los insumos: [singular, plural]. */
+export const NOMBRE_UNIDAD: Record<Unidad, [string, string]> = {
+  unidad: ['unidad', 'unidades'],
+  litro: ['litro', 'litros'],
+  ml: ['ml', 'ml'],
+  kg: ['kg', 'kg'],
+  g: ['g', 'g'],
+  par: ['par', 'pares'],
+  caja: ['caja', 'cajas'],
+};
+
+/** "2 litros", "1 unidad", "0,5 litro"… (singular solo para 1, como se dice). */
+export function cantidadConUnidad(n: number, u: Unidad): string {
+  return `${numero(n)} ${NOMBRE_UNIDAD[u][n === 1 ? 0 : 1]}`;
+}
+
+/** Las iniciales de un nombre: "Ana López" → "AL", "beto" → "B". Sin nombre, "?". */
+export function iniciales(nombre: string | null | undefined): string {
+  const palabras = (nombre ?? '')
+    .replace(/@.*/, '')
+    .split(/[\s._-]+/)
+    .filter((p) => /\p{L}|\d/u.test(p));
+  const letras = palabras
+    .slice(0, 2)
+    .map((p) => (Array.from(p).find((c) => /\p{L}|\d/u.test(c)) ?? '').toLocaleUpperCase('es-AR'))
+    .join('');
+  return letras || '?';
+}
+
+/** Pesos en poco lugar (el valor arriba de una barra): "$ 850", "$ 175 mil", "$ 1,2 M". */
+export function pesosCortos(n: number): string {
+  const abs = Math.abs(n);
+  // Se decide con lo ya redondeado: 999.600 es "$ 1 M" y no "$ 1.000 mil"; 999,6 es "$ 1 mil" y no "$ 1000".
+  if (Math.round(abs / 1000) >= 1000) return `$ ${(n / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`;
+  if (Math.round(abs) >= 1000) return `$ ${Math.round(n / 1000).toLocaleString('es-AR')} mil`;
+  return `$ ${String(Math.round(n))}`;
+}
+
+/** true si es una fecha YYYY-MM-DD que existe en el calendario (no "2026-13-01" ni "2026-02-31"). Para ?fecha=. */
+export function esFechaValida(fecha: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  if (!m) return false;
+  const [a, mes, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const f = new Date(Date.UTC(a, mes - 1, d));
+  return f.getUTCFullYear() === a && f.getUTCMonth() === mes - 1 && f.getUTCDate() === d;
 }

@@ -1,4 +1,6 @@
 import type { Booking } from './booking.js';
+import type { InsumoBajo } from './inventario.js';
+import type { Rol } from './perfil.js';
 
 /**
  * Avisos push al celular cuando entra un turno nuevo (contrato: reportes/2026-10-26_13_panel-pulido-y-app.md, bloque A).
@@ -64,6 +66,8 @@ export interface DestinoPush {
 
 /** Contenido del aviso: nunca nombre, teléfono, email, vehículo ni comentario. */
 export interface PayloadPush {
+  /** Qué aviso es: el service worker del panel lo usa (si viene) para elegir el ícono y agrupar las notificaciones. */
+  tipo: 'turno' | 'stock' | 'equipo';
   titulo: string;
   cuerpo: string;
   /** Cantidad de turnos pendientes (para el globito del ícono). */
@@ -82,6 +86,8 @@ export interface PushRepository {
   borrarPorEndpoint(endpoint: string): Promise<boolean>;
   /** Dispositivos de las personas ACTIVAS del panel. */
   destinosActivos(): Promise<DestinoPush[]>;
+  /** Dispositivos de las personas ACTIVAS (y no dadas de baja) con uno de esos roles, menos los de `excluirPerfilId`. */
+  destinosConRol(roles: readonly Rol[], excluirPerfilId?: string | null): Promise<DestinoPush[]>;
   /** Borra dispositivos por id (el servicio de push respondió 404/410). Devuelve cuántos borró. */
   borrarPorIds(ids: readonly string[]): Promise<number>;
   /** Marca el último aviso entregado. */
@@ -101,6 +107,14 @@ export class PushError extends Error {
 /** Lo que el alta de turnos necesita del push: avisar de un turno nuevo. Nunca se rechaza. */
 export interface BookingPushNotifier {
   avisarTurnoNuevo(booking: Booking, servicioNombre: string): Promise<void>;
+}
+
+/**
+ * Lo que el inventario necesita del push: avisar que uno o más insumos cruzaron su mínimo (un solo aviso por pedido,
+ * reportes/2026-11-17_06_recetas-stock-avisos.md, regla 7). Nunca se rechaza.
+ */
+export interface StockPushNotifier {
+  avisarStockBajo(insumos: readonly InsumoBajo[]): Promise<void>;
 }
 
 /** Cliente de envío (web-push en producción; un doble en los tests). Se rechaza con PushError si no se entregó. */

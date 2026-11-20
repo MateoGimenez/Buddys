@@ -1,0 +1,36 @@
+/* Ajustes del tema "Alto contraste" que no son solo colores (ver tokens.css). */
+
+:root[data-tema='contraste'] .hoja,
+:root[data-tema='contraste'] .menu,
+:root[data-tema='contraste'] .esqueleto-formulario {
+  border: var(--grosor) solid var(--tinta);
+}
+
+:root[data-tema='contraste'] .ranking-barra,
+:root[data-tema='contraste'] .progreso-pista,
+:root[data-tema='contraste'] .talon-plazo {
+  outline: var(--grosor-fino) solid var(--tinta);
+}
+
+:root[data-tema='contraste'] .barra,
+:root[data-tema='contraste'] .plegable {
+  border-style: solid;
+}
+
+/* Piezas de la tanda 03-06 (menú de la cuenta, campanita, pestañas de recetas): bordes de tinta, como el resto. */
+:root[data-tema='contraste'] .cuenta-panel {
+  border: var(--grosor) solid var(--tinta);
+}
+
+:root[data-tema='contraste'] .campanita,
+:root[data-tema='contraste'] .cuenta-boton {
+  border: var(--grosor) solid var(--tinta);
+}
+
+:root[data-tema='contraste'] .receta-tabs {
+  border-bottom-color: var(--tinta);
+}
+
+:root[data-tema='contraste'] .receta-tab[aria-selected='true']::after {
+  border-block-end-color: var(--tinta);
+}

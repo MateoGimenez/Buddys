@@ -9,14 +9,23 @@ import type { AuthService, UsuarioSesion } from '../services/auth.js';
 export interface AuthRouterDeps {
   auth: AuthService;
   cookies: SessionCookies;
-  /** Limita los intentos de login FALLIDOS por IP. */
-  loginLimiter: RequestHandler;
+  /** Limitan los intentos de login FALLIDOS: por IP + email y por IP sola (ver middleware/rate-limit.ts). */
+  loginLimiter: RequestHandler[];
   requireSession: RequestHandler;
 }
 
-/** Lo que el frontend ve del usuario: nunca tokens ni el session_id. */
-function publicUsuario(usuario: UsuarioSesion) {
-  return { id: usuario.id, email: usuario.email, nombre: usuario.nombre, rol: usuario.rol };
+/**
+ * Lo que el frontend ve del usuario: nunca tokens ni el session_id. Misma forma que el perfil de GET /api/admin/perfil.
+ * fotoVersion: la versión de la foto (ISO 8601, va como ?v= en su URL) o null si no tiene.
+ */
+export function publicUsuario(usuario: Pick<UsuarioSesion, 'id' | 'email' | 'nombre' | 'rol' | 'fotoVersion'>) {
+  return {
+    id: usuario.id,
+    email: usuario.email,
+    nombre: usuario.nombre,
+    rol: usuario.rol,
+    fotoVersion: usuario.fotoVersion,
+  };
 }
 
 function sendUsuario(res: Response, usuario: UsuarioSesion): void {
@@ -27,7 +36,7 @@ export function authRouter({ auth, cookies, loginLimiter, requireSession }: Auth
   const router = Router();
 
   // POST /api/auth/login { email, password } => 200 { usuario } + cookies bd_at y bd_rt
-  router.post('/login', loginLimiter, async (req, res) => {
+  router.post('/login', ...loginLimiter, async (req, res) => {
     const { email, password } = parseOrThrow(loginSchema, req.body ?? {});
     try {
       const { usuario, tokens } = await auth.login(email, password);
@@ -72,7 +81,7 @@ export function authRouter({ auth, cookies, loginLimiter, requireSession }: Auth
     res.status(204).end();
   });
 
-  // GET /api/auth/me => 200 { usuario: { id, email, nombre, rol } } | 401 | 403. Si el access token venció,
+  // GET /api/auth/me => 200 { usuario: { id, email, nombre, rol, fotoVersion } } | 401 | 403. Si el access token venció,
   // acá sí viaja el refresh token: se refresca solo.
   router.get('/me', requireSession, (_req, res) => {
     sendUsuario(res, getUsuario(res));

@@ -7,7 +7,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig(
-  globalIgnores(['dist/', 'coverage/', 'node_modules/']),
+  globalIgnores(['dist/', 'public/', 'coverage/', 'node_modules/', 'test-results/', 'playwright-report/']),
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
@@ -44,6 +44,12 @@ export default defineConfig(
       '@typescript-eslint/non-nullable-type-assertion-style': 'off',
       '@typescript-eslint/no-unnecessary-type-parameters': 'off',
     },
+  },
+  {
+    // public/push-sw.js: script clásico que importa el service worker (importScripts). Sin tipos ni módulos.
+    files: ['public/**/*.js'],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: { sourceType: 'script', globals: { ...globals.serviceworker } },
   },
   {
     files: ['eslint.config.js'],

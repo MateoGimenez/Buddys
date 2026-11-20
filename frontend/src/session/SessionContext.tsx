@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { alTerminarLaSesion, ApiError } from '../api/client';
 import * as ep from '../api/endpoints';
-import type { Permisos, Usuario } from '../api/types';
+import type { NivelPermiso, Permisos, Usuario } from '../api/types';
 
 type Estado =
   | { tipo: 'cargando' }
@@ -12,8 +12,12 @@ interface Sesion {
   estado: Estado;
   ingresar: (email: string, password: string) => Promise<void>;
   salir: () => Promise<void>;
+  /** Cambia los datos del usuario de la sesión sin recargar (después de guardar Mi perfil: nombre y foto). */
+  actualizarUsuario: (cambio: Partial<Pick<Usuario, 'nombre' | 'fotoVersion'>>) => void;
   /** true si el rol tiene la capacidad (sí o parcial). Sin la tabla de permisos, cae a las reglas por rol. */
   puede: (capacidad: string) => boolean;
+  /** 'si', 'parcial' o 'no' para el rol de la sesión (para los matices de un 'parcial'). */
+  nivel: (capacidad: string) => NivelPermiso;
 }
 
 const SesionContext = createContext<Sesion | null>(null);
@@ -32,12 +36,21 @@ const SOLO_ENCARGADOS = new Set([
   'documentos.comprobantes',
   'documentos.taller',
   'inventario.gestionar',
+  'inventario.recetas',
+  'inventario.consumo',
+  // Mejoras (contrato 2026-11-15, permisosAdminMejoras).
+  'caja.cerrar',
+  'finanzas.gastos_fijos',
+  'finanzas.exportar',
+  'turnos.crear',
 ]);
 
-function puedePorRol(usuario: Usuario, capacidad: string): boolean {
-  if (capacidad === 'usuarios.gestionar') return usuario.rol === 'superadmin';
-  if (SOLO_ENCARGADOS.has(capacidad)) return usuario.rol !== 'empleado';
-  return true;
+function nivelPorRol(usuario: Usuario, capacidad: string): NivelPermiso {
+  // Equipo: el superadmin gestiona a todos; el admin, solo a los empleados.
+  if (capacidad === 'usuarios.gestionar') return usuario.rol === 'superadmin' ? 'si' : usuario.rol === 'admin' ? 'parcial' : 'no';
+  if (capacidad === 'caja.reabrir') return usuario.rol === 'superadmin' ? 'si' : 'no';
+  if (SOLO_ENCARGADOS.has(capacidad)) return usuario.rol !== 'empleado' ? 'si' : 'no';
+  return 'si';
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -98,17 +111,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const puede = useCallback(
-    (capacidad: string) => {
-      if (estado.tipo !== 'adentro') return false;
+  const actualizarUsuario = useCallback((cambio: Partial<Pick<Usuario, 'nombre' | 'fotoVersion'>>) => {
+    setEstado((e) => (e.tipo === 'adentro' ? { ...e, usuario: { ...e.usuario, ...cambio } } : e));
+  }, []);
+
+  const nivel = useCallback(
+    (capacidad: string): NivelPermiso => {
+      if (estado.tipo !== 'adentro') return 'no';
       const cap = estado.permisos?.capacidades.find((c) => c.id === capacidad);
-      if (!cap) return puedePorRol(estado.usuario, capacidad);
-      return cap.roles[estado.usuario.rol] !== 'no';
+      if (!cap) return nivelPorRol(estado.usuario, capacidad);
+      return cap.roles[estado.usuario.rol];
     },
     [estado],
   );
 
-  const valor = useMemo(() => ({ estado, ingresar, salir, puede }), [estado, ingresar, salir, puede]);
+  const puede = useCallback((capacidad: string) => nivel(capacidad) !== 'no', [nivel]);
+
+  const valor = useMemo(
+    () => ({ estado, ingresar, salir, actualizarUsuario, puede, nivel }),
+    [estado, ingresar, salir, actualizarUsuario, puede, nivel],
+  );
   return <SesionContext.Provider value={valor}>{children}</SesionContext.Provider>;
 }
 

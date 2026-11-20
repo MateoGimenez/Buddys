@@ -1,8 +1,9 @@
-import { AlertTriangle, Check, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ButtonHTMLAttributes,
   type CSSProperties,
   type InputHTMLAttributes,
@@ -76,6 +77,62 @@ export function Campo({ etiqueta, ayuda, error, prefijo, className, ...rest }: C
       <div className={`entrada ${prefijo ? 'con-prefijo' : ''}`} data-invalido={error ? '' : undefined}>
         {prefijo ? <span className="prefijo" aria-hidden>{prefijo}</span> : null}
         <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...rest} />
+      </div>
+      <Pie ayudaId={ayudaId} ayuda={ayuda} errorId={errorId} error={error} />
+    </div>
+  );
+}
+
+/**
+ * Campo de contraseña con botón para verla. El input sigue siendo el mismo (mismo name, id y autocomplete): solo cambia
+ * `type`, así el gestor de contraseñas lo reconoce igual. Al enviar el formulario vuelve a `password` antes que corra el
+ * onSubmit de React (escucha `submit` en captura), para que el navegador guarde y no quede a la vista.
+ */
+export function CampoContrasena({ etiqueta, ayuda, error, className, ...rest }: CampoBase & Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>) {
+  const { id, ayudaId, errorId, describedBy } = useIds(error, ayuda);
+  const [visible, setVisible] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const form = inputRef.current?.form;
+    if (!form) return;
+    const ocultar = () => {
+      if (inputRef.current) inputRef.current.type = 'password';
+      setVisible(false);
+    };
+    form.addEventListener('submit', ocultar, true);
+    return () => {
+      form.removeEventListener('submit', ocultar, true);
+    };
+  }, []);
+
+  return (
+    <div className={`campo ${className ?? ''}`}>
+      <label htmlFor={id}>{etiqueta}</label>
+      <div className="entrada con-ojo" data-invalido={error ? '' : undefined}>
+        <input
+          ref={inputRef}
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          {...rest}
+          type={visible ? 'text' : 'password'}
+        />
+        <button
+          type="button"
+          className="ojo"
+          aria-controls={id}
+          aria-pressed={visible}
+          aria-label="Mostrar contraseña"
+          onClick={() => {
+            setVisible((v) => !v);
+          }}
+        >
+          {visible ? <EyeOff aria-hidden size={22} /> : <Eye aria-hidden size={22} />}
+        </button>
       </div>
       <Pie ayudaId={ayudaId} ayuda={ayuda} errorId={errorId} error={error} />
     </div>
@@ -277,13 +334,21 @@ export function Confirmar({
   onCancelar: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const cancelarRef = useRef<HTMLButtonElement>(null);
   const tituloId = useId();
+  const cuerpoId = useId();
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
     if (abierto && !d.open) {
       if (typeof d.showModal === 'function') d.showModal();
-      else d.setAttribute('open', '');
+      else {
+        // Safari < 15.4 no tiene <dialog>: se muestra igual, fijo en el centro (ver .dialogo-sin-modal).
+        d.classList.add('dialogo-sin-modal');
+        d.setAttribute('open', '');
+      }
+      // El foco arranca en lo seguro (Cancelar), nunca en la acción que confirma.
+      cancelarRef.current?.focus();
     }
     if (!abierto && d.open) {
       if (typeof d.close === 'function') d.close();
@@ -295,6 +360,7 @@ export function Confirmar({
       ref={ref}
       className="dialogo"
       aria-labelledby={tituloId}
+      aria-describedby={children ? cuerpoId : undefined}
       onCancel={(e) => {
         e.preventDefault();
         onCancelar();
@@ -303,9 +369,13 @@ export function Confirmar({
       <h2 id={tituloId} className="dialogo-titulo">
         {titulo}
       </h2>
-      {children ? <div className="dialogo-cuerpo">{children}</div> : null}
+      {children ? (
+        <div className="dialogo-cuerpo" id={cuerpoId}>
+          {children}
+        </div>
+      ) : null}
       <div className="dialogo-acciones">
-        <Boton variante="fantasma" onClick={onCancelar} disabled={ocupado}>
+        <Boton ref={cancelarRef} variante="fantasma" onClick={onCancelar} disabled={ocupado}>
           Cancelar
         </Boton>
         <Boton variante={variante} onClick={onConfirmar} cargando={ocupado ?? false}>

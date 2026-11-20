@@ -1,5 +1,7 @@
 import {
   type MetaActual,
+  type MetaDeHoy,
+  calcularMetaDeHoy,
   type MetaMensual,
   type MetaMensualConAvance,
   type MetaRepository,
@@ -11,7 +13,7 @@ import {
   metaCumplida,
 } from '../domain/metas.js';
 import type { EstadisticasRepository } from '../domain/estadisticas.js';
-import { todayInLaRioja } from '../lib/dates.js';
+import { addDays, todayInLaRioja } from '../lib/dates.js';
 import { AppError } from '../lib/errors.js';
 import type { Logger } from '../lib/logger.js';
 import type { UsuarioSesion } from './auth.js';
@@ -54,6 +56,31 @@ export class MetaService {
     const objetivos: ObjetivosMeta | null =
       meta === null ? null : { ingresosObjetivo: meta.ingresosObjetivo, trabajosObjetivo: meta.trabajosObjetivo };
     return { mes, meta: objetivos, progreso: calcularProgreso(objetivos, avance, contarDiasDeAtencion(cupos, hoy)) };
+  }
+
+  /** La meta de lavados de hoy del equipo, sin pesos (contrato: reportes/2026-11-19_09_meta-de-hoy.md). */
+  async deHoy(): Promise<MetaDeHoy> {
+    const hoy = this.hoy();
+    const mes = hoy.slice(0, 7);
+    const { desde, hasta } = limitesDelMes(mes);
+    const ayer = addDays(hoy, -1);
+    const rangos = [{ clave: 'hoy', desde: hoy, hasta: hoy }];
+    // El día 1 no hay "hasta ayer" dentro del mes.
+    if (ayer >= desde) rangos.push({ clave: 'hastaAyer', desde, hasta: ayer });
+    const [meta, totales, cupos] = await Promise.all([
+      this.deps.metas.obtener(mes),
+      this.deps.estadisticas.totales(rangos),
+      this.deps.disponibilidad.cupos(desde, hasta),
+    ]);
+    const dias = contarDiasDeAtencion(cupos, hoy);
+    const lavados = calcularMetaDeHoy({
+      trabajosObjetivo: meta?.trabajosObjetivo ?? null,
+      hechosHastaAyer: totales.hastaAyer?.completados ?? 0,
+      hechosHoy: totales.hoy?.completados ?? 0,
+      hoyAbierto: cupos.some((dia) => dia.fecha === hoy && dia.abierto),
+      diasRestantesSinHoy: dias.restantes,
+    });
+    return { fecha: hoy, lavados };
   }
 
   /** Las metas de un año (solo los meses que tienen), con lo logrado en cada mes. */

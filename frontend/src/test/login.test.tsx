@@ -20,14 +20,15 @@ describe('Login y sesión', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'clave-de-prueba');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
 
-    expect(await screen.findByRole('heading', { name: 'Registrar lavado' })).toBeInTheDocument();
+    // El encargado arranca en Hoy (el empleado, en Registrar).
+    expect(await screen.findByRole('heading', { name: 'Hoy', level: 1 })).toBeInTheDocument();
     const [login] = api.de('POST', '/api/auth/login');
     expect(login?.body).toEqual({ email: 'buddy@email.com', password: 'clave-de-prueba' });
     expect(login?.headers['Content-Type']).toBe('application/json');
 
     // El superadmin ve todas las secciones, Equipo incluido.
     const riel = screen.getByRole('navigation', { name: 'Secciones' });
-    for (const s of ['Registrar', 'Planilla', 'Números', 'Servicios', 'Insumos', 'Gastos', 'Presupuestos', 'Equipo']) {
+    for (const s of ['Hoy', 'Registrar', 'Planilla', 'Números', 'Clientes', 'Servicios', 'Insumos', 'Gastos', 'Presupuestos', 'Equipo']) {
       expect(within(riel).getByRole('link', { name: s })).toBeInTheDocument();
     }
   });
@@ -44,6 +45,32 @@ describe('Login y sesión', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('El email o la contraseña no son correctos');
     expect(screen.getByLabelText('Contraseña')).toHaveValue('');
+  });
+
+  it('el botón muestra y oculta la contraseña, y al enviar vuelve a ocultarla', async () => {
+    apiFalsa({
+      'GET /api/auth/me': errores.sinSesion,
+      'POST /api/auth/login': errores.credenciales,
+    });
+    const { user } = renderApp('/');
+    const campo = await screen.findByLabelText('Contraseña');
+    // Mismo input para el gestor de contraseñas: name y autocomplete no cambian.
+    expect(campo).toHaveAttribute('type', 'password');
+    expect(campo).toHaveAttribute('name', 'password');
+    expect(campo).toHaveAttribute('autocomplete', 'current-password');
+
+    const ojo = screen.getByRole('button', { name: 'Mostrar contraseña' });
+    expect(ojo).toHaveAttribute('aria-pressed', 'false');
+    await user.click(ojo);
+    expect(campo).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: 'Mostrar contraseña' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.type(screen.getByLabelText('Email'), 'buddy@email.com');
+    await user.type(campo, 'clave');
+    await user.click(screen.getByRole('button', { name: 'Ingresar' }));
+    expect(campo).toHaveAttribute('type', 'password');
+    expect(screen.getByRole('button', { name: 'Mostrar contraseña' })).toHaveAttribute('aria-pressed', 'false');
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 
   it('pide email y contraseña antes de mandar nada', async () => {
@@ -64,7 +91,7 @@ describe('Login y sesión', () => {
     renderApp('/gastos');
     expect(await screen.findByRole('heading', { name: 'Registrar lavado' })).toBeInTheDocument();
     const riel = screen.getByRole('navigation', { name: 'Secciones' });
-    for (const s of ['Gastos', 'Presupuestos', 'Equipo']) expect(within(riel).queryByRole('link', { name: s })).toBeNull();
+    for (const s of ['Hoy', 'Gastos', 'Presupuestos', 'Equipo']) expect(within(riel).queryByRole('link', { name: s })).toBeNull();
     for (const s of ['Registrar', 'Planilla', 'Números', 'Servicios', 'Insumos']) expect(within(riel).getByRole('link', { name: s })).toBeInTheDocument();
   });
 

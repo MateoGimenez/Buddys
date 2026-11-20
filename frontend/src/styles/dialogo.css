@@ -1,0 +1,43 @@
+/* ------------------------------------------------------------------ Diálogo */
+
+.dialogo {
+  inline-size: min(440px, calc(100vw - 32px));
+  padding: 20px;
+  border: 0;
+  border-top: 3px dashed var(--tinta-3);
+  border-radius: 0 0 var(--radio) var(--radio);
+  color: var(--tinta);
+  background: var(--papel);
+  box-shadow: var(--sombra-dialogo);
+}
+
+.dialogo::backdrop {
+  background: var(--velo);
+}
+
+.dialogo-titulo {
+  font-size: 1.25rem;
+  font-weight: 750;
+  margin-bottom: 8px;
+}
+
+.dialogo-cuerpo {
+  color: var(--tinta-2);
+  margin-bottom: 18px;
+}
+
+.dialogo-acciones {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Navegadores sin <dialog> (Safari < 15.4): el mismo cartel, fijo en el centro y con el velo como sombra. */
+.dialogo-sin-modal[open] {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 60;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 100vmax var(--velo);
+}

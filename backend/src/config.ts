@@ -125,12 +125,26 @@ export interface AppConfig {
     api: RateLimitRule;
     /** Solicitudes de turno creadas, por IP. */
     bookings: RateLimitRule;
-    /** Intentos de login FALLIDOS, por IP. */
+    /** Intentos de login FALLIDOS, por IP + email (así un error no bloquea a todo el lavadero, que comparte WiFi). */
     loginFailures: RateLimitRule;
+    /** Intentos de login FALLIDOS solo por IP, con un tope más alto: frena el barrido de muchas cuentas. */
+    loginFailuresIp: RateLimitRule;
     /** Consultas de seguimiento de un turno (GET /api/turnos/:id), por IP. */
     seguimiento: RateLimitRule;
-    /** Descarga de PDF (presupuestos y comprobantes), por IP: generarlos cuesta CPU. */
+    /** Descarga de PDF (presupuestos y comprobantes) y de CSV, por IP: generarlos cuesta CPU. */
     pdf: RateLimitRule;
+    /** Intentos de cambiar la propia contraseña (PATCH /api/admin/perfil), por USUARIO: el mismo tope que el login. */
+    perfilPassword: RateLimitRule;
+    /** Subidas de la propia foto (PUT /api/admin/perfil/foto), por USUARIO: re-codificarla cuesta CPU y memoria. */
+    perfilFoto: RateLimitRule;
+    /** Lavados registrados o deshechos (POST y DELETE /api/admin/lavados), por USUARIO. Los reintentos no cuentan. */
+    lavados: RateLimitRule;
+    /** Errores del panel con sesión (POST /api/admin/errores-cliente), por usuario. */
+    erroresCliente: RateLimitRule;
+    /** Errores del panel sin sesión (POST /api/errores-cliente, pantalla de login), por IP: estricto. */
+    erroresClientePublico: RateLimitRule;
+    /** Pedidos de URL de subida de fotos (POST /api/admin/lavados/:id/fotos), por usuario. */
+    fotos: RateLimitRule;
   };
   whatsapp: WhatsappConfig;
   recordatorios: RecordatoriosConfig;
@@ -138,6 +152,12 @@ export interface AppConfig {
   push: PushConfig | undefined;
   /** Origen público del sitio (sin barra final), para el link al panel en los avisos. */
   publicUrl: string | undefined;
+  /**
+   * Carpeta del panel compilado (frontend/dist, con su index.html). Si está, este mismo proceso sirve el panel fuera
+   * de /api: un solo origen, como necesita el cliente del frontend (llama a /api relativo). undefined = solo la API
+   * (fuera de /api, 404 JSON).
+   */
+  panelDir: string | undefined;
   /** Avisos para mostrar al arrancar (ej.: variables que ya no se usan). */
   warnings: string[];
 }
@@ -149,11 +169,24 @@ const SESSION_COOKIE_MAX_AGE_SECONDS = 8 * 60 * 60;
 export const DEFAULT_RATE_LIMITS: AppConfig['rateLimits'] = {
   api: { windowMs: 60 * 1000, limit: 300 },
   bookings: { windowMs: 15 * 60 * 1000, limit: 5 },
+  // Por persona (IP + email): 5 fallos. Por IP sola, más alto: el lavadero entero sale por la misma IP.
   loginFailures: { windowMs: 15 * 60 * 1000, limit: 5 },
+  loginFailuresIp: { windowMs: 15 * 60 * 1000, limit: 30 },
   // Una persona mira su turno unas pocas veces; un barrido de ids necesitaría millones de pedidos.
   seguimiento: { windowMs: 15 * 60 * 1000, limit: 60 },
   // Generar un PDF cuesta CPU: 30 por minuto por IP alcanzan de sobra para un panel con 2 o 3 personas.
   pdf: { windowMs: 60 * 1000, limit: 30 },
+  // Verificar la contraseña actual es un login contra Supabase: mismo tope que el login, pero contado por usuario.
+  perfilPassword: { windowMs: 15 * 60 * 1000, limit: 5 },
+  // Cambiar la foto es algo de una vez cada tanto: 10 subidas en 15 minutos alcanzan para probar varias.
+  perfilFoto: { windowMs: 15 * 60 * 1000, limit: 10 },
+  // Un lavado por minuto ya es mucho para una persona: 60 frena un script o un bucle sin molestar al uso real.
+  lavados: { windowMs: 60 * 1000, limit: 60 },
+  // Un panel con un error que se repite no puede llenar el log: 30 cada 10 minutos por persona, 5 cada 15 sin sesión.
+  erroresCliente: { windowMs: 10 * 60 * 1000, limit: 30 },
+  erroresClientePublico: { windowMs: 15 * 60 * 1000, limit: 5 },
+  // Cada URL de subida permite subir hasta 1,5 MB: 20 cada 10 minutos por persona alcanzan para el día a día.
+  fotos: { windowMs: 10 * 60 * 1000, limit: 20 },
 };
 
 /** Largo mínimo de CRON_SECRET: suficiente entropía para que no se pueda adivinar por fuerza bruta. */
@@ -370,6 +403,7 @@ const envSchema = z.object({
   SUPABASE_SECRET_KEY: optionalEnv(z.string()),
   TRUST_PROXY: optionalEnv(trustProxySchema),
   PUBLIC_URL: optionalEnv(originSchema),
+  PANEL_DIR: optionalEnv(z.string().trim().min(1).max(500, { error: 'es demasiado larga' })),
   WHATSAPP_PROVIDER: optionalEnv(
     z
       .string()
@@ -783,6 +817,15 @@ export function parseConfig(env: NodeJS.ProcessEnv): AppConfig {
   const recordatorios = recordatoriosFromValues(values, isProduction, problems, warnings);
   const push = pushFromValues(values, problems);
 
+  let panelDir: string | undefined;
+  if (values?.PANEL_DIR !== undefined) {
+    panelDir = path.resolve(BACKEND_ROOT, values.PANEL_DIR);
+    const index = path.join(panelDir, 'index.html');
+    if (!existsSync(index)) {
+      problems.push(`PANEL_DIR: falta el panel compilado (${index}); corré npm run build:front`);
+    }
+  }
+
   const database = databaseResult.database;
   if (problems.length > 0 || values === undefined || database === undefined || supabase === undefined) {
     throw new ConfigError(problems);
@@ -826,6 +869,7 @@ export function parseConfig(env: NodeJS.ProcessEnv): AppConfig {
     push,
     turnosOnline: values.TURNOS_ONLINE ?? false,
     publicUrl: values.PUBLIC_URL,
+    panelDir,
     warnings,
   };
 }

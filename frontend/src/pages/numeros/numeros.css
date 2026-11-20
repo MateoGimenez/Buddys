@@ -1,0 +1,147 @@
+/* ------------------------------------------------------------------ Números */
+
+.numeros {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.periodo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.periodo .segmentado-barra .opcion {
+  font-size: 0.9375rem;
+  padding-inline: 4px;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+  margin-inline: -4px;
+  padding-inline: 4px;
+}
+
+.tabla {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.tabla th,
+.tabla td {
+  padding: 8px 6px;
+  text-align: start;
+  border-bottom: var(--grosor-fino) solid var(--linea);
+  vertical-align: top;
+}
+
+.tabla thead th {
+  font-size: 0.8125rem;
+  color: var(--tinta-3);
+  font-weight: 650;
+  border-bottom: var(--grosor) solid var(--tinta);
+}
+
+.tabla tbody th {
+  font-weight: 700;
+}
+
+.tabla .num {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.variacion {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.variacion.sube {
+  color: var(--ok);
+}
+
+.variacion.baja {
+  color: var(--peligro);
+}
+
+.negativo {
+  color: var(--peligro);
+}
+
+.cifras-periodo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.cifras-periodo div {
+  border-top: var(--grosor) solid var(--tinta);
+  padding-top: 6px;
+}
+
+.cifras-periodo dt {
+  font-size: 0.8125rem;
+  color: var(--tinta-3);
+  font-weight: 600;
+}
+
+.cifras-periodo dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 750;
+  font-stretch: 88%;
+}
+
+/* Los gráficos (barras) están en components/graficos.css: los usan Números, Insumos y Cierre de caja. */
+
+.estado-meta {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border: var(--grosor) solid currentcolor;
+}
+
+.estado-cumplida,
+.estado-adelantado {
+  color: var(--ok);
+}
+
+.estado-en-ritmo {
+  color: var(--carbon);
+}
+
+.estado-atrasado {
+  color: var(--alerta);
+}
+
+.progreso {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progreso-texto {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.9375rem;
+}
+
+.progreso-pista {
+  block-size: 12px;
+  background: var(--pista);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progreso-pista span {
+  display: block;
+  block-size: 100%;
+  background: var(--rosa);
+  border-right: var(--grosor) solid var(--tinta);
+}

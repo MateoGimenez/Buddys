@@ -1,0 +1,181 @@
+/* Panel Buddys Wash Detail.
+   Mundo: el talonario de remitos con copia. Hoja blanca (original), copia canario (planilla), copia rosa (marca),
+   tinta azul carbónico para el texto y numeración roja de imprenta. Archivo variable para todo.
+
+   Temas (data-tema en <html>; lo pone public/tema-inicial.js antes de pintar y después lib/tema.ts):
+   - Automático (sin atributo): color-scheme "light dark", sigue al celular.
+   - claro / oscuro: solo fuerzan color-scheme. Cada color es light-dark(<claro>, <oscuro>): el talonario de día y el
+     mismo talonario de noche (papel azul noche, copia canario tostada). Un color nuevo va con su par, en un solo lugar.
+   - contraste ("Alto contraste, para el sol"): bloque propio. Negro sobre blanco, bordes gruesos, sin grises; lo
+     elegido en amarillo.
+   Celulares viejos (Chrome 80, Safari 15) no tienen light-dark(): lightningcss lo traduce en el build (cssTarget en
+   vite.config.ts) a variables --lightningcss-light / --lightningcss-dark que sí entienden.
+   Todo color de la interfaz sale de acá: un componente nuevo usa estas variables, nunca un hex suelto. Cada par
+   texto/fondo está medido en src/test/contraste.test.ts (AA en claro y oscuro, AAA en alto contraste). */
+
+:root {
+  color-scheme: light dark;
+  /* Tinta y papel */
+  --tinta: light-dark(#17204d, #e9ebf7);
+  --tinta-2: light-dark(#3a4372, #c6cbe6);
+  --tinta-3: light-dark(#5a628c, #a3aad0);
+  --papel: light-dark(#ffffff, #1a1f38);
+  /* En oscuro el fondo va más hondo que la hoja: si quedan parecidos, se pierde el papel. */
+  --fondo: light-dark(#eceef5, #0a0d1b);
+  /* Lo que se escribe sobre un fondo de tinta (opción elegida, fichas oscuras). */
+  --sobre-tinta: light-dark(#ffffff, #0f1325);
+  --marca-sobre-tinta: light-dark(#ec5fa4, #b0175f);
+  --carbon: light-dark(#2742b8, #a9b8ff);
+  --carbon-claro: light-dark(#e6eafb, #2a3260);
+  --rosa: light-dark(#ec5fa4, #f27ab5);
+  --rosa-fuerte: light-dark(#cc3584, #ff9ccb);
+  --rosa-claro: light-dark(#fde4f0, #45203a);
+  --sobre-rosa: #17204d;
+  --sobre-rosa-fuerte: light-dark(#ffffff, #17204d);
+  --borde-primario: light-dark(#17204d, #f27ab5);
+  --canario: light-dark(#fff3c2, #2b2714);
+  --canario-borde: light-dark(#e8d68a, #5e5427);
+  --serie: light-dark(#c41d2b, #ff8f97);
+  /* Lo que se escribe sobre la numeración roja (el número de la campanita). */
+  --sobre-serie: light-dark(#ffffff, #0f1325);
+  --linea: light-dark(#cdd1e2, #353c62);
+  /* Borde de campos y casillas: 3:1 contra el papel (se tienen que ver al sol). */
+  --linea-fuerte: light-dark(#7a82a8, #7a82ad);
+  --ok: light-dark(#146c35, #7ad89c);
+  --ok-claro: light-dark(#e2f4e8, #12301e);
+  --sobre-ok: light-dark(#ffffff, #0f1325);
+  --alerta: light-dark(#8a4f00, #ffc46b);
+  --alerta-claro: light-dark(#fff0d6, #33270f);
+  --peligro: light-dark(#b3192a, #ff9a9f);
+  --peligro-claro: light-dark(#fde7e9, #3d1519);
+  --peligro-hover: light-dark(#8f1220, #ffb8bc);
+  --sobre-peligro: light-dark(#ffffff, #0f1325);
+  /* Pistas de barras (ranking, metas), filas apagadas y esqueletos de carga. */
+  --pista: light-dark(#e5e7f0, #2c3357);
+  --inactivo: light-dark(#f6f7fa, #151a30);
+  --apagado: light-dark(#e3e4ea, #2c3357);
+  --esqueleto-1: light-dark(#e2e5ef, #222846);
+  --esqueleto-2: light-dark(#f3f4f9, #2c3357);
+  /* Barra de abajo y riel lateral. */
+  --nav-fondo: light-dark(#17204d, #080b18);
+  --nav-texto: light-dark(#c9cdea, #b9bfe0);
+  --nav-activo: #ffffff;
+  --nav-marca: light-dark(#ec5fa4, #f27ab5);
+  --nav-hover: rgb(255 255 255 / 8%);
+  --nav-activo-fondo: light-dark(#ec5fa4, #f27ab5);
+  --nav-activo-texto: #17204d;
+  /* Velos y sombras */
+  --papel-velado: light-dark(rgb(255 255 255 / 70%), rgb(15 19 37 / 55%));
+  --papel-transparente: light-dark(rgb(255 255 255 / 0%), rgb(26 31 56 / 0%));
+  --plazo-pista: light-dark(rgb(23 32 77 / 10%), rgb(233 235 247 / 14%));
+  --velo: light-dark(rgb(23 32 77 / 45%), rgb(0 0 0 / 60%));
+  --sombra: 0 1px 2px light-dark(rgb(23 32 77 / 8%), rgb(0 0 0 / 40%)), 0 4px 14px light-dark(rgb(23 32 77 / 6%), rgb(0 0 0 / 25%));
+  --sombra-copia: 0 1px 2px light-dark(rgb(23 32 77 / 8%), rgb(0 0 0 / 40%));
+  --sombra-dialogo: 0 12px 40px light-dark(rgb(23 32 77 / 30%), rgb(0 0 0 / 55%));
+  --sombra-login: 0 20px 50px light-dark(rgb(0 0 0 / 30%), rgb(0 0 0 / 50%));
+  --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2317204d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  /* Grosor de bordes: en alto contraste todo se engrosa. */
+  --grosor: 2px;
+  --grosor-fino: 1px;
+
+  --radio: 10px;
+  --radio-chico: 7px;
+  --tabs-alto: 64px;
+  --barra-alto: 56px;
+  /* Movimiento: arranca rápido y se asienta (nada de rebotes elásticos). Lo que sale, sale más rápido. */
+  --curva: cubic-bezier(0.16, 1, 0.3, 1);
+  --curva-salida: cubic-bezier(0.4, 0, 1, 1);
+  --t-toque: 110ms;
+  --t-estado: 200ms;
+  --fuente: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Avatares sin foto: 8 tintas de talonario, todas con blanco encima en AA (6:1 o más). Se elige por hash del id.
+     Iguales en todos los temas: el avatar lleva siempre letra blanca. */
+  --avatar-1: #2742b8;
+  --avatar-2: #a3236b;
+  --avatar-3: #146c35;
+  --avatar-4: #8a4f00;
+  --avatar-5: #5b2a9e;
+  --avatar-6: #0f6a73;
+  --avatar-7: #17204d;
+  --avatar-8: #9c3a12;
+  --sobre-avatar: #ffffff;
+}
+
+:root[data-tema='claro'] {
+  color-scheme: light;
+}
+
+:root[data-tema='oscuro'] {
+  color-scheme: dark;
+}
+
+/* tema:oscuro (lo que no es un color y no entra en light-dark(): la flecha de los select) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema]) {
+    --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23e9ebf7' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+}
+
+:root[data-tema='oscuro'] {
+  --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23e9ebf7' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* tema:contraste — para leer a pleno sol. */
+:root[data-tema='contraste'] {
+  --tinta: #000000;
+  --tinta-2: #000000;
+  --tinta-3: #000000;
+  --papel: #ffffff;
+  --fondo: #ffffff;
+  --sobre-tinta: #ffffff;
+  --marca-sobre-tinta: #ffe600;
+  --carbon: #0010a0;
+  --carbon-claro: #e3e6ff;
+  --rosa: #000000;
+  --rosa-fuerte: #000000;
+  --rosa-claro: #ffe600;
+  --sobre-rosa: #ffffff;
+  --sobre-rosa-fuerte: #ffffff;
+  --borde-primario: #000000;
+  --canario: #ffffff;
+  --canario-borde: #000000;
+  --serie: #9e0000;
+  --linea: #000000;
+  --linea-fuerte: #000000;
+  --ok: #00531c;
+  --ok-claro: #ffffff;
+  --sobre-ok: #ffffff;
+  --alerta: #5c3200;
+  --alerta-claro: #ffffff;
+  --peligro: #9e0000;
+  --peligro-claro: #ffffff;
+  --peligro-hover: #6b0000;
+  --sobre-peligro: #ffffff;
+  --sobre-serie: #ffffff;
+  --pista: #ffffff;
+  --inactivo: #ffffff;
+  --apagado: #ffffff;
+  --esqueleto-1: #d0d0d0;
+  --esqueleto-2: #ffffff;
+  --nav-fondo: #000000;
+  --nav-texto: #ffffff;
+  --nav-activo: #ffe600;
+  --nav-marca: #ffe600;
+  --nav-hover: rgb(255 255 255 / 18%);
+  --nav-activo-fondo: #ffe600;
+  --nav-activo-texto: #000000;
+  --papel-velado: #ffffff;
+  --papel-transparente: rgb(255 255 255 / 0%);
+  --plazo-pista: #ffffff;
+  --velo: rgb(0 0 0 / 70%);
+  --sombra: none;
+  --sombra-copia: none;
+  --sombra-dialogo: none;
+  --sombra-login: none;
+  --flecha-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --grosor: 3px;
+  --grosor-fino: 2px;
+
+  color-scheme: light;
+}

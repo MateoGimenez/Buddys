@@ -1,0 +1,136 @@
+/* ------------------------------------------------------------------ Avisos y estados */
+
+.aviso {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radio-chico);
+  border: var(--grosor) solid currentcolor;
+}
+
+.aviso-error {
+  background: var(--peligro-claro);
+  color: var(--peligro);
+}
+
+.aviso-ok {
+  background: var(--ok-claro);
+  color: var(--ok);
+}
+
+.aviso-info {
+  background: var(--carbon-claro);
+  color: var(--tinta);
+  border-color: var(--carbon);
+}
+
+.aviso-icono {
+  flex: none;
+  margin-top: 1px;
+}
+
+.aviso-cuerpo {
+  flex: 1 1 200px;
+  color: var(--tinta);
+}
+
+.aviso-titulo {
+  font-weight: 700;
+  color: inherit;
+}
+
+.aviso-error .aviso-titulo {
+  color: var(--peligro);
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px 16px;
+  border: var(--grosor) dashed var(--linea-fuerte);
+  border-radius: var(--radio);
+  background: var(--papel);
+}
+
+.vacio-titulo {
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+
+.vacio-texto {
+  color: var(--tinta-2);
+  max-inline-size: 60ch;
+}
+
+.esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.esqueleto-fila {
+  block-size: 64px;
+  border-radius: var(--radio);
+  background: linear-gradient(90deg, var(--esqueleto-1) 0%, var(--esqueleto-2) 50%, var(--esqueleto-1) 100%);
+  background-size: 200% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes brillo {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.etiqueta {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  background: var(--carbon-claro);
+  color: var(--tinta);
+  vertical-align: 2px;
+}
+
+.etiqueta-alerta {
+  background: var(--alerta-claro);
+  color: var(--alerta);
+}
+
+.etiqueta-apagada {
+  background: var(--apagado);
+  color: var(--tinta-2);
+}
+
+/* Esqueleto con la forma de Registrar (barra de vehículos y fichas): la pantalla no salta cuando llega el catálogo. */
+.esqueleto-formulario {
+  padding: 16px;
+  border-radius: var(--radio);
+  background: var(--papel);
+  box-shadow: var(--sombra);
+}
+
+.esqueleto-formulario .esqueleto-fila {
+  block-size: 48px;
+  border-radius: var(--radio-chico);
+}
+
+.esqueleto-grilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.esqueleto-grilla .esqueleto-fila {
+  block-size: 60px;
+}

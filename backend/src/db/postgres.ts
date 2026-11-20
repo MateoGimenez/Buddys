@@ -50,6 +50,10 @@ const AGENDA_COLUMNS = ['fecha_confirmada', 'franja_confirmada'] as const;
 const COBRO_COLUMNS = ['monto', 'trabajador_id'] as const;
 /** Columnas que agrega la migración notas_telefono_cliente (las que lee el repositorio de turnos). */
 const NOTAS_COLUMNS = ['notas_internas', 'telefono_whatsapp'] as const;
+/** Columna que agrega la migración perfil_foto (la versión de la foto de perfil; la lee el repositorio de perfiles). */
+const PERFIL_FOTO_COLUMNS = ['foto_actualizada_at'] as const;
+/** Lo que agrega la migración recetas_stock: la tabla de recetas, la marca del aviso de stock bajo y el tipo devolucion. */
+const RECETAS_TABLES = ['recetas'] as const;
 
 /**
  * Pool chico y con timeouts: un taller con un servidor Node de larga vida no necesita más, y el pooler de
@@ -395,6 +399,57 @@ export async function verifyPostgresSchema(client: SqlClient): Promise<void> {
     );
   }
 
+  // La foto de perfil (migración perfil_foto): cada lectura de un perfil (también la de la sesión) usa la columna.
+  const fotoColumns = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'perfiles' AND column_name = ANY($2::text[])`,
+    [PG_SCHEMA, PERFIL_FOTO_COLUMNS],
+  );
+  const presentFoto = new Set(fotoColumns.rows.map((row) => row.column_name));
+  const missingFoto = PERFIL_FOTO_COLUMNS.filter((column) => !presentFoto.has(column));
+  if (missingFoto.length > 0) {
+    throw new Error(
+      `Faltan columnas en buddys.perfiles (${missingFoto.join(', ')}). ` +
+        'Aplicá la migración perfil_foto de backend/supabase/migrations/ (ver README, "Migraciones").',
+    );
+  }
+
+  // Recetas, descuento de stock y avisos (migración recetas_stock): la tabla, insumos.aviso_bajo_at, el origen y que el CHECK de
+  // movimientos_stock acepte `devolucion` (deshacer un lavado la inserta: sin ella, el deshacer daría 500).
+  const recetas = await client.query(
+    'SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 AND tablename = ANY($2::text[])',
+    [PG_SCHEMA, RECETAS_TABLES],
+  );
+  const missingRecetas: string[] = RECETAS_TABLES.filter((table) => !recetas.rows.some((row) => row.tablename === table));
+  const avisoBajo = await client.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'insumos' AND column_name = 'aviso_bajo_at'`,
+    [PG_SCHEMA],
+  );
+  if (avisoBajo.rows.length === 0) missingRecetas.push('insumos.aviso_bajo_at');
+  // movimientos_stock.origen: el descuento por receta lo graba y la corrección lo filtra (sin ella, darían 500).
+  const origen = await client.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'movimientos_stock' AND column_name = 'origen'`,
+    [PG_SCHEMA],
+  );
+  if (origen.rows.length === 0) missingRecetas.push('movimientos_stock.origen');
+  const devolucion = await client.query(
+    `SELECT 1 FROM pg_catalog.pg_constraint c
+     JOIN pg_catalog.pg_class t ON t.oid = c.conrelid
+     JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace
+     WHERE n.nspname = $1 AND t.relname = 'movimientos_stock' AND c.conname = 'movimientos_stock_tipo_valido'
+       AND pg_catalog.pg_get_constraintdef(c.oid) LIKE '%''devolucion''%'`,
+    [PG_SCHEMA],
+  );
+  if (devolucion.rows.length === 0) missingRecetas.push("tipo 'devolucion' en movimientos_stock");
+  if (missingRecetas.length > 0) {
+    throw new Error(
+      `Faltan objetos de la migración de recetas y stock en buddys (${missingRecetas.join(', ')}). ` +
+        'Aplicá la migración recetas_stock de backend/supabase/migrations/ (ver README, "Migraciones").',
+    );
+  }
+
   const roles = await client.query('SELECT id FROM buddys.roles WHERE id = ANY($1::text[])', [ROLES]);
   const knownRoles = new Set(roles.rows.map((row) => row.id));
   const missingRoles = ROLES.filter((id) => !knownRoles.has(id));
@@ -411,4 +466,37 @@ export async function verifyPostgresSchema(client: SqlClient): Promise<void> {
       'Falta la función buddys_private.sesion_vigente (o el rol no tiene USAGE sobre buddys_private). Aplicá las migraciones.',
     );
   }
+
+  // Las mejoras del contrato 2026-11-15 (migraciones 20261115100000 a 20261115180000, salvo la del bucket de Storage).
+  const mejorasTablas = await client.query(
+    'SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 AND tablename = ANY($2::text[])',
+    [PG_SCHEMA, MEJORAS_TABLES],
+  );
+  const faltanMejoras: string[] = MEJORAS_TABLES.filter(
+    (table) => !mejorasTablas.rows.some((row) => row.tablename === table),
+  );
+  const mejorasColumnas = await client.query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = $1 AND table_name = 'bookings' AND column_name = ANY($2::text[])`,
+    [PG_SCHEMA, MEJORAS_BOOKINGS_COLUMNS],
+  );
+  for (const column of MEJORAS_BOOKINGS_COLUMNS) {
+    if (!mejorasColumnas.rows.some((row) => row.column_name === column)) faltanMejoras.push(`bookings.${column}`);
+  }
+  const funciones = await client.query(
+    `SELECT to_regprocedure('buddys.gastos_fijos_imputados(date,date)') IS NOT NULL AS fijos`,
+  );
+  if (funciones.rows[0]?.fijos !== true) faltanMejoras.push('función gastos_fijos_imputados');
+  if (faltanMejoras.length > 0) {
+    throw new Error(
+      `Faltan objetos de las migraciones 20261115* en buddys (${faltanMejoras.join(', ')}). ` +
+        'Aplicalas en orden (ver README, "Migraciones").',
+    );
+  }
+
 }
+
+/** Tablas de las migraciones 20261115* (caja, gastos fijos, fotos, tarjeta de sellos). */
+const MEJORAS_TABLES = ['gastos_fijos', 'cierres_caja', 'lavado_fotos', 'fotos_a_borrar', 'fidelizacion'] as const;
+/** Columnas de bookings de las migraciones lavados_etapa_descuento y turnos_panel_sena. */
+const MEJORAS_BOOKINGS_COLUMNS = ['etapa', 'etapa_at', 'descuento', 'descuento_motivo', 'sena_monto', 'sena_forma_pago', 'sena_fecha'] as const;

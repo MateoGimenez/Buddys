@@ -2,7 +2,7 @@
   "name": "buddys-sistema",
   "version": "0.1.0",
   "private": true,
-  "description": "Sistema interno de Buddys Wash Detail: API (Node + Express + Supabase) para registrar lavados, cobros por trabajador, finanzas y estadísticas.",
+  "description": "Sistema interno de Buddys Wash Detail: API (Node + Express + Supabase) y panel web (Vite + React) para registrar lavados, seguimiento del taller, stock, finanzas y estadísticas.",
   "scripts": {
     "instalar": "npm --prefix backend install && npm --prefix frontend install",
     "instalar:front": "npm --prefix frontend install",

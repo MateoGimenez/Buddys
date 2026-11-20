@@ -6,9 +6,15 @@ import {
   vistaDeListaDeInsumos,
   vistaDeMovimiento,
 } from '../domain/inventario.js';
-import { puedeGestionarInventario, puedeRegistrarUsoInsumos, puedeVerInventario } from '../domain/permisos.js';
+import {
+  puedeGestionarInventario,
+  puedeRegistrarUsoInsumos,
+  puedeVerConsumoInventario,
+  puedeVerInventario,
+} from '../domain/permisos.js';
 import { AppError } from '../lib/errors.js';
 import { getUsuario, requirePermiso } from '../middleware/require-session.js';
+import { estadisticasQuerySchema } from '../schemas/admin.js';
 import { parseOrThrow } from '../schemas/common.js';
 import {
   actualizarInsumoSchema,
@@ -23,6 +29,9 @@ import { INSUMO_NOT_FOUND, type InventarioService } from '../services/inventario
 const SIN_VER_MESSAGE = 'Con tu rol no podés ver el inventario.';
 const SIN_GESTIONAR_MESSAGE = 'Con tu rol no podés crear ni editar insumos.';
 const SIN_COMPRAS_MESSAGE = 'Con tu rol solo podés registrar el uso de los insumos, no compras ni ajustes.';
+const SIN_CONSUMO_MESSAGE = 'Con tu rol no podés ver el consumo, la lista para comprar ni los avisos de stock bajo.';
+export const DEVOLUCION_MANUAL_MESSAGE =
+  'Las devoluciones las registra el sistema al deshacer o corregir un lavado: no se cargan a mano.';
 
 /** Las claves exactas del contrato. El costo y el valor ya vienen en null para el empleado (vistaDeInsumo). */
 function insumoJson(insumo: Insumo) {
@@ -51,6 +60,7 @@ function movimientoJson(movimiento: Movimiento) {
     nota: movimiento.nota,
     persona: movimiento.persona,
     turnoId: movimiento.turnoId,
+    automatico: movimiento.automatico,
     createdAt: movimiento.createdAt,
   };
 }
@@ -84,6 +94,33 @@ export function adminInsumosRouter(deps: { inventario: InventarioService }): Rou
     });
     const vista = vistaDeListaDeInsumos(getUsuario(res).rol, lista);
     res.json({ insumos: vista.insumos.map(insumoJson), total: vista.total, bajoStock: vista.bajoStock, valorTotal: vista.valorTotal });
+  });
+
+  // GET /api/admin/insumos/alertas => { bajoStock, insumos }: la campanita. Solo admin y superadmin.
+  router.get('/alertas', requirePermiso(puedeVerConsumoInventario, SIN_CONSUMO_MESSAGE), async (_req, res) => {
+    const { bajoStock, insumos } = await inventario.alertas();
+    res.json({
+      bajoStock,
+      insumos: insumos.map((i) => ({ id: i.id, nombre: i.nombre, unidad: i.unidad, stock: i.stock, stockMinimo: i.stockMinimo })),
+    });
+  });
+
+  // GET /api/admin/insumos/para-comprar => { items, costoTotalEstimado }. Solo admin y superadmin.
+  router.get('/para-comprar', requirePermiso(puedeVerConsumoInventario, SIN_CONSUMO_MESSAGE), async (_req, res) => {
+    const { items, costoTotalEstimado } = await inventario.paraComprar();
+    res.json({
+      items: items.map((item) => ({
+        insumoId: item.insumoId,
+        nombre: item.nombre,
+        categoria: item.categoria,
+        unidad: item.unidad,
+        stock: item.stock,
+        stockMinimo: item.stockMinimo,
+        sugerido: item.sugerido,
+        costoEstimado: item.costoEstimado,
+      })),
+      costoTotalEstimado,
+    });
   });
 
   // POST /api/admin/insumos { nombre, categoria?, unidad, stockInicial?, stockMinimo?, costoUnitario? } => 201 { insumo }
@@ -131,6 +168,8 @@ export function adminInsumosRouter(deps: { inventario: InventarioService }): Rou
       throw AppError.forbidden(SIN_COMPRAS_MESSAGE);
     }
     const id = parseId(req.params.id);
+    // Las devoluciones solo las crea el sistema (deshacer o corregir un lavado): a mano, 400.
+    if (tipo === 'devolucion') throw AppError.validation({ tipo: DEVOLUCION_MANUAL_MESSAGE });
     const pedido = parseOrThrow(movimientoSchema, body);
     const resultado = await inventario.registrarMovimiento(usuario, id, pedido);
     const insumo = insumoJson(vistaDeInsumo(usuario.rol, resultado.insumo));
@@ -139,6 +178,38 @@ export function adminInsumosRouter(deps: { inventario: InventarioService }): Rou
       return;
     }
     res.status(201).json({ insumo, movimiento: movimientoJson(vistaDeMovimiento(usuario.rol, resultado.movimiento, usuario.id)) });
+  });
+
+  return router;
+}
+
+/**
+ * GET /api/admin/consumo?desde=&hasta= (contrato: reportes/2026-11-17_06_recetas-stock-avisos.md). Lavados, consumo
+ * por insumo y costo de insumos por lavado. Solo admin y superadmin: el empleado recibe 403 antes de validar nada.
+ */
+export function adminConsumoRouter(deps: { inventario: InventarioService }): Router {
+  const { inventario } = deps;
+  const router = Router();
+
+  router.get('/', requirePermiso(puedeVerConsumoInventario, SIN_CONSUMO_MESSAGE), async (req, res) => {
+    const query = parseOrThrow(estadisticasQuerySchema, req.query);
+    const consumo = await inventario.consumo({
+      ...(query.desde !== undefined && { desde: query.desde }),
+      ...(query.hasta !== undefined && { hasta: query.hasta }),
+    });
+    res.json({
+      rango: consumo.rango,
+      lavados: consumo.lavados,
+      porInsumo: consumo.porInsumo.map((fila) => ({
+        insumoId: fila.insumoId,
+        nombre: fila.nombre,
+        unidad: fila.unidad,
+        consumido: fila.consumido,
+        costo: fila.costo,
+      })),
+      costoInsumos: consumo.costoInsumos,
+      costoPorLavado: consumo.costoPorLavado,
+    });
   });
 
   return router;

@@ -29,11 +29,13 @@ import {
  * permitido, gasto de inventario) las verifican los servicios.
  */
 
-const CONTROL_DE_LINEA = /\p{Cc}/u;
+/** Controles (Cc) y separadores de línea y de párrafo de Unicode (U+2028, U+2029): ninguno entra en una línea. */
+const CONTROL_DE_LINEA = /[\p{Cc}\p{Zl}\p{Zp}]/u;
 
 /**
  * Texto de una sola línea: se quitan los controles bidireccionales (invisibles; pueden invertir el orden visual) y los
- * espacios de los extremos; cualquier otro carácter de control (también saltos de línea y tabulaciones) se rechaza.
+ * espacios de los extremos; cualquier otro carácter de control (también saltos de línea y tabulaciones) y los separadores U+2028 y U+2029
+ * se rechazan.
  * Largo en caracteres (code points), como char_length de Postgres.
  */
 function textoBase(max: number, mensaje: string) {

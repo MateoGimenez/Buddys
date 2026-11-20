@@ -1,0 +1,288 @@
+/* Gráficos del panel (contrato reportes/2026-11-19_10_graficos.md): Barras (una serie en el tiempo),
+   BarrasHorizontales (con nombre) y BarrasDivergentes (con signo). Sin librería: CSS y los colores de tokens.css.
+   Las barras crecen una vez al aparecer; con movimiento reducido llegan directo (styles/movimiento.css). */
+
+/* ------------------------------------------------------------------ Barras (en el tiempo) */
+
+.barras {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.barras figcaption,
+.barras-h figcaption,
+.barras-d figcaption {
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.barras-mejor {
+  font-weight: 500;
+  color: var(--tinta-3);
+}
+
+.barras-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  block-size: 120px;
+  padding-bottom: 2px;
+  border-bottom: var(--grosor) solid var(--tinta);
+}
+
+/* Pocas barras (semanas, meses): más separadas, se leen como columnas y no como un peine. */
+.barras-area[data-pocas] {
+  gap: 6px;
+}
+
+.grafico-col {
+  flex: 1;
+  min-width: 0;
+  block-size: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Con los valores escritos, lugar arriba para el de la barra más alta. */
+.barras-area[data-valores] {
+  block-size: 140px;
+  padding-block-start: 20px;
+}
+
+/* El valor arriba de la barra (solo con pocas barras): va adentro del relleno, posicionado encima, así no le roba alto. */
+.grafico-valor {
+  position: absolute;
+  inset-block-end: calc(100% + 2px);
+  inset-inline: -8px;
+  color: var(--tinta-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.grafico-relleno {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  min-block-size: 1px;
+  background: var(--tinta-2);
+  border-radius: 2px 2px 0 0;
+  transform-origin: bottom;
+  animation: grafico-crece-alto 600ms var(--curva) both;
+}
+
+.grafico-col:hover .grafico-relleno {
+  background: var(--rosa-fuerte);
+}
+
+.barras-eje {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: var(--tinta-3);
+}
+
+/* ------------------------------------------------------------------ Barras horizontales (con nombre) */
+
+.barras-h,
+.barras-d {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.barras-h-lista,
+.barras-d-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* En el celular: nombre arriba, barra y valor abajo. En pantallas anchas, todo en una fila. */
+.barras-h-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'nombre valor' 'pista pista';
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.barras-h-nombre {
+  grid-area: nombre;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.barras-h-valor {
+  grid-area: valor;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.barras-h-fila[data-alerta] .barras-h-valor {
+  color: var(--alerta);
+}
+
+.barras-h-pista {
+  grid-area: pista;
+  position: relative;
+  display: block;
+  block-size: 12px;
+  border-radius: 6px;
+  background: var(--pista);
+}
+
+.barras-h-relleno {
+  display: block;
+  block-size: 100%;
+  border-radius: 6px;
+  background: var(--tinta);
+  transform-origin: left center;
+  animation: grafico-crece-ancho 600ms var(--curva) both;
+}
+
+.barras-h-fila[data-alerta] .barras-h-relleno {
+  background: var(--alerta);
+}
+
+/* La marca del mínimo: una raya de tinta que cruza la pista. */
+.barras-h-marca {
+  position: absolute;
+  inset-block: -4px;
+  inline-size: 3px;
+  margin-inline-start: -1px;
+  border-radius: 2px;
+  background: var(--tinta);
+}
+
+@media (min-width: 640px) {
+  .barras-h-fila {
+    grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr) auto;
+    grid-template-areas: 'nombre pista valor';
+  }
+}
+
+/* ------------------------------------------------------------------ Barras divergentes (con signo) */
+
+.barras-d-leyenda {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: var(--tinta-3);
+}
+
+.barras-d-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'nombre valor' 'pista pista';
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.barras-d-nombre {
+  grid-area: nombre;
+  font-weight: 600;
+}
+
+.barras-d-valor {
+  grid-area: valor;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.barras-d-fila[data-tono='falta'] .barras-d-valor {
+  color: var(--peligro);
+}
+
+.barras-d-fila[data-tono='sobra'] .barras-d-valor {
+  color: var(--alerta);
+}
+
+.barras-d-fila[data-tono='justo'] .barras-d-valor {
+  color: var(--ok);
+}
+
+/* La pista con el eje en el medio: lo que faltó crece a la izquierda, lo que sobró a la derecha. */
+.barras-d-pista {
+  grid-area: pista;
+  position: relative;
+  display: block;
+  block-size: 12px;
+  border-radius: 6px;
+  background: var(--pista);
+}
+
+.barras-d-pista::after {
+  content: '';
+  position: absolute;
+  inset-block: -4px;
+  inset-inline-start: 50%;
+  inline-size: 2px;
+  margin-inline-start: -1px;
+  background: var(--tinta);
+}
+
+.barras-d-relleno {
+  position: absolute;
+  inset-block: 0;
+  display: block;
+  animation: grafico-crece-ancho 600ms var(--curva) both;
+}
+
+.barras-d-fila[data-tono='falta'] .barras-d-relleno {
+  inset-inline-end: 50%;
+  border-radius: 6px 0 0 6px;
+  background: var(--peligro);
+  transform-origin: right center;
+}
+
+.barras-d-fila[data-tono='sobra'] .barras-d-relleno {
+  inset-inline-start: 50%;
+  border-radius: 0 6px 6px 0;
+  background: var(--alerta);
+  transform-origin: left center;
+}
+
+/* Justo: un punto sobre el eje. */
+.barras-d-fila[data-tono='justo'] .barras-d-relleno {
+  inset-inline-start: 50%;
+  inline-size: 12px;
+  margin-inline-start: -6px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+@media (min-width: 640px) {
+  .barras-d-fila {
+    grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr) minmax(7rem, auto);
+    grid-template-areas: 'nombre pista valor';
+  }
+}
+
+@keyframes grafico-crece-alto {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes grafico-crece-ancho {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Alto contraste: las pistas con borde de tinta para que se vean sobre el blanco. */
+:root[data-tema='contraste'] .barras-h-pista,
+:root[data-tema='contraste'] .barras-d-pista {
+  outline: var(--grosor-fino) solid var(--tinta);
+}

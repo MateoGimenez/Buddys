@@ -3,6 +3,7 @@ import { type Confirmada, type Estado, ESTADOS, FRANJAS, MONTO_MAX } from '../do
 import { MAX_DIAS_AGENDA } from '../domain/booking-dates.js';
 import { type FormaDePago, FORMAS_DE_PAGO } from '../domain/comprobantes.js';
 import { daysBetween, isValidCalendarDate } from '../lib/dates.js';
+import { descuentoMotivoSchema, descuentoSchema, revisarDescuento } from './descuentos.js';
 import { servicioIdsSchema } from './servicios.js';
 
 export const DEFAULT_PAGE_SIZE = 50;
@@ -101,7 +102,8 @@ const TRABAJADOR_MSG = 'El trabajador tiene que ser el id de una persona del pan
 const FECHA_CONFIRMADA_MSG = 'La fecha confirmada tiene que ser una fecha válida AAAA-MM-DD, o null.';
 const FRANJA_CONFIRMADA_MSG = 'La franja confirmada tiene que ser manana, tarde o null.';
 const JUNTAS_MSG = 'Mandá la fecha y la franja confirmadas juntas (las dos con valor o las dos en null).';
-const VACIO_MSG = 'Indicá el estado nuevo, la fecha y la franja confirmadas, la nota interna, el cobro o los servicios.';
+const VACIO_MSG = 'Indicá el estado nuevo, la fecha y la franja confirmadas, la nota interna, el cobro, el descuento o los servicios.';
+const MOTIVO_SOLO_MSG = 'Mandá el descuento junto con su motivo.';
 /** Mismo texto en POST /api/admin/lavados y PATCH /api/admin/bookings/:id. */
 export const FORMA_PAGO_TURNO_MSG = `La forma de pago tiene que ser una de: ${FORMAS_DE_PAGO.join(', ')}, o null.`;
 
@@ -149,6 +151,8 @@ export interface CambiosTurno {
   formaPago?: FormaDePago | null;
   /** Servicios del turno (1 a 10, sin repetidos; el primero es el principal). undefined = no se tocan. */
   servicioIds?: string[];
+  /** Descuento y su motivo (van juntos; motivo null con descuento 0). undefined = no se tocan. */
+  descuento?: { monto: number; motivo: string | null };
 }
 
 /**
@@ -175,8 +179,10 @@ export const updateBookingSchema = z
     franjaConfirmada: z.enum(FRANJAS, { error: FRANJA_CONFIRMADA_MSG }).nullable().optional(),
     formaPago: formaPagoTurnoSchema.optional(),
     servicioIds: servicioIdsSchema.optional(),
+    descuento: descuentoSchema.optional(),
+    descuentoMotivo: descuentoMotivoSchema.optional(),
   })
-  .superRefine(({ estado, fechaConfirmada: fecha, franjaConfirmada: franja, notasInternas, monto, trabajadorId, formaPago, servicioIds }, ctx) => {
+  .superRefine(({ estado, fechaConfirmada: fecha, franjaConfirmada: franja, notasInternas, monto, trabajadorId, formaPago, servicioIds, descuento, descuentoMotivo }, ctx) => {
     if (
       estado === undefined &&
       fecha === undefined &&
@@ -185,12 +191,18 @@ export const updateBookingSchema = z
       monto === undefined &&
       trabajadorId === undefined &&
       formaPago === undefined &&
-      servicioIds === undefined
+      servicioIds === undefined &&
+      descuento === undefined &&
+      descuentoMotivo === undefined
     ) {
       // Mismo campo que antes de la agenda: un body vacío sigue informando "estado".
       ctx.addIssue({ code: 'custom', path: ['estado'], message: VACIO_MSG });
       return;
     }
+    if (descuento === undefined && descuentoMotivo !== undefined) {
+      ctx.addIssue({ code: 'custom', path: ['descuento'], message: MOTIVO_SOLO_MSG });
+    }
+    revisarDescuento(ctx, monto, descuento, descuentoMotivo);
     // Falta una de las dos, o una es null y la otra no: el error va en la que falta (o en la que es null).
     if (fecha === undefined && franja !== undefined) {
       ctx.addIssue({ code: 'custom', path: ['fechaConfirmada'], message: JUNTAS_MSG });
@@ -202,7 +214,7 @@ export const updateBookingSchema = z
       ctx.addIssue({ code: 'custom', path: ['franjaConfirmada'], message: JUNTAS_MSG });
     }
   })
-  .transform(({ estado, fechaConfirmada: fecha, franjaConfirmada: franja, notasInternas, monto, trabajadorId, formaPago, servicioIds }): CambiosTurno => {
+  .transform(({ estado, fechaConfirmada: fecha, franjaConfirmada: franja, notasInternas, monto, trabajadorId, formaPago, servicioIds, descuento, descuentoMotivo }): CambiosTurno => {
     const cambios: CambiosTurno = {};
     if (estado !== undefined) cambios.estado = estado;
     if (notasInternas !== undefined) cambios.notasInternas = notasInternas;
@@ -210,6 +222,7 @@ export const updateBookingSchema = z
     if (trabajadorId !== undefined) cambios.trabajadorId = trabajadorId;
     if (formaPago !== undefined) cambios.formaPago = formaPago;
     if (servicioIds !== undefined) cambios.servicioIds = servicioIds;
+    if (descuento !== undefined) cambios.descuento = { monto: descuento, motivo: descuentoMotivo ?? null };
     if (fecha === null || franja === null) cambios.confirmada = null;
     else if (fecha !== undefined && franja !== undefined) cambios.confirmada = { fecha, franja };
     return cambios;

@@ -1,0 +1,314 @@
+/* Cierre de caja con arqueo. La diferencia es lo primero que se lee: grande, con ícono y palabra (nunca solo color).
+   Falta = rojo (peligro), sobra = ámbar (alerta), justo = verde (ok). Los pares texto/fondo ya están medidos en
+   src/test/contraste.test.ts (peligro/peligro-claro, alerta/alerta-claro, ok/ok-claro). */
+
+.caja-pantalla {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ------------------------------------------------------------------ Lo esperado */
+
+.caja-esperado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--canario);
+  border: var(--grosor-fino) solid var(--canario-borde);
+}
+
+.caja-esperado-titulo {
+  font-size: 0.9375rem;
+  font-weight: 650;
+  color: var(--tinta-2);
+}
+
+.caja-esperado-total {
+  font-size: 2rem;
+  font-weight: 800;
+  font-stretch: 88%;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.caja-esperado .nota-chica {
+  color: var(--tinta-2);
+}
+
+.caja-esperado-aviso {
+  margin-top: 6px;
+  color: var(--alerta);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+/* ------------------------------------------------------------------ Arqueo (el formulario) */
+
+.arqueo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.arqueo-formas {
+  display: grid;
+  gap: 4px 16px;
+}
+
+@media (min-width: 640px) {
+  .arqueo-formas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.arqueo-forma {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: var(--grosor-fino) dashed var(--linea);
+}
+
+.arqueo-forma-dif {
+  align-self: flex-end;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.arqueo-forma-dif[data-tono='falta'],
+.cierre-dif[data-tono='falta'],
+.historial-dif[data-tono='falta'] {
+  color: var(--peligro);
+}
+
+.arqueo-forma-dif[data-tono='sobra'],
+.cierre-dif[data-tono='sobra'],
+.historial-dif[data-tono='sobra'] {
+  color: var(--alerta);
+}
+
+.arqueo-forma-dif[data-tono='justo'],
+.cierre-dif[data-tono='justo'],
+.historial-dif[data-tono='justo'] {
+  color: var(--ok);
+}
+
+.arqueo-sin-indicar {
+  color: var(--tinta-2);
+  font-size: 0.9375rem;
+}
+
+/* El pie del arqueo: la línea de troquel del talonario separa lo que se cuenta del resultado. */
+.arqueo-pie {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: var(--grosor) dashed var(--linea-fuerte);
+}
+
+/* ------------------------------------------------------------------ La diferencia, grande */
+
+.diferencia {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radio-chico);
+  border: var(--grosor) solid currentcolor;
+  font-size: 1.625rem;
+  font-weight: 800;
+  font-stretch: 88%;
+  line-height: 1.15;
+  transition:
+    background-color var(--t-estado) var(--curva),
+    color var(--t-estado) var(--curva);
+}
+
+.diferencia[data-tono='falta'] {
+  background: var(--peligro-claro);
+  color: var(--peligro);
+}
+
+.diferencia[data-tono='sobra'] {
+  background: var(--alerta-claro);
+  color: var(--alerta);
+}
+
+.diferencia[data-tono='justo'] {
+  background: var(--ok-claro);
+  color: var(--ok);
+}
+
+.diferencia[data-tono='nada'] {
+  border-style: dashed;
+  border-color: var(--linea-fuerte);
+  color: var(--tinta-2);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.diferencia-icono {
+  flex: none;
+}
+
+/* ------------------------------------------------------------------ Caja ya cerrada */
+
+.cierre {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cierre-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* El sello de "cerrada", como el de goma sobre la copia. */
+.cierre-sello {
+  padding: 2px 10px;
+  border: var(--grosor) solid var(--serie);
+  border-radius: var(--radio-chico);
+  color: var(--serie);
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transform: rotate(-3deg);
+}
+
+.cierre-tabla tr[data-no-contada] td {
+  color: var(--tinta-3);
+}
+
+.cierre-tabla tfoot th,
+.cierre-tabla tfoot td {
+  border-top: 3px double var(--tinta);
+  font-weight: 800;
+}
+
+.cierre-dif {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cierre-nota {
+  padding: 10px 12px;
+  border-radius: var(--radio-chico);
+  background: var(--canario);
+  color: var(--tinta);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ Historial */
+
+.historial-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.historial-lista li + li {
+  border-top: var(--grosor-fino) dashed var(--linea);
+}
+
+.historial-fila {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'fecha flecha' 'dif flecha' 'quien flecha';
+  align-items: center;
+  gap: 2px 8px;
+  inline-size: 100%;
+  min-block-size: 56px;
+  padding: 10px 4px;
+  border: 0;
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  border-radius: var(--radio-chico);
+}
+
+.historial-fila:hover {
+  background: var(--carbon-claro);
+}
+
+.historial-fila[aria-current] {
+  background: var(--canario);
+}
+
+.historial-fecha {
+  grid-area: fecha;
+  font-weight: 650;
+}
+
+.historial-fecha::first-letter {
+  text-transform: uppercase;
+}
+
+.historial-dif {
+  grid-area: dif;
+  font-weight: 750;
+}
+
+.historial-quien {
+  grid-area: quien;
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+}
+
+.historial-flecha {
+  grid-area: flecha;
+  color: var(--tinta-3);
+}
+
+/* ------------------------------------------------------------------ Exportar (components/Exportar.tsx) */
+
+.exportar-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exportar-botones .btn {
+  text-align: start;
+}
+
+/* Enlace desde "Caja del día" de la planilla. */
+.caja-cerrar {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  font-weight: 650;
+}
+
+/* La diferencia de cada forma va debajo de lo contado: tres columnas entran a 360 px sin correr la tabla. */
+.cierre-tabla .cierre-dif {
+  display: block;
+  font-size: 0.875rem;
+}
+
+.cierre-tabla {
+  font-size: 0.9375rem;
+}
+
+.cierre-tabla th,
+.cierre-tabla td {
+  padding-inline: 4px;
+}
+
+.cierre-tabla tbody th {
+  overflow-wrap: anywhere;
+}
+
+.cierre-sin-contar {
+  white-space: normal;
+}

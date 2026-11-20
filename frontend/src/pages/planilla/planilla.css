@@ -1,0 +1,365 @@
+/* ------------------------------------------------------------------ Planilla */
+
+.planilla {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.planilla[aria-busy='true'] {
+  opacity: 0.7;
+  transition: opacity 200ms ease-out;
+}
+
+
+
+.resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.resumen-cifras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+}
+
+.resumen-cifras div {
+  display: flex;
+  flex-direction: column;
+}
+
+.resumen-cifras dt {
+  font-size: 0.875rem;
+  color: var(--tinta-3);
+  font-weight: 600;
+}
+
+.resumen-cifras dd {
+  margin: 0;
+}
+
+.cifra {
+  font-size: 1.75rem;
+  font-weight: 750;
+  font-stretch: 85%;
+  line-height: 1.1;
+}
+
+.cifra-alerta {
+  color: var(--alerta);
+}
+
+.ranking-titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.ranking-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ranking-fila {
+  display: grid;
+  grid-template-columns: 28px 32px minmax(0, 1fr) auto;
+  grid-template-areas: 'puesto foto nombre cantidad' 'puesto foto barra total';
+  align-items: center;
+  gap: 2px 10px;
+  padding: 6px 0;
+}
+
+.ranking-puesto {
+  grid-area: puesto;
+  font-weight: 800;
+  font-stretch: 75%;
+  font-size: 1.25rem;
+  color: var(--serie);
+  text-align: center;
+}
+
+.ranking-fila .avatar {
+  grid-area: foto;
+}
+
+.ranking-nombre {
+  grid-area: nombre;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-fila[data-primero] .ranking-nombre {
+  font-weight: 800;
+}
+
+.ranking-barra {
+  grid-area: barra;
+  block-size: 8px;
+  background: var(--pista);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ranking-barra span {
+  display: block;
+  block-size: 100%;
+  background: var(--tinta-2);
+  border-radius: 4px;
+  transform-origin: left center;
+  transition: transform 320ms var(--curva);
+}
+
+.ranking-fila[data-primero] .ranking-barra span {
+  background: var(--rosa);
+}
+
+.ranking-cantidad {
+  grid-area: cantidad;
+  text-align: end;
+  font-weight: 600;
+}
+
+.ranking-total {
+  grid-area: total;
+  text-align: end;
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+}
+
+/* Caja del día: el cierre, como la cinta de una registradora. Importes grandes alineados a la derecha. */
+.caja {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.caja-titulo {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.caja-tabla {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.caja-tabla th,
+.caja-tabla td {
+  padding: 10px 0;
+  text-align: start;
+  vertical-align: baseline;
+}
+
+.caja-tabla tbody tr + tr {
+  border-top: var(--grosor-fino) dashed var(--linea-fuerte);
+}
+
+.caja-tabla .caja-forma {
+  font-weight: 650;
+  font-size: 1.0625rem;
+}
+
+.caja-tabla tr[data-sin-indicar] .caja-forma {
+  font-weight: 550;
+  color: var(--tinta-2);
+}
+
+.caja-tabla .caja-cantidad {
+  padding-inline: 8px;
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+  white-space: nowrap;
+  text-align: end;
+}
+
+.caja-tabla .caja-importe {
+  font-size: 1.1875rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.caja-tabla tfoot tr {
+  border-top: 3px double var(--tinta);
+}
+
+.caja-tabla tfoot .caja-forma {
+  font-weight: 800;
+}
+
+.caja-tabla tfoot .caja-importe {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.caja-nota {
+  font-size: 0.9375rem;
+  color: var(--alerta);
+  font-weight: 600;
+}
+
+.franja {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.franja-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-stretch: 85%;
+  padding-bottom: 4px;
+  border-bottom: var(--grosor) solid var(--tinta);
+}
+
+.franja-total {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 650;
+  font-stretch: 100%;
+  color: var(--tinta-2);
+}
+
+.copias {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Cada lavado es una copia canario del talonario, con su número de imprenta y el troquel arriba. */
+.copia {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px 10px;
+  background: var(--canario);
+  border: var(--grosor-fino) solid var(--canario-borde);
+  border-top: var(--grosor) dashed var(--tinta-3);
+  border-radius: 2px 2px var(--radio) var(--radio);
+  box-shadow: var(--sombra-copia);
+}
+
+.copia-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.copia-serie {
+  font-weight: 750;
+  font-stretch: 72%;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: var(--serie);
+}
+
+.copia-hora {
+  font-size: 0.875rem;
+  color: var(--tinta-3);
+}
+
+.copia-pago {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: var(--grosor-fino) solid var(--tinta-3);
+  background: var(--papel-velado);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.copia-pago-falta {
+  border-style: dashed;
+  color: var(--tinta-3);
+  font-weight: 550;
+}
+
+.copia-monto {
+  margin-inline-start: auto;
+  font-weight: 750;
+  font-size: 1.125rem;
+}
+
+.copia-monto-falta {
+  font-size: 0.9375rem;
+  color: var(--alerta);
+  font-weight: 650;
+}
+
+.copia-servicio {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.copia-detalle,
+.copia-trabajador {
+  color: var(--tinta-2);
+}
+
+.copia-trabajador strong {
+  color: var(--tinta);
+}
+
+.copia-nota {
+  white-space: pre-line;
+  font-size: 0.9375rem;
+  color: var(--tinta-2);
+  padding: 6px 10px;
+  border-radius: var(--radio-chico);
+  background: var(--papel-velado);
+}
+
+.copia-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-inline: -8px;
+}
+
+.copia-form {
+  padding-top: 10px;
+  margin-top: 4px;
+  border-top: var(--grosor-fino) solid var(--canario-borde);
+}
+
+/* Copias de la planilla: al abrir un día entran escalonadas, una atrás de otra como hojas que caen al talonario.
+   El retraso tiene tope (8 copias): nunca hay que esperar para leer. */
+.copia {
+  animation: caer 260ms var(--curva) both;
+  animation-delay: calc(var(--orden, 0) * 35ms);
+}
+
+@keyframes caer {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.copia-descuento {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--tinta-2);
+}

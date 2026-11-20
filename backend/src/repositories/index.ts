@@ -9,8 +9,19 @@ import type { MetaRepository } from '../domain/metas.js';
 import type { PerfilRepository } from '../domain/perfil.js';
 import type { PresupuestoRepository } from '../domain/presupuestos.js';
 import type { PushRepository } from '../domain/push.js';
+import type { RecetaRepository } from '../domain/recetas.js';
 import type { ServicioRepository } from '../domain/servicios.js';
 import type { TallerRepository } from '../domain/taller.js';
+import type { CajaRepository } from '../domain/caja.js';
+import type { ClienteRepository } from '../domain/clientes.js';
+import type { ExportRepository } from '../domain/exportar.js';
+import type { FotoRepository } from '../domain/fotos.js';
+import type { GastoFijoRepository } from '../domain/gastos-fijos.js';
+import { PostgresCajaRepository } from './postgres/caja.js';
+import { PostgresClienteRepository } from './postgres/clientes.js';
+import { PostgresExportRepository } from './postgres/exportar.js';
+import { PostgresFotoRepository } from './postgres/fotos.js';
+import { PostgresGastoFijoRepository } from './postgres/gastos-fijos.js';
 import { PostgresBookingRepository } from './postgres/bookings.js';
 import { PostgresComprobanteRepository } from './postgres/comprobantes.js';
 import { PostgresDisponibilidadRepository } from './postgres/disponibilidad.js';
@@ -21,6 +32,7 @@ import { PostgresMetaRepository } from './postgres/metas.js';
 import { PostgresPerfilRepository } from './postgres/perfiles.js';
 import { PostgresPresupuestoRepository } from './postgres/presupuestos.js';
 import { PostgresPushRepository } from './postgres/push.js';
+import { PostgresRecetaRepository } from './postgres/recetas.js';
 import { PostgresServicioRepository } from './postgres/servicios.js';
 import { PostgresTallerRepository } from './postgres/taller.js';
 
@@ -35,8 +47,14 @@ export interface Repositories {
   metas: MetaRepository;
   taller: TallerRepository;
   inventario: InventarioRepository;
+  recetas: RecetaRepository;
   presupuestos: PresupuestoRepository;
   comprobantes: ComprobanteRepository;
+  clientes: ClienteRepository;
+  fotos: FotoRepository;
+  gastosFijos: GastoFijoRepository;
+  caja: CajaRepository;
+  exportar: ExportRepository;
 }
 
 /** Los repositorios sobre Postgres (esquema buddys ya migrado; ver supabase/migrations/). */
@@ -52,7 +70,13 @@ export function createPostgresRepositories(sql: SqlClient): Repositories {
     metas: new PostgresMetaRepository(sql),
     taller: new PostgresTallerRepository(sql),
     inventario: new PostgresInventarioRepository(sql),
+    recetas: new PostgresRecetaRepository(sql),
     presupuestos: new PostgresPresupuestoRepository(sql),
     comprobantes: new PostgresComprobanteRepository(sql),
+    clientes: new PostgresClienteRepository(sql),
+    fotos: new PostgresFotoRepository(sql),
+    gastosFijos: new PostgresGastoFijoRepository(sql),
+    caja: new PostgresCajaRepository(sql),
+    exportar: new PostgresExportRepository(sql),
   };
 }

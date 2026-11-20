@@ -1,0 +1,116 @@
+/* ------------------------------------------------------------------ Fotos antes/después (Fotos.tsx)
+   Como las fotos abrochadas a la orden de trabajo: marco de papel, la etiqueta Antes/Después escrita abajo. */
+
+.fotos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fotos-titulo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.fotos-cuenta {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.fotos-galeria {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fotos-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fotos-marco {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: var(--radio-chico);
+  overflow: hidden;
+  background: var(--papel);
+  border: var(--grosor) solid var(--papel);
+  box-shadow: var(--sombra-copia);
+}
+
+.fotos-marco img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.fotos-sin-url {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+  font-size: 0.75rem;
+  text-align: center;
+  color: var(--tinta-2);
+  background: var(--inactivo);
+  border-color: var(--linea);
+}
+
+.fotos-tipo {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--tinta-2);
+}
+
+.fotos-tipo[data-tipo='despues'] {
+  color: var(--ok);
+}
+
+.fotos-borrar {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 2px;
+  min-inline-size: 44px;
+  background: var(--papel);
+  box-shadow: var(--sombra-copia);
+}
+
+.fotos-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fotos-sacar {
+  flex: 1 1 170px;
+  position: relative;
+}
+
+.fotos-sacar:focus-within {
+  outline: 3px solid var(--carbon);
+  outline-offset: 2px;
+}
+
+.fotos-sacar[data-deshabilitado] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fotos-subiendo {
+  font-weight: 650;
+  color: var(--tinta-2);
+}

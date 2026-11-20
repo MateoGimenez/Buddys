@@ -25,8 +25,12 @@ afterEach(closeAllContexts);
 const CAMPOS_TURNO = [
   'comentario',
   'createdAt',
+  'descuento',
+  'descuentoMotivo',
   'email',
   'estado',
+  'etapa',
+  'etapaDesde',
   'fechaConfirmada',
   'fechaPreferida',
   'formaPago',
@@ -37,6 +41,9 @@ const CAMPOS_TURNO = [
   'nombre',
   'notasInternas',
   'origen',
+  'registradoPor',
+  'saldo',
+  'sena',
   'servicioId',
   'servicios',
   'telefono',
@@ -46,6 +53,7 @@ const CAMPOS_TURNO = [
   'updatedAt',
   'vehiculoModelo',
   'vehiculoTipo',
+  'whatsappListo',
 ];
 
 interface TurnoJson {

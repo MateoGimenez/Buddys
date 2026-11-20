@@ -11,7 +11,10 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run",
-    "verificar": "npm run typecheck && npm run lint && npm test && npm run build"
+    "verificar": "npm run typecheck && npm run lint && npm test && npm run build",
+    "e2e": "vite build && playwright test",
+    "respuestas": "node scripts/actualizar-respuestas.ts",
+    "respuestas:verificar": "node scripts/actualizar-respuestas.ts --verificar"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.65.1",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

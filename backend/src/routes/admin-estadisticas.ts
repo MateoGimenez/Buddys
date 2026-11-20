@@ -15,8 +15,9 @@ function pedido(query: { desde?: string | undefined; hasta?: string | undefined 
 
 /**
  * Estadísticas del taller (contrato: reportes/2026-10-26_15_estadisticas-y-permisos.md). Detrás de requireSession.
- *  - GET /api/admin/estadisticas: completas, con importes y de todo el equipo; solo admin y superadmin.
- *  - GET /api/admin/estadisticas/mias: los trabajos que completó quien pregunta, sin importes; todos los roles.
+ *  - GET /api/admin/estadisticas: las del taller, con importes (sin comparar personas); solo admin y superadmin.
+ *  - GET /api/admin/estadisticas/mias: los trabajos que registró quien pregunta (y los turnos web que completó sin
+ *    registro), sin importes; todos los roles. Contrato: reportes/2026-11-17_05_seguimiento-sin-ranking.md.
  */
 export function adminEstadisticasRouter(deps: { estadisticas: EstadisticasService }): Router {
   const { estadisticas } = deps;

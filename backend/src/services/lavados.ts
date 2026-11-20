@@ -1,9 +1,12 @@
-import type { Booking, BookingRepository, Franja, NuevoLavado, Trabajador } from '../domain/booking.js';
+import type { Booking, BookingRepository, Etapa, Franja, NuevoLavado } from '../domain/booking.js';
 import { type FormaDePago, FORMAS_DE_PAGO, TurnoConComprobanteError } from '../domain/comprobantes.js';
 import type { PerfilRepository } from '../domain/perfil.js';
+import type { StockPushNotifier } from '../domain/push.js';
 import {
   deshacerLavadoHasta,
   puedeAnotarLavadoDeOtro,
+  puedeCambiarEtapa,
+  puedeCorregirCobro,
   puedeDeshacerLavado,
   puedeRegistrarLavados,
   puedeVerImportes,
@@ -14,8 +17,11 @@ import { AppError } from '../lib/errors.js';
 import { addDays, hourInLaRioja, todayInLaRioja } from '../lib/dates.js';
 import type { Logger } from '../lib/logger.js';
 import { LAVADO_DIAS_ATRAS } from '../schemas/lavados.js';
-import { EMPLEADO_OTRO_TRABAJADOR_MESSAGE, TRABAJADOR_INVALIDO_MESSAGE } from './agenda.js';
+import { EMPLEADO_DESCUENTO_MESSAGE, EMPLEADO_OTRO_TRABAJADOR_MESSAGE, TRABAJADOR_INVALIDO_MESSAGE } from './agenda.js';
+import type { AvisoService } from './avisos.js';
 import type { UsuarioSesion } from './auth.js';
+import { avisarStockBajo } from './inventario.js';
+import type { FotoService } from './fotos.js';
 import { serviciosDelLavado } from './servicios.js';
 
 /** Nombre que queda cuando el lavado se registra sin nombre de cliente. */
@@ -27,6 +33,7 @@ export const HORA_TARDE = 14;
 export const LAVADO_NOT_FOUND = 'No encontramos ese lavado.';
 export const DESHACER_AJENO_MESSAGE = 'Solo podés deshacer un lavado que registraste vos.';
 export const ID_LOCAL_AJENO_MESSAGE = 'Ese lavado ya lo registró otra persona.';
+export const ETAPA_AJENA_MESSAGE = 'Solo podés cambiar la etapa de tus lavados.';
 export const LAVADO_CON_COMPROBANTE_MESSAGE =
   'Este lavado ya tiene un comprobante de pago emitido: no se puede deshacer.';
 
@@ -45,6 +52,11 @@ export interface DatosLavado {
   notasInternas: string | null;
   formaPago: FormaDePago | null;
   idLocal?: string | undefined;
+  /** Dónde está el auto; 'entregado' si se registra ya terminado (el default del esquema). */
+  etapa: Etapa;
+  /** Pesos rebajados (0 = sin descuento) y su motivo (el esquema ya verificó que vayan juntos). */
+  descuento: number;
+  descuentoMotivo: string | null;
 }
 
 /** Respuesta de POST /api/admin/lavados. */
@@ -64,13 +76,6 @@ export interface ResumenFormaDePago {
   total: number | null;
 }
 
-export interface ResumenTrabajador {
-  trabajador: Trabajador | null;
-  cantidad: number;
-  /** Pesos cobrados; null para quien no ve importes. */
-  total: number | null;
-}
-
 export interface LavadosDelDia {
   fecha: string;
   lavados: Booking[];
@@ -80,11 +85,6 @@ export interface LavadosDelDia {
     total: number | null;
     /** Lavados sin monto cargado (para completarlos). */
     sinMonto: number;
-    /**
-     * Quién lavó más ese día: más lavados primero; a igual cantidad, más cobrado (solo para quien ve importes) y después
-     * por nombre.
-     */
-    porTrabajador: ResumenTrabajador[];
     /**
      * Cierre de caja: una entrada por forma de pago usada ese día (null = sin indicar). Más cobrado primero (solo
      * para quien ve importes); si no, más lavados primero. Empates: el orden de FORMAS_DE_PAGO, "sin indicar" al final.
@@ -103,6 +103,19 @@ export interface LavadoServiceDeps {
   perfiles: PerfilRepository;
   logger: Logger;
   now: () => Date;
+  /** Aviso push de stock bajo cuando la receta deja un insumo bajo el mínimo (después del COMMIT). */
+  avisos?: StockPushNotifier | undefined;
+  /** Avisos push al encargado (lavado sin monto, meta cumplida). Opcional: sin él no se avisa. */
+  avisosEquipo?: AvisoService;
+  /** Para borrar del bucket las fotos de un lavado que se deshace. Opcional. */
+  fotos?: FotoService;
+}
+
+/** Los lavados de hoy que siguen en el taller (GET /api/admin/lavados/en-curso). */
+export interface LavadosEnCurso {
+  fecha: string;
+  lavados: Booking[];
+  resumen: { espera: number; lavando: number; listo: number };
 }
 
 /** Rango de fechas permitido para registrar un lavado: de hoy - LAVADO_DIAS_ATRAS a hoy (La Rioja). */
@@ -113,8 +126,9 @@ export function rangoLavado(now: Date): { min: string; max: string } {
 
 /**
  * "Registrar lavado": el auto que llega sin turno. Se guarda como turno completado de origen 'mostrador' con su cobro,
- * así cuenta en estadísticas, metas y el ranking del equipo. Permisos (domain/permisos.ts, lavados.registrar):
- * admin y superadmin anotan a cualquiera del equipo; el empleado, solo a su nombre. El monto lo puede cargar
+ * así cuenta en estadísticas, metas y "mis trabajos". Queda registrado a nombre de quien lo carga (registradoPor).
+ * `trabajadorId` se sigue aceptando por compatibilidad (domain/permisos.ts, lavados.registrar): admin y superadmin
+ * pueden anotar a otra persona del equipo; el empleado, solo a su nombre. El panel ya no lo manda. El monto lo puede cargar
  * cualquiera al registrar (es el momento de cobrar), pero el empleado nunca lo recibe en las respuestas.
  */
 export class LavadoService {
@@ -133,6 +147,9 @@ export class LavadoService {
       if (previo !== undefined) return previo;
     }
 
+    // El descuento es plata: solo lo carga quien corrige el cobro (el empleado puede mandar 0, que es no tener).
+    if (datos.descuento > 0 && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_DESCUENTO_MESSAGE);
+
     // Quién lavó: el empleado no elige a otra persona (se verifica antes de leer nada).
     let trabajadorId = datos.trabajadorId ?? actor.id;
     if (!puedeAnotarLavadoDeOtro(actor.rol)) {
@@ -146,7 +163,7 @@ export class LavadoService {
     // Cada servicio: activo y ofrecido para el vehículo (400 en fields.servicioIds).
     const elegidos = await serviciosDelLavado(servicios, datos.servicioIds, datos.vehiculoTipo);
 
-    const lavado = await bookings.registrarLavado(
+    const guardado = await bookings.registrarLavado(
       {
         nombre: datos.nombre ?? NOMBRE_MOSTRADOR,
         telefono: datos.telefono,
@@ -161,26 +178,34 @@ export class LavadoService {
         formaPago: datos.formaPago,
         registradoPor: actor.id,
         idLocal,
+        etapa: datos.etapa,
+        descuento: datos.descuento,
+        descuentoMotivo: datos.descuentoMotivo,
       },
       now,
     );
-    if (lavado === undefined) {
+    if (guardado === undefined) {
       // Otro pedido con el mismo idLocal entró entre la búsqueda y el INSERT: el índice único lo frenó.
       const previo = idLocal === null ? undefined : await this.yaRegistrado(actor, idLocal);
       if (previo === undefined) throw new Error('El lavado con ese idLocal no se encontró');
       return previo;
     }
+    const { lavado, stockBajo } = guardado;
     // Sin importe ni datos del cliente en el log.
     logger.info(`Lavado registrado id=${lavado.id} servicios=${elegidos.map((s) => s.id).join(',')} por=${actor.id}`);
+    // El stock lo descontó la misma transacción (receta); el aviso sale ahora, después del COMMIT, y nunca falla.
+    avisarStockBajo(this.deps.avisos, logger, stockBajo);
+    // Avisos push al encargado (función 7): no se esperan ni pueden tirar el registro.
+    if (lavado.monto === null) this.deps.avisosEquipo?.lavadoSinMonto(actor.id);
+    this.deps.avisosEquipo?.revisarMeta();
     return { lavado: vistaDeTurno(actor.rol, lavado), deshacerHasta: deshacerLavadoHasta(lavado.createdAt), creado: true };
   }
 
   /** El lavado ya registrado con ese idLocal (creado: false), 409 si lo registró otra persona, o undefined. */
   private async yaRegistrado(actor: UsuarioSesion, idLocal: string): Promise<LavadoRegistrado | undefined> {
-    const existente = await this.deps.bookings.lavadoPorIdLocal(idLocal);
-    if (existente === undefined) return undefined;
-    if (existente.registradoPor !== actor.id) throw AppError.conflict(ID_LOCAL_AJENO_MESSAGE);
-    const { lavado } = existente;
+    const lavado = await this.deps.bookings.lavadoPorIdLocal(idLocal);
+    if (lavado === undefined) return undefined;
+    if (lavado.registradoPor?.id !== actor.id) throw AppError.conflict(ID_LOCAL_AJENO_MESSAGE);
     return { lavado: vistaDeTurno(actor.rol, lavado), deshacerHasta: deshacerLavadoHasta(lavado.createdAt), creado: false };
   }
 
@@ -199,13 +224,48 @@ export class LavadoService {
     if (permiso === 'no') throw AppError.forbidden(DESHACER_AJENO_MESSAGE);
     if (permiso === 'vencido') throw AppError.plazoDeshacerVencido();
 
+    // Las rutas de sus fotos, antes de que el borrado en cascada se lleve las filas.
+    const fotos = await this.deps.fotos?.rutasDelTurno(id);
     try {
-      if (!(await bookings.delete(id))) throw AppError.notFound(LAVADO_NOT_FOUND);
+      // Devuelve al stock lo que descontó su receta, en la misma transacción que el borrado (regla 4).
+      if (!(await bookings.delete(id, actor.id))) throw AppError.notFound(LAVADO_NOT_FOUND);
     } catch (error) {
       if (error instanceof TurnoConComprobanteError) throw AppError.turnoConComprobante(LAVADO_CON_COMPROBANTE_MESSAGE);
       throw error;
     }
     logger.info(`Lavado deshecho id=${id} por=${actor.id}`);
+    if (fotos !== undefined) this.deps.fotos?.borrarArchivos(fotos);
+  }
+
+  /**
+   * PATCH /api/admin/lavados/:id/etapa: mueve el auto de etapa (hacia adelante o hacia atrás). Permisos
+   * (domain/permisos.ts, lavados.etapa): admin y superadmin, cualquiera; el empleado, los suyos (los lavó o los
+   * registró). 404 si no existe o no es de mostrador. La misma etapa no escribe nada.
+   */
+  async cambiarEtapa(actor: UsuarioSesion, id: string, etapa: Etapa): Promise<Booking> {
+    const { bookings, logger } = this.deps;
+    const [registro, lavado] = await Promise.all([bookings.registroDeLavado(id), bookings.find(id)]);
+    if (registro === undefined || lavado === undefined) throw AppError.notFound(LAVADO_NOT_FOUND);
+    if (!puedeCambiarEtapa(actor.rol, actor.id, { trabajador: lavado.trabajador, registradoPor: registro.registradoPor })) {
+      throw AppError.forbidden(ETAPA_AJENA_MESSAGE);
+    }
+    if (lavado.etapa === etapa) return vistaDeTurno(actor.rol, lavado);
+    const actualizado = await bookings.cambiarEtapa(id, etapa, this.deps.now());
+    if (actualizado === undefined) throw AppError.notFound(LAVADO_NOT_FOUND);
+    logger.info(`Lavado id=${id} etapa=${etapa} por=${actor.id}`);
+    return vistaDeTurno(actor.rol, actualizado);
+  }
+
+  /** GET /api/admin/lavados/en-curso: los lavados de hoy (La Rioja) que todavía no se entregaron. Todos los roles. */
+  async enCurso(actor: UsuarioSesion): Promise<LavadosEnCurso> {
+    const fecha = todayInLaRioja(this.deps.now());
+    const lavados = await this.deps.bookings.lavadosEnCurso(fecha);
+    const cuantos = (etapa: Etapa) => lavados.filter((l) => l.etapa === etapa).length;
+    return {
+      fecha,
+      lavados: lavados.map((l) => vistaDeTurno(actor.rol, l)),
+      resumen: { espera: cuantos('espera'), lavando: cuantos('lavando'), listo: cuantos('listo') },
+    };
   }
 
   async delDia(actor: UsuarioSesion, fecha: string | undefined): Promise<LavadosDelDia> {
@@ -218,24 +278,6 @@ export class LavadoService {
     const veImportes = puedeVerImportes(actor.rol);
     const suma = (lista: Booking[]) => lista.reduce((acc, l) => acc + (l.monto ?? 0), 0);
 
-    const grupos = new Map<string, { trabajador: Trabajador | null; lavados: Booking[] }>();
-    for (const lavado of lavados) {
-      const clave = lavado.trabajador?.id ?? '';
-      const grupo = grupos.get(clave) ?? { trabajador: lavado.trabajador, lavados: [] };
-      grupo.lavados.push(lavado);
-      grupos.set(clave, grupo);
-    }
-    const porTrabajador = [...grupos.values()]
-      .map((g) => ({ trabajador: g.trabajador, cantidad: g.lavados.length, cobrado: suma(g.lavados) }))
-      // El desempate por lo cobrado solo para quien ve importes: si no, el orden mismo revelaría quién cobró más.
-      .sort(
-        (a, b) =>
-          b.cantidad - a.cantidad ||
-          (veImportes ? b.cobrado - a.cobrado : 0) ||
-          (a.trabajador?.nombre ?? '').localeCompare(b.trabajador?.nombre ?? '', 'es'),
-      )
-      .map(({ trabajador, cantidad, cobrado }) => ({ trabajador, cantidad, total: veImportes ? cobrado : null }));
-
     return {
       fecha: dia,
       lavados: lavados.map((l) => vistaDeTurno(actor.rol, l)),
@@ -243,8 +285,7 @@ export class LavadoService {
         cantidad: lavados.length,
         total: veImportes ? suma(lavados) : null,
         sinMonto: lavados.filter((l) => l.monto === null).length,
-        porTrabajador,
-        // Mismo cuidado que en porTrabajador: sin importes, el orden no depende de lo cobrado.
+        // Sin importes, el orden no depende de lo cobrado (si no, el orden mismo lo revelaría).
         porFormaPago: formas
           .sort(
             (a, b) =>

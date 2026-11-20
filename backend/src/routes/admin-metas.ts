@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { puedeGestionarMetas } from '../domain/permisos.js';
+import { puedeGestionarMetas, puedeVerMetaDeHoy } from '../domain/permisos.js';
 import { getUsuario, requirePermiso } from '../middleware/require-session.js';
 import { parseOrThrow } from '../schemas/common.js';
 import { guardarMetaSchema, listarMetasQuerySchema, mesSchema } from '../schemas/finanzas.js';
@@ -7,6 +7,7 @@ import type { MetaService } from '../services/metas.js';
 import { AppError } from '../lib/errors.js';
 
 const SIN_PERMISO_MESSAGE = 'Con tu rol no podés ver ni fijar las metas mensuales.';
+const SIN_META_HOY_MESSAGE = 'Con tu rol no podés ver la meta de hoy.';
 
 /** Un mes con formato inválido en la URL: 400 con el campo "mes". */
 function parseMes(value: unknown): string {
@@ -22,6 +23,12 @@ function parseMes(value: unknown): string {
 export function adminMetasRouter(deps: { metas: MetaService }): Router {
   const { metas } = deps;
   const router = Router();
+
+  // GET /api/admin/metas/hoy => { fecha, lavados: { hechos, objetivo, mesCumplido } | null }. Lo ven los tres roles: solo
+  // cantidades de lavados, nunca pesos (contrato: reportes/2026-11-19_09_meta-de-hoy.md). Va ANTES del permiso de metas.
+  router.get('/hoy', requirePermiso(puedeVerMetaDeHoy, SIN_META_HOY_MESSAGE), async (_req, res) => {
+    res.json(await metas.deHoy());
+  });
 
   router.use(requirePermiso(puedeGestionarMetas, SIN_PERMISO_MESSAGE));
 

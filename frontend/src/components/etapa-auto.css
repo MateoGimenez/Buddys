@@ -1,0 +1,128 @@
+/* ------------------------------------------------------------------ Etapa del auto (EtapaAuto.tsx)
+   Como los casilleros sellados de una orden de trabajo: cuatro puntos sobre una línea; los hechos, llenos de tinta;
+   el actual, más grande y con el color de su etapa. */
+
+.etapa {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radio-chico);
+  background: var(--papel-velado);
+  border: var(--grosor-fino) solid var(--canario-borde);
+  --etapa-color: var(--tinta-2);
+  --etapa-fondo: var(--apagado);
+}
+
+.etapa[data-etapa='espera'] {
+  --etapa-color: var(--alerta);
+  --etapa-fondo: var(--alerta-claro);
+}
+
+.etapa[data-etapa='lavando'] {
+  --etapa-color: var(--carbon);
+  --etapa-fondo: var(--carbon-claro);
+}
+
+.etapa[data-etapa='listo'] {
+  --etapa-color: var(--ok);
+  --etapa-fondo: var(--ok-claro);
+}
+
+.etapa-pasos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.etapa-paso {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+/* La línea que une cada punto con el anterior. */
+.etapa-paso + .etapa-paso::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 7px;
+  inset-inline: -50% 50%;
+  block-size: var(--grosor);
+  background: var(--linea-fuerte);
+}
+
+.etapa-paso[data-hecho]::before,
+.etapa-paso[data-actual]::before {
+  background: var(--tinta);
+}
+
+.etapa-punto {
+  position: relative;
+  z-index: 1;
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: 50%;
+  border: var(--grosor) solid var(--linea-fuerte);
+  background: var(--papel);
+  transition:
+    background-color var(--t-estado) var(--curva),
+    border-color var(--t-estado) var(--curva),
+    transform var(--t-estado) var(--curva);
+}
+
+.etapa-paso[data-hecho] .etapa-punto {
+  background: var(--tinta);
+  border-color: var(--tinta);
+}
+
+.etapa-paso[data-actual] .etapa-punto {
+  background: var(--etapa-color);
+  border-color: var(--tinta);
+  transform: scale(1.25);
+}
+
+.etapa-nombre {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--tinta-2);
+  line-height: 1.15;
+}
+
+.etapa-paso[data-actual] .etapa-nombre {
+  color: var(--tinta);
+  font-weight: 800;
+}
+
+.etapa-estado {
+  font-size: 1rem;
+}
+
+.etapa-estado strong {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--etapa-fondo);
+  color: var(--etapa-color);
+  font-weight: 750;
+}
+
+.etapa-hace {
+  color: var(--tinta-2);
+}
+
+.etapa-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.etapa-avanzar,
+.etapa-whatsapp {
+  flex: 1 1 160px;
+}

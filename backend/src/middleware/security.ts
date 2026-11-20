@@ -3,64 +3,28 @@ import type { RequestHandler } from 'express';
 import helmet from 'helmet';
 import type { AppConfig } from '../config.js';
 
-export const isApiPath = (path: string): boolean => /^\/api(?:\/|$)/i.test(path);
-
 const PERMISSIONS_POLICY = 'camera=(), microphone=(), geolocation=(), payment=(), usb=()';
 
 /**
- * Cabeceras de seguridad (helmet). Hay dos perfiles:
- * - /api: respuestas JSON. CSP "none": no pueden cargar ni ejecutar nada ni embeberse en un frame.
- * - resto: hoy no hay web (el sistema es solo la API); quedó la CSP que usaba la SPA de MgDetailing, por si vuelve.
- *   La SPA: CSP restrictiva y ajustada a lo que el frontend realmente usa:
- *   todo del mismo origen ('self'), sin scripts ni estilos inline, fuentes autoalojadas (sin Google Fonts),
- *   imágenes y video propios o data:, sin plugins. El único iframe permitido es el de Google Maps de "Dónde estamos"
- *   (frame-src https://www.google.com/maps/; la landing lo carga recién cuando la persona lo pide).
- *   Si el frontend pasa a cargar recursos de otro dominio, hay que agregarlos acá a propósito.
- *   En producción la web es un Static Site de Render y sus cabeceras están en render.yaml (buddys-web): ese
- *   archivo tiene una COPIA de esta CSP (más la API en connect-src). Un cambio acá va también allá.
+ * Cabeceras de seguridad (helmet), iguales para TODAS las respuestas. La CSP es la mínima, "default-src 'none';
+ * frame-ancestors 'none'": nada de lo que responda la API puede cargar ni ejecutar recursos ni embeberse en un frame.
+ * Si PANEL_DIR está, lo que entrega el panel (HTML, scripts, service worker, manifest) la pisa con la suya
+ * (middleware/panel.ts); lo que cae al 404 JSON conserva esta.
  */
 export function securityHeaders(config: Pick<AppConfig, 'isProduction'>): RequestHandler {
-  const common = {
+  const headers = helmet({
     frameguard: { action: 'deny' },
     // HSTS solo en producción (en HTTP local no aplica). Sin includeSubDomains: no se impone HTTPS a otros subdominios.
     strictTransportSecurity: config.isProduction ? { maxAge: 15_552_000, includeSubDomains: false } : false,
-  } as const;
-
-  const apiHeaders = helmet({
-    ...common,
     contentSecurityPolicy: {
       useDefaults: false,
       directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
     },
   });
 
-  const appHeaders = helmet({
-    ...common,
-    contentSecurityPolicy: {
-      useDefaults: false,
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'"],
-        fontSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:'],
-        mediaSrc: ["'self'"], // <video> mp4 propio servido desde /fotos/
-        workerSrc: ["'self'"], // service worker del panel (/admin/sw.js): solo el propio
-        manifestSrc: ["'self'"], // manifest del panel (/admin/manifest.webmanifest)
-        connectSrc: ["'self'"],
-        frameSrc: ['https://www.google.com/maps/'],
-        objectSrc: ["'none'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
-        frameAncestors: ["'none'"],
-        ...(config.isProduction ? { upgradeInsecureRequests: [] } : {}),
-      },
-    },
-  });
-
   return (req, res, next) => {
     res.setHeader('Permissions-Policy', PERMISSIONS_POLICY);
-    (isApiPath(req.path) ? apiHeaders : appHeaders)(req, res, next);
+    headers(req, res, next);
   };
 }
 

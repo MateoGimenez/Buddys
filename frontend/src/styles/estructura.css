@@ -1,0 +1,295 @@
+/* ------------------------------------------------------------------ Estructura */
+
+.app {
+  /* vh primero: Chrome < 108 y Safari < 15.4 no conocen dvh y se quedan con la línea anterior. */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'barra' 'contenido' 'tabs';
+}
+
+.barra {
+  grid-area: barra;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  padding-top: max(8px, env(safe-area-inset-top));
+  background: var(--papel);
+  border-bottom: var(--grosor) dashed var(--linea-fuerte);
+}
+
+.barra-logo {
+  display: block;
+  inline-size: 132px;
+  block-size: auto;
+}
+
+/* Botón de perfil: la foto en un círculo, a la derecha. El nombre y el rol a su izquierda solo desde 600 px (en el
+   celular de 360 px no entran al lado del logo sin apretarse). */
+.barra-perfil {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-block-size: 48px;
+  min-inline-size: 48px;
+  justify-content: flex-end;
+  padding: 2px;
+  margin-inline-end: -4px;
+  border-radius: 999px;
+  color: var(--tinta);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.barra-perfil .avatar {
+  outline: var(--grosor) solid transparent;
+  outline-offset: 2px;
+  transition: outline-color var(--t-toque) ease-out;
+}
+
+.barra-perfil:hover .avatar,
+.barra-perfil.active .avatar {
+  outline-color: var(--borde-primario);
+}
+
+.barra-perfil:focus-visible {
+  outline: 3px solid var(--carbon);
+  outline-offset: 2px;
+}
+
+.barra-usuario {
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 600px) {
+  .barra-usuario {
+    display: flex;
+  }
+}
+
+.barra-nombre {
+  font-weight: 650;
+  font-size: 0.9375rem;
+  max-inline-size: 45vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barra-rol {
+  font-size: 0.8125rem;
+  color: var(--tinta-3);
+}
+
+.contenido {
+  grid-area: contenido;
+  min-width: 0;
+  inline-size: 100%;
+  max-inline-size: 760px;
+  margin-inline: auto;
+  padding: 16px 16px calc(var(--tabs-alto) + 32px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contenido:focus {
+  outline: none;
+}
+
+/* Estado de la señal: discreto, arriba del contenido. Solo aparece si hay algo que decir. */
+.senal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.senal-ficha {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: var(--grosor) solid var(--alerta);
+  background: var(--alerta-claro);
+  color: var(--alerta);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.senal-sin-red {
+  border-color: var(--tinta);
+  background: var(--tinta);
+  color: var(--sobre-tinta);
+}
+
+.senal-rechazos {
+  margin: 4px 0 6px;
+  padding-inline-start: 20px;
+}
+
+.riel {
+  display: none;
+}
+
+.tabs {
+  grid-area: tabs;
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 20;
+  background: var(--nav-fondo);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tabs ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-block-size: var(--tabs-alto);
+  color: var(--nav-texto);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  position: relative;
+}
+
+.tab.active {
+  color: var(--nav-activo);
+}
+
+.tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline: 22%;
+  block-size: 4px;
+  border-radius: 0 0 4px 4px;
+  background: var(--nav-marca);
+}
+
+.tab:focus-visible {
+  outline-color: var(--nav-marca);
+  outline-offset: -4px;
+}
+
+@media (min-width: 900px) {
+  .app {
+    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 'barra barra' 'riel contenido';
+  }
+
+  .tabs {
+    display: none;
+  }
+
+  .riel {
+    grid-area: riel;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Si la ventana es baja, el riel scrollea con la barra en sus colores (no el gris del navegador). */
+    scrollbar-width: thin;
+    scrollbar-color: var(--nav-texto) var(--nav-fondo);
+    position: sticky;
+    top: 62px;
+    block-size: calc(100vh - 62px);
+    block-size: calc(100dvh - 62px);
+    background: var(--nav-fondo);
+    padding: 16px 12px;
+  }
+
+  .riel ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .riel-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    inline-size: 100%;
+    min-block-size: 44px;
+    padding: 8px 12px;
+    border-radius: var(--radio-chico);
+    color: var(--nav-texto);
+    text-decoration: none;
+    font: inherit;
+    font-weight: 550;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    text-align: start;
+  }
+
+  .riel-link:hover {
+    background: var(--nav-hover);
+    color: var(--nav-activo);
+  }
+
+  .riel-link.active {
+    background: var(--nav-activo-fondo);
+    color: var(--nav-activo-texto);
+  }
+
+  .riel-link:focus-visible {
+    outline-color: var(--nav-marca);
+  }
+
+  /* Grupos (los mismos de Más), separados por el troquel del talonario. */
+  .riel-grupo {
+    padding-block-start: 10px;
+    border-block-start: var(--grosor-fino) dashed var(--nav-texto);
+  }
+
+  .riel-grupo-titulo {
+    margin: 0 0 4px;
+    padding-inline: 12px;
+    color: var(--nav-texto);
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+
+  .contenido {
+    padding: 28px 32px 48px;
+  }
+
+  :root {
+    --barra-alto: 62px;
+  }
+
+  .barra-logo {
+    inline-size: 160px;
+  }
+}

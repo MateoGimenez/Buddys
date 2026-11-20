@@ -1,0 +1,25 @@
+.navegador-fecha {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navegador-fecha-campo input {
+  min-block-size: 44px;
+  padding: 6px 10px;
+  border: var(--grosor) solid var(--linea-fuerte);
+  border-radius: var(--radio-chico);
+  font: inherit;
+  color: var(--tinta);
+  background: var(--papel);
+}
+
+.navegador-mes {
+  min-inline-size: 11ch;
+  text-align: center;
+  font-weight: 650;
+}
+
+.navegador-mes::first-letter {
+  text-transform: uppercase;
+}

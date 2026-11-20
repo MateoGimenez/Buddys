@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { ROLES } from '../domain/perfil.js';
+import { DOMINIO_DE_BAJA, ROLES } from '../domain/perfil.js';
 import { emailSchema } from './auth.js';
 
 const BIDI_CONTROLS = /\p{Bidi_Control}/gu;
-const CONTROL_CHARS = /\p{Cc}/u;
+/** Controles y separadores de línea y de párrafo de Unicode (U+2028, U+2029): el nombre es de una sola línea. */
+const CONTROL_CHARS = /[\p{Cc}\p{Zl}\p{Zp}]/u;
 
 /** Los ids de usuario son los UUID de auth.users. Cualquier otra cosa no puede existir => 404. */
 export const usuarioIdSchema = z.uuid();
@@ -11,7 +12,7 @@ export const usuarioIdSchema = z.uuid();
 /** Contraseña que elige el superadmin: 8 a 72 caracteres y no más de 72 bytes (el tope de bcrypt en Supabase Auth). */
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX_BYTES = 72;
-const passwordSchema = z
+export const passwordSchema = z
   .string({ error: 'Ingresá una contraseña.' })
   .min(PASSWORD_MIN, { error: `La contraseña tiene que tener al menos ${String(PASSWORD_MIN)} caracteres.` })
   .refine((value) => Buffer.byteLength(value, 'utf8') <= PASSWORD_MAX_BYTES, {
@@ -21,7 +22,7 @@ const passwordSchema = z
 const rolSchema = z.enum(ROLES, { error: 'El rol tiene que ser superadmin, admin o empleado.' });
 
 /** `nombre`: texto de una línea, 1 a 80 caracteres; null o "" lo borran. */
-const nombreSchema = z.union(
+export const nombreSchema = z.union(
   [
     z.null(),
     z
@@ -38,9 +39,18 @@ const nombreSchema = z.union(
   { error: 'El nombre tiene que ser un texto o null.' },
 );
 
+/**
+ * Email de una cuenta del panel: el de siempre, pero nunca del dominio reservado de las bajas (emailDeBaja:
+ * baja+<id>@buddys.invalid). Si alguien pudiera ponérselo a mano a una cuenta, la baja de esa persona chocaría con
+ * "email en uso" para siempre (503 en cada intento).
+ */
+const emailCuentaSchema = emailSchema.refine((email) => !email.endsWith(`@${DOMINIO_DE_BAJA}`), {
+  error: 'Ese email está reservado. Usá otro.',
+});
+
 /** POST /api/admin/usuarios. Estricto (un campo desconocido => 400). */
 export const createUsuarioSchema = z.strictObject({
-  email: emailSchema,
+  email: emailCuentaSchema,
   password: passwordSchema,
   nombre: nombreSchema.optional().transform((value) => value ?? null),
   rol: rolSchema,
@@ -55,6 +65,6 @@ export const updateUsuarioSchema = z.strictObject({
   rol: rolSchema.optional(),
   activo: z.boolean({ error: 'activo tiene que ser true o false.' }).optional(),
   nombre: nombreSchema.optional(),
-  email: emailSchema.optional(),
+  email: emailCuentaSchema.optional(),
   password: passwordSchema.optional(),
 });

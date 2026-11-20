@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { hoy, miles, pesos, slug, sumarDias, ultimoDelMes } from '../lib/format';
+import { esFechaValida, hoy, miles, pesos, pesosCortos, slug, sumarDias, ultimoDelMes } from '../lib/format';
 
 describe('formato', () => {
   it('pesos en es-AR sin decimales', () => {
-    expect(pesos(12500)).toBe('$ 12.500');
-    expect(pesos(0)).toBe('$ 0');
+    expect(pesos(12500)).toBe('$ 12.500');
+    expect(pesos(0)).toBe('$ 0');
+  });
+
+  it('pesos usa un espacio no separable: "$ 1.000" no se parte en dos renglones', () => {
+    expect(pesos(1000)).toBe('$ 1.000');
+    expect(pesos(1000)).not.toMatch(/ /);
+    expect(pesos(-500)).not.toMatch(/ /);
   });
 
   it('"hoy" usa la hora de Argentina', () => {
@@ -33,12 +39,36 @@ describe('formato', () => {
   });
 
   it('montos grandes y bordes de calendario', () => {
-    expect(pesos(99_999_999)).toBe('$ 99.999.999');
+    expect(pesos(99_999_999)).toBe('$ 99.999.999');
     expect(miles('99999999')).toBe('99.999.999');
     expect(sumarDias('2026-12-31', 1)).toBe('2027-01-01');
     expect(sumarDias('2028-03-01', -1)).toBe('2028-02-29');
     expect(ultimoDelMes('2026-02-01')).toBe('2026-02-28');
     // 23:30 del 31/12 en Argentina ya es 1/1 en UTC.
     expect(hoy(new Date('2027-01-01T02:30:00Z'))).toBe('2026-12-31');
+  });
+});
+
+describe('esFechaValida (el ?fecha= de Planilla y Cierre de caja)', () => {
+  it('acepta fechas que existen y rechaza las imposibles o mal escritas', () => {
+    expect(esFechaValida('2026-11-19')).toBe(true);
+    expect(esFechaValida('2028-02-29')).toBe(true);
+    for (const mala of ['2026-13-01', '2026-00-10', '2026-02-31', '2027-02-29', '2026-1-01', 'hoy', '2026-11-19x', '']) {
+      expect(esFechaValida(mala), mala).toBe(false);
+    }
+  });
+});
+
+describe('pesosCortos (el valor arriba de una barra)', () => {
+  it('pasa de unidad con lo ya redondeado: nunca "$ 1.000 mil" ni "$ 1000"', () => {
+    expect(pesosCortos(0)).toBe('$ 0');
+    expect(pesosCortos(850)).toBe('$ 850');
+    expect(pesosCortos(999.6)).toBe('$ 1 mil');
+    expect(pesosCortos(175_000)).toBe('$ 175 mil');
+    expect(pesosCortos(999_499)).toBe('$ 999 mil');
+    expect(pesosCortos(999_500)).toBe('$ 1 M');
+    expect(pesosCortos(1_250_000)).toBe('$ 1,3 M');
+    expect(pesosCortos(-1600)).toBe('$ -2 mil');
+    expect(pesosCortos(12_345_678_901)).toBe('$ 12.345,7 M');
   });
 });

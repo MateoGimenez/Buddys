@@ -457,14 +457,15 @@ describe('envío al crear un turno público', () => {
     const dicho = JSON.parse(String(payload)) as Record<string, unknown>;
     const servicio = await context.db.sql.query("SELECT nombre FROM buddys.servicios WHERE id = 'pulido'");
     expect(dicho).toEqual({
+      tipo: 'turno',
       titulo: 'Turno nuevo',
       cuerpo: `${String(servicio.rows[0]?.nombre)} · jue 29/10 · Mañana`,
       pendientes: 2,
-      url: '/admin',
+      url: '/planilla',
     });
     // Nada del cliente en el aviso, en ningún lado.
     expect(String(payload)).not.toMatch(/Juan|Pérez|380|412|example\.com|Corolla|rayones/i);
-    expect(Object.keys(dicho).sort()).toEqual(['cuerpo', 'pendientes', 'titulo', 'url']);
+    expect(Object.keys(dicho).sort()).toEqual(['cuerpo', 'pendientes', 'tipo', 'titulo', 'url']);
 
     const marcas = await context.db.sql.query(
       'SELECT count(*)::int AS n FROM buddys.push_suscripciones WHERE ultimo_aviso_at IS NOT NULL',
@@ -543,6 +544,7 @@ describe('envío al crear un turno público', () => {
       guardar: () => Promise.resolve(),
       borrarPorEndpoint: () => Promise.resolve(false),
       destinosActivos: () => Promise.resolve(guardados),
+      destinosConRol: () => Promise.resolve(guardados),
       borrarPorIds: () => Promise.resolve(0),
       marcarAvisados: (ids) => {
         marcados.push(...ids);
@@ -727,10 +729,11 @@ describe('flujo completo de los avisos (API + base de datos)', () => {
     for (const [destino, payload] of send.mock.calls) {
       expect(destino).toMatchObject({ p256dh: P256DH, auth: AUTH });
       expect(JSON.parse(payload)).toEqual({
+        tipo: 'turno',
         titulo: 'Turno nuevo',
         cuerpo: `${String(servicio.rows[0]?.nombre)} · jue 29/10 · Tarde`,
         pendientes: 1,
-        url: '/admin',
+        url: '/planilla',
       });
     }
 

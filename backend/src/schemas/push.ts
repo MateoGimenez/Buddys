@@ -35,7 +35,7 @@ export const suscripcionSchema = z.strictObject({
     .trim()
     .min(1, { error: 'El nombre del dispositivo no puede estar vacío.' })
     .max(120, { error: 'El nombre del dispositivo es demasiado largo (máximo 120 caracteres).' })
-    .regex(/^[^\p{Cc}]+$/u, { error: 'El nombre del dispositivo tiene caracteres no permitidos.' })
+    .regex(/^[^\p{Cc}\p{Zl}\p{Zp}]+$/u, { error: 'El nombre del dispositivo tiene caracteres no permitidos.' })
     .nullable()
     .optional(),
 });

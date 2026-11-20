@@ -1,0 +1,933 @@
+/* Tanda 03-06 (rama main, 17/11): Equipo, Mi perfil y foto, menú de la cuenta, campanita, recetas, consumo, para
+   comprar y sin ranking. Reglas nuevas o cambiadas respecto de la base, pasadas tal cual al unir las ramas (19/11). */
+
+.contenido {
+  grid-area: contenido;
+  min-width: 0;
+  inline-size: 100%;
+  max-inline-size: 760px;
+  margin-inline: auto;
+  padding: 16px 16px calc(var(--tabs-alto) + 32px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.con-ojo .ojo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 48px;
+  block-size: 48px;
+  margin-inline-start: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--radio-chico) - 2px);
+  background: transparent;
+  color: var(--tinta-2);
+  cursor: pointer;
+  transition: color var(--t-toque) ease-out, background-color var(--t-toque) ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.con-ojo .ojo:hover {
+  color: var(--tinta);
+  background: var(--carbon-claro);
+}
+
+.con-ojo .ojo[aria-pressed='true'] {
+  color: var(--carbon);
+}
+
+.con-ojo .ojo:focus-visible {
+  outline-offset: -3px;
+}
+
+.con-ojo input::-ms-reveal {
+  display: none;
+}
+
+.dato-fijo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.segmentado-barra .opcion {
+  align-items: center;
+  text-align: center;
+  font-weight: 650;
+}
+
+.talon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 14px 16px;
+  background: var(--canario);
+  border: var(--grosor) solid var(--canario-borde);
+  border-top: 3px dashed var(--tinta-3);
+  border-radius: 0 0 var(--radio) var(--radio);
+  animation: arrancar 460ms var(--curva);
+  transform-origin: top left;
+}
+
+.talon-tilde path {
+  stroke-width: 3.2;
+  animation: dibujar 280ms ease-out 300ms both;
+}
+
+.copia {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px 10px;
+  background: var(--canario);
+  border: var(--grosor-fino) solid var(--canario-borde);
+  border-top: var(--grosor) dashed var(--tinta-3);
+  border-radius: 2px 2px var(--radio) var(--radio);
+  box-shadow: var(--sombra-copia);
+}
+
+.copia-detalle, .copia-registro {
+  overflow-wrap: anywhere;
+  color: var(--tinta-2);
+}
+
+.copia-registro strong {
+  color: var(--tinta);
+}
+
+.fila-hoja[data-baja] {
+  background: transparent;
+  box-shadow: none;
+  border: var(--grosor) dashed var(--linea-fuerte);
+}
+
+.fila-hoja[data-baja] .fila-hoja-titulo {
+  color: var(--tinta-2);
+  font-weight: 600;
+}
+
+.fila-botones-inicio {
+  justify-content: flex-start;
+}
+
+.equipo-filtros {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.equipo-filtros-selects {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 480px) {
+  .equipo-filtros-selects {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+.entrada input[type='search']::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.equipo-conteo {
+  margin-block: -4px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--tinta-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.fila-hoja-cabeza-avatar {
+  align-items: center;
+}
+
+.receta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fila-hoja > .receta {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: var(--grosor) dashed var(--linea-fuerte);
+}
+
+.receta-cabeza {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.receta-titulo {
+  font-size: 1.0625rem;
+  font-weight: 750;
+}
+
+.receta-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--grosor) solid var(--linea);
+}
+
+.receta-tab {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 44px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--radio-chico) var(--radio-chico) 0 0;
+  background: none;
+  color: var(--tinta-2);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .receta-tab:hover:not([aria-selected='true']) {
+      background: var(--carbon-claro);
+      color: var(--tinta);
+    }
+
+}
+
+.receta-tab[aria-selected='true'] {
+  color: var(--tinta);
+}
+
+.receta-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  inset: auto 6px -2px;
+  border-block-end: 4px solid var(--rosa-fuerte);
+  border-radius: 4px 4px 0 0;
+}
+
+.receta-tab:focus-visible {
+  outline-offset: -3px;
+}
+
+.receta-tab-cuenta {
+  min-inline-size: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--carbon-claro);
+  color: var(--tinta);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.receta-tab-pendiente {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--rosa-fuerte);
+}
+
+@media (forced-colors: active) {
+  .receta-tab-pendiente {
+      background: CanvasText;
+    }
+
+}
+
+.receta-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receta-panel[hidden] {
+  display: none;
+}
+
+.receta-vacia {
+  color: var(--tinta-2);
+  font-size: 0.9375rem;
+}
+
+.receta-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.receta-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: var(--grosor-fino) dashed var(--linea);
+}
+
+.receta-lista li:last-child {
+  border-bottom: 0;
+}
+
+.receta-lista strong {
+  white-space: nowrap;
+}
+
+.receta-renglones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.receta-renglon {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'insumo insumo' 'cantidad quitar';
+  align-items: end;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: var(--grosor-fino) dashed var(--linea);
+}
+
+.receta-insumo {
+  grid-area: insumo;
+}
+
+.receta-cantidad {
+  grid-area: cantidad;
+}
+
+.receta-quitar {
+  grid-area: quitar;
+  min-inline-size: 48px;
+  min-block-size: 48px;
+  color: var(--tinta-2);
+}
+
+@media (min-width: 560px) {
+  .receta-renglon {
+      grid-template-columns: minmax(0, 1fr) 150px auto;
+      grid-template-areas: 'insumo cantidad quitar';
+    }
+
+}
+
+.receta-agregar {
+  align-self: flex-start;
+}
+
+.receta-guardar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.receta-guardar .btn {
+  margin-inline-start: auto;
+}
+
+.receta-listo {
+  align-self: flex-end;
+}
+
+.plegable-receta .receta {
+  padding-bottom: 14px;
+}
+
+.vistas {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: var(--grosor) solid var(--linea);
+  margin-top: -4px;
+}
+
+.vista {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 48px;
+  padding: 8px 14px;
+  color: var(--tinta-2);
+  font-weight: 650;
+  text-decoration: none;
+  border-radius: var(--radio-chico) var(--radio-chico) 0 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .vista:hover:not([aria-current]) {
+      background: var(--carbon-claro);
+      color: var(--tinta);
+    }
+
+}
+
+.vista[aria-current] {
+  color: var(--tinta);
+}
+
+.vista[aria-current]::after {
+  content: '';
+  position: absolute;
+  inset: auto 8px -2px;
+  border-block-end: 4px solid var(--rosa-fuerte);
+  border-radius: 4px 4px 0 0;
+}
+
+.vista:focus-visible {
+  outline-offset: -3px;
+}
+
+.comprar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comprar-resumen {
+  color: var(--tinta-2);
+  font-size: 0.9375rem;
+}
+
+.comprar-fila-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.comprar-sugerido {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+.comprar-sugerido strong {
+  font-size: 1.25rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  white-space: nowrap;
+}
+
+.comprar-etiqueta {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--tinta-2);
+}
+
+.comprar-costo {
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+  white-space: nowrap;
+}
+
+.comprar-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.comprar-total span {
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+}
+
+.comprar-total strong {
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
+.comprar-resultado:empty {
+  position: absolute;
+}
+
+.comprar-mensaje {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: var(--canario);
+  border: var(--grosor-fino) solid var(--canario-borde);
+  border-radius: var(--radio-chico);
+  font: inherit;
+  font-size: 0.9375rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sin-dato {
+  color: var(--tinta-3);
+  font-weight: 500;
+}
+
+.avatar {
+  --avatar-tam: 40px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--avatar-tam);
+  block-size: var(--avatar-tam);
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--avatar-fondo, var(--avatar-7));
+  color: var(--sobre-avatar);
+  font-weight: 700;
+  font-stretch: 88%;
+  font-size: calc(var(--avatar-tam) * 0.4);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.avatar[data-tono='1'] { --avatar-fondo: var(--avatar-1); }
+
+.avatar[data-tono='2'] { --avatar-fondo: var(--avatar-2); }
+
+.avatar[data-tono='3'] { --avatar-fondo: var(--avatar-3); }
+
+.avatar[data-tono='4'] { --avatar-fondo: var(--avatar-4); }
+
+.avatar[data-tono='5'] { --avatar-fondo: var(--avatar-5); }
+
+.avatar[data-tono='6'] { --avatar-fondo: var(--avatar-6); }
+
+.avatar[data-tono='7'] { --avatar-fondo: var(--avatar-7); }
+
+.avatar[data-tono='8'] { --avatar-fondo: var(--avatar-8); }
+
+.avatar[data-foto] {
+  background: var(--carbon-claro);
+}
+
+.avatar img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  object-fit: cover;
+}
+
+.barra-acciones {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.campanita {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 999px;
+  color: var(--tinta-2);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--t-toque) var(--curva);
+}
+
+.campanita[data-alerta] {
+  color: var(--tinta);
+}
+
+@media (hover: hover) {
+  .campanita:hover {
+      background: var(--carbon-claro);
+    }
+
+}
+
+.campanita:active {
+  background: var(--carbon-claro);
+}
+
+.campanita-numero {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 0;
+  min-inline-size: 22px;
+  block-size: 22px;
+  padding-inline: 5px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: var(--grosor) solid var(--papel);
+  background: var(--serie);
+  color: var(--sobre-serie);
+  font-size: 0.75rem;
+  font-weight: 750;
+  font-stretch: 88%;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (forced-colors: active) {
+  .campanita-numero {
+      border-color: CanvasText;
+    }
+
+}
+
+.cuenta {
+  position: relative;
+  min-width: 0;
+}
+
+.cuenta-boton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 4px;
+  border: var(--grosor) solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  text-align: end;
+  cursor: pointer;
+  transition: background-color var(--t-toque) var(--curva);
+}
+
+@media (hover: hover) {
+  .cuenta-boton:hover {
+      background: var(--carbon-claro);
+    }
+
+  .cuenta-item:hover {
+      background: var(--carbon-claro);
+    }
+
+  a.quien:hover {
+      background: var(--carbon-claro);
+    }
+
+}
+
+.cuenta-boton[aria-expanded='true'] {
+  background: var(--carbon-claro);
+  border-color: var(--carbon);
+}
+
+.cuenta-texto {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.cuenta-flecha {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .cuenta-boton {
+      padding: 4px 10px 4px 4px;
+      border-radius: var(--radio);
+    }
+
+  .cuenta-texto {
+      position: static;
+      inline-size: auto;
+      block-size: auto;
+      clip: auto;
+      order: -1;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      min-width: 0;
+      line-height: 1.2;
+    }
+
+  .cuenta-flecha {
+      display: block;
+      flex: none;
+      color: var(--tinta-2);
+      transition: rotate var(--t-estado) var(--curva);
+    }
+
+  .cuenta-boton[aria-expanded='true'] .cuenta-flecha {
+      rotate: 180deg;
+    }
+
+}
+
+.cuenta-nombre {
+  font-weight: 650;
+  font-size: 0.9375rem;
+  max-inline-size: 30vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cuenta-rol {
+  font-size: 0.8125rem;
+  color: var(--tinta-2);
+  white-space: nowrap;
+}
+
+.cuenta-panel {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-end: 0;
+  z-index: 30;
+  inline-size: max-content;
+  min-inline-size: 240px;
+  max-inline-size: min(320px, calc(100vw - 32px));
+  padding: 6px;
+  background: var(--papel);
+  /* --linea-fuerte: en oscuro, --linea no se distingue del fondo y el menú quedaba sostenido solo por la sombra. */
+  border: var(--grosor-fino) solid var(--linea-fuerte);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-dialogo);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cuenta-panel {
+      transition:
+        opacity 120ms var(--curva),
+        translate 120ms var(--curva);
+  
+      @starting-style {
+        opacity: 0;
+        translate: 0 -4px;
+      }
+    }
+
+}
+
+.cuenta-quien {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 10px;
+  margin-block-end: 4px;
+  border-block-end: var(--grosor-fino) dashed var(--linea-fuerte);
+  line-height: 1.3;
+}
+
+.cuenta-quien-nombre {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.cuenta-quien-detalle {
+  font-size: 0.875rem;
+  color: var(--tinta-2);
+  overflow-wrap: anywhere;
+}
+
+.cuenta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radio-chico);
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cuenta-item:focus-visible {
+  background: var(--carbon-claro);
+}
+
+.cuenta-item:focus-visible {
+  outline-offset: -3px;
+}
+
+.cuenta-item[aria-disabled='true'] {
+  cursor: progress;
+  color: var(--tinta-2);
+}
+
+/* Tema (tanda 07): grupo de menuitemradio entre "Mi perfil" y "Cerrar sesión", separado por el troquel. */
+.cuenta-grupo {
+  margin-block: 6px;
+  padding-block: 6px;
+  border-block: var(--grosor-fino) dashed var(--linea-fuerte);
+}
+
+.cuenta-grupo-titulo {
+  display: block;
+  padding: 4px 12px 2px;
+  color: var(--tinta-3);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.cuenta-tema-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.cuenta-tema-detalle {
+  color: var(--tinta-2);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Lo elegido: el mismo rosa claro que un servicio elegido, con su tilde (nunca solo el color). */
+.cuenta-tema[aria-checked='true'] {
+  background: var(--rosa-claro);
+  font-weight: 750;
+}
+
+.cuenta-tema-marca {
+  flex: none;
+  color: var(--tinta);
+}
+
+.cuenta-tema-aviso:empty {
+  margin: 0;
+}
+
+.cuenta-tema-aviso {
+  margin: 4px 12px 2px;
+  color: var(--tinta-2);
+  font-size: 0.8125rem;
+}
+
+.perfil-foto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 20px;
+}
+
+.perfil-foto-vista {
+  flex: none;
+  margin: 6px;
+  border-radius: 50%;
+  outline: var(--grosor) dashed var(--linea-fuerte);
+  outline-offset: 4px;
+}
+
+.perfil-foto-vista[data-ocupado] {
+  outline-color: var(--carbon);
+}
+
+.perfil-foto-vista[data-ocupado] .avatar {
+  opacity: 0.5;
+}
+
+.perfil-foto-cuerpo {
+  /* 160 px: a 360 de ancho la foto y el texto entran lado a lado. */
+  flex: 1 1 160px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perfil-nombre {
+  font-size: 1.25rem;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.perfil-detalle {
+  margin-block-start: -6px;
+  color: var(--tinta-2);
+  overflow-wrap: anywhere;
+}
+
+.perfil-foto-acciones {
+  margin-block-start: 4px;
+}
+
+.btn-archivo {
+  cursor: pointer;
+}
+
+.btn-archivo:has(input:focus-visible) {
+  outline: 3px solid var(--carbon);
+  outline-offset: 2px;
+}
+
+.btn-archivo:has(input:disabled) {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.quien-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.quien-accion {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--carbon);
+}
+
+.dialogo::backdrop {
+  background: var(--velo);
+  /* Que el scroll sobre el fondo no mueva la página de atrás. */
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.dialogo:modal {
+  overscroll-behavior: contain;
+}
+
+.esqueleto-titulo {
+  display: block;
+  inline-size: min(220px, 60%);
+  block-size: 1.625rem;
+  margin-block: 0.25rem;
+  border-radius: var(--radio-chico);
+  background: linear-gradient(90deg, var(--esqueleto-1) 0%, var(--esqueleto-2) 50%, var(--esqueleto-1) 100%);
+  background-size: 200% 100%;
+  animation: brillo 1.4s ease-in-out infinite;
+}
+
+.push-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--ok);
+}

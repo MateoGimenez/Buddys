@@ -1,0 +1,163 @@
+/* Agenda de turnos con seña. Cada turno es una hoja; la franja va como la serie del talonario. */
+
+.agenda-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.agenda-controles .segmentado {
+  min-inline-size: 200px;
+}
+
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.agenda-dia {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agenda-dia-titulo {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  padding-bottom: 4px;
+  border-bottom: var(--grosor) dashed var(--linea-fuerte);
+}
+
+.agenda-dia-titulo::first-letter {
+  text-transform: uppercase;
+}
+
+.turno {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.turno[data-estado='completado'] {
+  background: var(--inactivo);
+}
+
+.turno-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.turno-franja {
+  color: var(--serie);
+  font-weight: 750;
+  font-stretch: 80%;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.turno-nombre {
+  font-size: 1.125rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.turno-estado {
+  margin-inline-start: auto;
+}
+
+.turno-estado-pendiente {
+  background: var(--alerta-claro);
+  color: var(--alerta);
+}
+
+.turno-estado-completado {
+  background: var(--ok-claro);
+  color: var(--ok);
+}
+
+.turno-servicios {
+  font-weight: 650;
+}
+
+.turno-detalle,
+.turno-nota {
+  color: var(--tinta-2);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.turno-sena {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: var(--radio-chico);
+  background: var(--canario);
+  color: var(--tinta);
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+/* Seña, total y saldo: renglones alineados a la derecha, el saldo con doble raya como un total del talonario. */
+.saldo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.saldo div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.saldo dt {
+  color: var(--tinta-2);
+}
+
+.saldo dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.saldo .saldo-final {
+  padding-top: 4px;
+  border-top: 3px double var(--tinta);
+}
+
+.saldo .saldo-final dt {
+  color: var(--tinta);
+  font-weight: 700;
+}
+
+.saldo .saldo-final dd {
+  font-size: 1.375rem;
+  font-weight: 800;
+}
+
+.turno[data-estado='completado'] .saldo dt {
+  color: var(--tinta-2);
+}
+
+.completar {
+  padding-top: 10px;
+  border-top: var(--grosor) dashed var(--linea);
+}
+
+.nuevo-turno-sena-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px;
+  border-radius: var(--radio-chico);
+  background: var(--canario);
+}
+
+.nuevo-turno-sena-campos .campo-ayuda {
+  color: var(--tinta-2);
+}

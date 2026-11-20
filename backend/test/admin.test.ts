@@ -89,9 +89,17 @@ describe('GET /api/admin/bookings', () => {
       turnosDelCliente: 1,
       monto: null,
       trabajador: null,
+      registradoPor: null,
       formaPago: null,
       // Un turno web tiene un solo servicio; el precio de lista es la foto al pedirlo (pulido: "Consultá").
       servicios: [{ id: 'pulido', nombre: 'Pulido', precioLista: null }],
+      etapa: null,
+      etapaDesde: null,
+      descuento: 0,
+      descuentoMotivo: null,
+      sena: null,
+      saldo: null,
+      whatsappListo: expect.stringMatching(/^https:\/\/wa\.me\/\d+\?text=/) as unknown,
       createdAt: '2026-10-16T15:00:00.000Z',
       updatedAt: '2026-10-16T15:00:00.000Z',
     });

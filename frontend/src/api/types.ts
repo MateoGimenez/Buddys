@@ -4,6 +4,10 @@ export type Rol = 'superadmin' | 'admin' | 'empleado';
 export type VehiculoTipo = 'auto' | 'suv' | 'pickup' | 'moto';
 export type Franja = 'manana' | 'tarde';
 export type EstadoTurno = 'pendiente' | 'confirmado' | 'completado' | 'cancelado';
+/** Dónde está el auto de un lavado de mostrador: llega (espera), se lava, queda listo y se entrega. */
+export type Etapa = 'espera' | 'lavando' | 'listo' | 'entregado';
+/** En el orden del lavadero. */
+export const ETAPAS: readonly Etapa[] = ['espera', 'lavando', 'listo', 'entregado'];
 
 /** Orden canónico: el de los selectores, las tablas de precios y los textos. */
 export const VEHICULOS: readonly VehiculoTipo[] = ['auto', 'suv', 'pickup', 'moto'];
@@ -13,7 +17,17 @@ export interface Usuario {
   email: string | null;
   nombre: string | null;
   rol: Rol;
+  /** Versión de la foto de perfil (ISO 8601) o null si no tiene. Va en la URL de la foto como `?v=`. */
+  fotoVersion: string | null;
 }
+
+/** GET/PATCH /api/admin/perfil y PUT/DELETE /api/admin/perfil/foto: el perfil propio (misma forma que el de la sesión). */
+export type Perfil = Usuario;
+
+/** Lo que se puede cambiar del perfil propio. La contraseña va siempre con la actual. */
+export type CambioPerfil =
+  | { nombre: string | null }
+  | { passwordActual: string; passwordNueva: string };
 
 export interface Persona {
   id: string;
@@ -29,7 +43,8 @@ export interface Turno {
   email: string | null;
   vehiculoTipo: VehiculoTipo;
   vehiculoModelo: string | null;
-  origen: 'web' | 'mostrador';
+  /** 'panel' = turno que cargó un encargado desde el panel. */
+  origen: 'web' | 'mostrador' | 'panel';
   /** El servicio principal (el primero de `servicios`). */
   servicioId: string;
   /** Todos los servicios del lavado, en orden. precioLista null para el empleado o si el servicio era "Consultá". */
@@ -45,7 +60,24 @@ export interface Turno {
   formaPago: FormaPago | null;
   turnosDelCliente: number | null;
   monto: number | null;
+  /** Quién hizo el trabajo. Sigue llegando, pero el panel ya no lo muestra (contrato 05: solo "Registrado por"). */
   trabajador: Persona | null;
+  /** Quién lo registró en el panel. null en los turnos de la web (o si no hay dato). Lo reciben todos los roles. */
+  registradoPor: Persona | null;
+  /** Solo lavados de mostrador; null en turnos de la web o del panel. */
+  etapa: Etapa | null;
+  /** Desde cuándo está en esa etapa (ISO UTC). null si etapa es null. */
+  etapaDesde: string | null;
+  /** Pesos descontados (0 = sin descuento). null para el empleado. */
+  descuento: number | null;
+  /** null sin descuento o para el empleado. */
+  descuentoMotivo: string | null;
+  /** Seña del turno; monto null para el empleado. */
+  sena: { monto: number | null; formaPago: FormaPago | null; fecha: string } | null;
+  /** monto - seña. null sin monto o para el empleado. */
+  saldo: number | null;
+  /** Link de wa.me con el "ya está listo" (lo ven todos los roles). null sin teléfono. */
+  whatsappListo: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,12 +86,6 @@ export interface ServicioDelTurno {
   id: string;
   nombre: string;
   precioLista: number | null;
-}
-
-export interface ResumenTrabajador {
-  trabajador: Persona | null;
-  cantidad: number;
-  total: number | null;
 }
 
 /** Cierre de caja: lavados y total por forma de pago. formaPago null = "Sin indicar"; total null para el empleado. */
@@ -76,7 +102,6 @@ export interface PlanillaDelDia {
     cantidad: number;
     total: number | null;
     sinMonto: number;
-    porTrabajador: ResumenTrabajador[];
     porFormaPago: ResumenFormaPago[];
   };
 }
@@ -97,6 +122,11 @@ export interface NuevoLavado {
   vehiculoModelo?: string;
   notasInternas?: string;
   formaPago?: FormaPago | null;
+  /** Por defecto 'entregado' ("ya terminado"); 'espera' = recién llega. */
+  etapa?: Etapa;
+  /** Solo quien ve importes, y solo si es > 0 (con su motivo). */
+  descuento?: number;
+  descuentoMotivo?: string;
   /**
    * uuid que genera el panel por cada envío (el mismo en los reintentos desde la cola sin conexión). Si el backend ya
    * tiene un lavado con ese idLocal del mismo usuario responde 200 con ese lavado (no crea otro); de otra persona, 409.
@@ -124,6 +154,9 @@ export interface CambioTurno {
   formaPago?: FormaPago | null;
   /** Solo quien tiene cobro.corregir. */
   servicioIds?: string[];
+  /** 0 = sin descuento (y sin motivo). Con descuento > 0 el motivo es obligatorio. */
+  descuento?: number;
+  descuentoMotivo?: string | null;
 }
 
 export interface Trabajador {
@@ -208,9 +241,7 @@ export interface Estadisticas {
   };
   serie: { clave: string; completados: number; ingresos: number; gastos: number }[];
   porServicio: { servicioId: string; nombre: string; pedidos: number; completados: number; ingresos: number }[];
-  porTrabajador: { id: string | null; nombre: string; completados: number; ingresos: number }[];
   porDiaSemana: { dia: number; manana: number; tarde: number }[];
-  completadosSinTrabajador: number;
   gastosPorCategoria: { categoria: string; monto: number }[];
 }
 
@@ -240,15 +271,29 @@ export interface MetaActual {
   };
 }
 
+/**
+ * Un usuario de GET /api/admin/usuarios. `email` llega en null para quien no podés ver (el admin no ve el de admins ni
+ * superadmins) y para los dados de baja. `gestionable`: si quien pide puede editarlo y eliminarlo.
+ */
 export interface UsuarioEquipo {
   id: string;
   email: string | null;
   nombre: string | null;
   rol: Rol;
   activo: boolean;
+  /** ISO 8601 si está dado de baja; si no, null. */
+  eliminadoAt: string | null;
+  /** Aparece en algún lavado, turno, gasto, movimiento, presupuesto o comprobante: eliminarlo lo da de baja. */
+  tieneHistorial: boolean;
+  gestionable: boolean;
+  /** Como en la sesión: versión de la foto o null. */
+  fotoVersion: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+/** DELETE /api/admin/usuarios/:id: sin historial se borra; con historial se da de baja. */
+export type ResultadoEliminar = { resultado: 'eliminado' } | { resultado: 'baja'; usuario: UsuarioEquipo };
 
 export interface NuevoUsuario {
   email: string;
@@ -330,6 +375,97 @@ export type MovimientoNuevo =
   | { tipo: 'compra'; cantidad: number; costoTotal?: number; proveedor?: string; nota?: string }
   | { tipo: 'ajuste'; stockReal: number; nota?: string };
 
+/**
+ * Tipos de movimiento de stock. `devolucion` (contrato 06) lo crea solo el backend al deshacer o corregir un lavado:
+ * devuelve lo que la receta había descontado. No se puede mandar a mano (POST con `devolucion` es 400).
+ */
+export type TipoMovimiento = 'uso' | 'compra' | 'ajuste' | 'devolucion';
+
+/** Un renglón de GET /api/admin/insumos/:id/movimientos. `cantidad` con signo; `costoTotal` null para el empleado. */
+export interface Movimiento {
+  id: string;
+  tipo: TipoMovimiento;
+  cantidad: number;
+  costoTotal: number | null;
+  proveedor: string | null;
+  nota: string | null;
+  persona: Persona | null;
+  /** El lavado que lo generó (los `uso` y `devolucion` de una receta). */
+  turnoId: string | null;
+  createdAt: string;
+}
+
+/* ------------------------------------------------------------------ Recetas y stock (contrato 06) */
+
+/** Un insumo de una receta, con su nombre y su unidad (sin costos: lo ven todos los roles). */
+export interface RenglonReceta {
+  insumoId: string;
+  nombre: string;
+  unidad: Unidad;
+  cantidad: number;
+}
+
+/**
+ * Qué insumos usa un servicio. `general` se usa cuando el vehículo del lavado no tiene renglones propios.
+ * `porVehiculo` solo trae las claves que tienen renglones.
+ */
+export interface Receta {
+  servicioId: string;
+  general: RenglonReceta[];
+  porVehiculo: Partial<Record<VehiculoTipo, RenglonReceta[]>>;
+}
+
+/** Cuántos renglones puede tener una variante de receta (el backend rechaza más). */
+export const MAX_RENGLONES_RECETA = 30;
+/** Tope de la cantidad de un renglón (numeric(12,2), CHECK > 0 y <= 99999). */
+export const MAX_CANTIDAD_RECETA = 99999;
+
+/** PUT /api/admin/servicios/:id/receta: reemplaza una variante. `items: []` la borra. */
+export interface CambioReceta {
+  vehiculo: VehiculoTipo | null;
+  items: { insumoId: string; cantidad: number }[];
+}
+
+/** GET /api/admin/insumos/alertas: lo liviano que pide la campanita. Ordenados por stock / mínimo, ascendente. */
+export interface AlertasStock {
+  bajoStock: number;
+  insumos: { id: string; nombre: string; unidad: Unidad; stock: number; stockMinimo: number }[];
+}
+
+export interface ItemParaComprar {
+  insumoId: string;
+  nombre: string;
+  categoria: string | null;
+  unidad: Unidad;
+  stock: number;
+  stockMinimo: number;
+  /** max(2 × mínimo − stock, 0): entero para unidad, par y caja; 2 decimales para el resto. */
+  sugerido: number;
+  /** round(sugerido × costo unitario), o null si el insumo no tiene costo cargado. */
+  costoEstimado: number | null;
+}
+
+/** GET /api/admin/insumos/para-comprar (admin y superadmin), ordenado por categoría y nombre. */
+export interface ParaComprar {
+  items: ItemParaComprar[];
+  /** Suma de los costoEstimado que no son null: 0 si ninguno tiene costo cargado (nunca null). */
+  costoTotalEstimado: number;
+}
+
+export type AgrupadoConsumo = 'dia' | 'semana' | 'mes';
+
+/** GET /api/admin/consumo (admin y superadmin). Los costos son con el costo unitario de hoy. */
+export interface Consumo {
+  rango: { desde: string; hasta: string; agrupado: AgrupadoConsumo };
+  /** Lavados de mostrador completados; la serie trae ceros en los días, semanas (clave = el lunes) o meses sin lavados. */
+  lavados: { total: number; serie: { clave: string; cantidad: number }[] };
+  /** `consumido` = usos menos devoluciones; `costo` null si el insumo no tiene costo cargado. */
+  porInsumo: { insumoId: string; nombre: string; unidad: Unidad; consumido: number; costo: number | null }[];
+  costoInsumos: number;
+  /** null si no hubo lavados. */
+  costoPorLavado: number | null;
+}
+
 export const ESTADOS_PRESUPUESTO = ['borrador', 'enviado', 'aceptado', 'rechazado'] as const;
 export type EstadoPresupuesto = (typeof ESTADOS_PRESUPUESTO)[number];
 
@@ -385,4 +521,26 @@ export interface Comprobante {
   servicioNombre: string;
   vehiculo: string;
   notas: string | null;
+}
+
+// ------------------------------------------------------------------ Avisos push (backend/README.md, "Avisos push")
+
+/** GET /api/admin/push/estado: la clave pública solo viene si el envío está disponible. */
+export interface EstadoPush {
+  disponible: boolean;
+  clavePublica: string | null;
+}
+
+/** POST /api/admin/push/suscripciones: la forma de PushSubscription.toJSON() (sin campos de más: el backend es estricto). */
+export interface SuscripcionPush {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: { p256dh: string; auth: string };
+}
+
+/** GET /api/admin/metas/hoy: la meta de lavados de hoy del equipo (contrato 2026-11-19_09). Nunca lleva pesos. */
+export interface MetaDeHoy {
+  fecha: string;
+  /** null si el mes no tiene meta de lavados o hoy no se atiende. */
+  lavados: { hechos: number; objetivo: number; mesCumplido: boolean } | null;
 }

@@ -1,18 +1,24 @@
 import {
   type Booking,
   type BookingRepository,
+  type CorreccionDeStock,
   ESTADOS_CERRADOS,
+  type Estado,
+  MONTO_MAX,
   type Reprogramacion,
   TurnoCerradoError,
 } from '../domain/booking.js';
 import { fechaConfirmadaRange, MAX_DAYS_CONFIRMADA } from '../domain/booking-dates.js';
 import type { PerfilRepository } from '../domain/perfil.js';
+import type { StockPushNotifier } from '../domain/push.js';
 import type { ServicioRepository } from '../domain/servicios.js';
 import { puedeCambiarEstado, puedeCorregirCobro, puedeRegistrarCobro, puedeReprogramar } from '../domain/permisos.js';
 import { AppError } from '../lib/errors.js';
 import type { Logger } from '../lib/logger.js';
 import type { CambiosTurno } from '../schemas/admin.js';
+import type { AvisoService } from './avisos.js';
 import type { UsuarioSesion } from './auth.js';
+import { avisarStockBajo } from './inventario.js';
 import { serviciosDelLavado } from './servicios.js';
 
 export interface AgendaServiceDeps {
@@ -23,6 +29,10 @@ export interface AgendaServiceDeps {
   perfiles: PerfilRepository;
   logger: Logger;
   now: () => Date;
+  /** Aviso push de stock bajo si corregir los servicios de un lavado deja un insumo bajo el mínimo. */
+  avisos?: StockPushNotifier | undefined;
+  /** Avisos push al encargado (meta del mes cumplida). Opcional: sin él no se avisa. */
+  avisosEquipo?: AvisoService;
 }
 
 export const NOT_FOUND_MESSAGE = 'No encontramos ese turno.';
@@ -36,15 +46,22 @@ export const EMPLEADO_COBRO_COMPLETADO_MESSAGE = 'Con tu rol no podés cambiar e
 export const TRABAJADOR_INVALIDO_MESSAGE = 'Elegí una persona activa del panel.';
 export const EMPLEADO_FORMA_PAGO_MESSAGE = 'Con tu rol no podés cambiar la forma de pago: la corrige un administrador.';
 export const EMPLEADO_SERVICIOS_MESSAGE = 'Con tu rol no podés cambiar los servicios de un turno: los corrige un administrador.';
+export const MOSTRADOR_NO_SE_CANCELA_MESSAGE =
+  'Un lavado de mostrador no se cancela: borralo desde la planilla (así vuelven los productos al stock).';
+export const EMPLEADO_DESCUENTO_MESSAGE = 'Con tu rol no podés cargar descuentos: lo carga un administrador.';
+export const MONTO_MENOR_SENA_MESSAGE = 'El total no puede ser menor que la seña que ya se cobró.';
+const DESCUENTO_TOPE_MESSAGE = `El monto más el descuento no puede pasar de ${MONTO_MAX.toLocaleString('es-AR')}.`;
 
 /** Errores por campo cuando se manda cobro (con valor) para un turno que no queda completado. */
 function erroresCobroSinCompletar(
   monto: number | null | undefined,
   trabajadorId: string | null | undefined,
+  descuento?: { monto: number },
 ): Record<string, string> {
   return {
     ...(monto != null && { monto: COBRO_SOLO_COMPLETADO_MESSAGE }),
     ...(trabajadorId != null && { trabajadorId: COBRO_SOLO_COMPLETADO_MESSAGE }),
+    ...(descuento !== undefined && descuento.monto > 0 && { descuento: COBRO_SOLO_COMPLETADO_MESSAGE }),
   };
 }
 
@@ -77,12 +94,15 @@ export class AgendaService {
    *    fields.servicioIds) también los cambia quien corrige el cobro, en cualquier estado: reemplazan la lista y el
    *    principal (el primero) y mueven updated_at (el servicio se ve en el seguimiento). La misma lista de antes no
    *    escribe nada;
+   *  - un lavado de mostrador nace completado y no sale de ahí: pasarlo a cualquier otro estado es 409 (se deshace
+   *    desde la planilla, que devuelve el stock; contrato 2026-11-17_06, decisión del dueño). Los turnos web no cambian;
    *  - todo se valida antes de escribir: o se guarda todo o nada.
    * Cargar o corregir solo el cobro no mueve updated_at (es el "actualizado el" que ve el cliente).
    */
   async modificar(actor: UsuarioSesion, id: string, cambios: CambiosTurno): Promise<Booking> {
-    const { estado, confirmada, notasInternas, monto, trabajadorId, formaPago, servicioIds } = cambios;
+    const { estado, confirmada, notasInternas, monto, trabajadorId, formaPago, servicioIds, descuento } = cambios;
     if (formaPago !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_FORMA_PAGO_MESSAGE);
+    if (descuento !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_DESCUENTO_MESSAGE);
     if (servicioIds !== undefined && !puedeCorregirCobro(actor.rol)) throw AppError.forbidden(EMPLEADO_SERVICIOS_MESSAGE);
     // Los servicios se validan antes de escribir nada (o se guarda todo o nada).
     const servicios = servicioIds === undefined ? undefined : await this.serviciosNuevos(id, servicioIds);
@@ -95,17 +115,18 @@ export class AgendaService {
 
     // Con fecha/franja: reprogramar. Un turno que se reprograma no está (ni queda) completado: no admite cobro.
     if (confirmada !== undefined) {
-      if (monto != null || trabajadorId != null) {
+      if (monto != null || trabajadorId != null || (descuento !== undefined && descuento.monto > 0)) {
         if (!puedeReprogramar(actor.rol)) throw AppError.forbidden(SIN_PERMISO_REPROGRAMAR_MESSAGE);
-        throw AppError.validation(erroresCobroSinCompletar(monto, trabajadorId));
+        throw AppError.validation(erroresCobroSinCompletar(monto, trabajadorId, descuento));
       }
       return this.reprogramar(actor, id, { confirmada, ...(estado !== undefined && { estado }), ...nota });
     }
 
     if (estado !== undefined && !puedeCambiarEstado(actor.rol, estado)) throw AppError.forbidden(SOLO_COMPLETAR_MESSAGE);
+    await this.verificarEstadoDeMostrador(id, estado);
 
     const completaTodo = puedeRegistrarCobro(actor.rol);
-    const tocaCobro = monto !== undefined || trabajadorId !== undefined;
+    const tocaCobro = monto !== undefined || trabajadorId !== undefined || descuento !== undefined;
     const empleadoCompleta = !completaTodo && estado === 'completado';
     const now = this.deps.now();
 
@@ -117,8 +138,10 @@ export class AgendaService {
         return actual;
       }
       // Sin cobro de por medio: estado y/o nota, como siempre (el repositorio borra el cobro si el turno sale de completado).
-      const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota }, now);
+      const stock = this.correccionDeStock(actor);
+      const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota }, now, stock);
       if (booking === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
+      avisarStockBajo(this.deps.avisos, this.deps.logger, stock.stockBajo);
       return booking;
     }
 
@@ -135,16 +158,34 @@ export class AgendaService {
     const yaCompletado = actual.estado === 'completado';
     if (!completaTodo && tocaCobro && yaCompletado) throw AppError.forbidden(EMPLEADO_COBRO_COMPLETADO_MESSAGE);
 
-    let cobro: { monto?: number | null; trabajadorId?: string | null } = {};
+    let cobro: {
+      monto?: number | null;
+      trabajadorId?: string | null;
+      descuento?: { monto: number; motivo: string | null };
+    } = {};
     if ((estado ?? actual.estado) !== 'completado') {
-      const errores = erroresCobroSinCompletar(monto, trabajadorId);
+      const errores = erroresCobroSinCompletar(monto, trabajadorId, descuento);
       if (Object.keys(errores).length > 0) throw AppError.validation(errores);
     } else if (completaTodo) {
       if (trabajadorId != null) {
         const persona = await this.deps.perfiles.findById(trabajadorId);
         if (persona?.activo !== true) throw AppError.validation({ trabajadorId: TRABAJADOR_INVALIDO_MESSAGE });
       }
-      cobro = { ...(monto !== undefined && { monto }), ...(trabajadorId !== undefined && { trabajadorId }) };
+      // Con los valores que van a quedar: el total no puede ser menor que la seña ni pasar el tope con el descuento.
+      const montoFinal = monto !== undefined ? monto : actual.monto;
+      const descuentoFinal = descuento?.monto ?? actual.descuento ?? 0;
+      const sena = actual.sena?.monto ?? null;
+      if (monto !== undefined && montoFinal !== null && sena !== null && montoFinal < sena) {
+        throw AppError.validation({ monto: MONTO_MENOR_SENA_MESSAGE });
+      }
+      if (montoFinal !== null && montoFinal + descuentoFinal > MONTO_MAX) {
+        throw AppError.validation({ descuento: DESCUENTO_TOPE_MESSAGE });
+      }
+      cobro = {
+        ...(monto !== undefined && { monto }),
+        ...(trabajadorId !== undefined && { trabajadorId }),
+        ...(descuento !== undefined && { descuento }),
+      };
     } else if (!yaCompletado) {
       cobro = { trabajadorId: actor.id }; // el empleado que completa un turno queda como quien lo hizo
     }
@@ -155,14 +196,48 @@ export class AgendaService {
       (cobro.monto === undefined || cobro.monto === actual.monto) &&
       (cobro.trabajadorId === undefined || cobro.trabajadorId === (actual.trabajador?.id ?? null));
     const igualForma = formaPago === undefined || formaPago === actual.formaPago;
-    if (igualEstado && notasInternas === undefined && igualCobro && igualForma && servicios === undefined) return actual;
+    const igualDescuento =
+      cobro.descuento === undefined ||
+      (cobro.descuento.monto === actual.descuento && cobro.descuento.motivo === actual.descuentoMotivo);
+    if (igualEstado && notasInternas === undefined && igualCobro && igualForma && igualDescuento && servicios === undefined) {
+      return actual;
+    }
 
-    const booking = await this.deps.bookings.actualizar(id, { ...(estado !== undefined && { estado }), ...nota, ...cobro }, now);
+    const stock = this.correccionDeStock(actor);
+    const booking = await this.deps.bookings.actualizar(
+      id,
+      { ...(estado !== undefined && { estado }), ...nota, ...cobro },
+      now,
+      stock,
+    );
     if (booking === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
-    if (cobro.monto !== undefined || cobro.trabajadorId !== undefined) {
+    avisarStockBajo(this.deps.avisos, this.deps.logger, stock.stockBajo);
+    if (cobro.monto !== undefined || cobro.trabajadorId !== undefined || cobro.descuento !== undefined) {
       this.deps.logger.info(`Cobro de turno actualizado id=${booking.id} por=${actor.id}`); // sin el importe
     }
+    // Completar o cobrar mueve los ingresos y los trabajos del mes: puede cumplir la meta (aviso push, una vez).
+    if (booking.estado === 'completado') this.deps.avisosEquipo?.revisarMeta();
     return booking;
+  }
+
+  /**
+   * 409 si `estado` saca de completado a un lavado de mostrador (404 si el turno no existe). El origen de un turno no
+   * cambia nunca, así que leerlo antes de escribir no deja carreras. Sin estado, o con 'completado', no lee nada.
+   */
+  private async verificarEstadoDeMostrador(id: string, estado: Estado | undefined): Promise<void> {
+    if (estado === undefined || estado === 'completado') return;
+    const actual = await this.deps.bookings.find(id);
+    if (actual === undefined) throw AppError.notFound(NOT_FOUND_MESSAGE);
+    if (actual.origen === 'mostrador') throw AppError.conflict(MOSTRADOR_NO_SE_CANCELA_MESSAGE);
+  }
+
+  /**
+   * Con quién se registran los movimientos si la corrección cambia los servicios de un lavado de mostrador (el
+   * repositorio devuelve lo que descontó la receta y descuenta la nueva, regla 5) y dónde quedan los insumos que
+   * cruzaron su mínimo.
+   */
+  private correccionDeStock(actor: UsuarioSesion): CorreccionDeStock {
+    return { perfilId: actor.id, stockBajo: [] };
   }
 
   /**
@@ -188,6 +263,7 @@ export class AgendaService {
     const { estado, confirmada } = cambios;
     if (!puedeReprogramar(actor.rol)) throw AppError.forbidden(SIN_PERMISO_REPROGRAMAR_MESSAGE);
     if (estado !== undefined && !puedeCambiarEstado(actor.rol, estado)) throw AppError.forbidden(SOLO_COMPLETAR_MESSAGE);
+    await this.verificarEstadoDeMostrador(id, estado);
 
     // Confirmar una fecha y a la vez cancelar o completar el turno no tiene sentido: se rechaza igual que
     // reprogramar uno que ya está cerrado.

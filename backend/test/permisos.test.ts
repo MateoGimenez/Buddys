@@ -17,9 +17,13 @@ import {
   puedeGestionarInventario,
   puedeGestionarMetas,
   puedeRegistrarUsoInsumos,
+  puedeDefinirRecetas,
+  puedeVerConsumoInventario,
   puedeVerCostosInventario,
   puedeVerInventario,
   puedeEditarDisponibilidad,
+  puedeAsignarRol,
+  puedeGestionarA,
   puedeGestionarUsuarios,
   puedeRegistrarCobro,
   puedeReprogramar,
@@ -33,7 +37,7 @@ afterEach(closeAllContexts);
 /** La verdad escrita a mano, independiente de CAPACIDADES: si alguien cambia una regla, este test lo ve. */
 const ESPERADO: Record<Rol, Record<string, boolean>> = {
   superadmin: { reprogramar: true, borrar: true, usuarios: true, catalogo: true, disponibilidad: true, estadisticas: true, cobro: true, corregir: true },
-  admin: { reprogramar: true, borrar: true, usuarios: false, catalogo: true, disponibilidad: true, estadisticas: true, cobro: true, corregir: true },
+  admin: { reprogramar: true, borrar: true, usuarios: true, catalogo: true, disponibilidad: true, estadisticas: true, cobro: true, corregir: true },
   empleado: { reprogramar: false, borrar: false, usuarios: false, catalogo: false, disponibilidad: false, estadisticas: false, cobro: false, corregir: false },
 };
 
@@ -63,7 +67,6 @@ describe('matriz de permisos (CAPACIDADES) y funciones puede*', () => {
       ['lavados.registrar', puedeAnotarLavadoDeOtro],
       ['turnos.reprogramar', puedeReprogramar],
       ['turnos.borrar', puedeBorrarTurnos],
-      ['usuarios.gestionar', puedeGestionarUsuarios],
       ['catalogo.editar', puedeEditarCatalogo],
       ['disponibilidad.editar', puedeEditarDisponibilidad],
       ['estadisticas.completas', puedeVerEstadisticas],
@@ -78,6 +81,8 @@ describe('matriz de permisos (CAPACIDADES) y funciones puede*', () => {
       ['inventario.usar', puedeRegistrarUsoInsumos],
       ['inventario.gestionar', puedeGestionarInventario],
       ['inventario.gestionar', puedeVerCostosInventario],
+      ['inventario.recetas', puedeDefinirRecetas],
+      ['inventario.consumo', puedeVerConsumoInventario],
     ];
     for (const [id, funcion] of pares) {
       const capacidad = CAPACIDADES.find((c) => c.id === id);
@@ -85,6 +90,8 @@ describe('matriz de permisos (CAPACIDADES) y funciones puede*', () => {
       for (const rol of ROLES) expect(funcion(rol), `${id} ${rol}`).toBe(capacidad?.roles[rol] === 'si');
     }
     for (const rol of ROLES) {
+      // usuarios.gestionar: entra quien tenga algo ("si" o "parcial"); el alcance lo deciden puedeGestionarA y puedeAsignarRol.
+      expect(puedeGestionarUsuarios(rol), rol).toBe(nivelDe(rol, 'usuarios.gestionar') !== 'no');
       const nivel = nivelDe(rol, 'turnos.estado');
       expect(ESTADOS.every((e) => puedeCambiarEstado(rol, e))).toBe(nivel === 'si');
       expect(ESTADOS.some((e) => puedeCambiarEstado(rol, e))).toBe(nivel !== 'no');
@@ -106,6 +113,47 @@ describe('matriz de permisos (CAPACIDADES) y funciones puede*', () => {
     const ids = CAPACIDADES.map((c) => c.id);
     for (const id of ['turnos.ver', 'turnos.estado', 'cobro.registrar', 'catalogo.editar', 'disponibilidad.editar', 'estadisticas.completas', 'estadisticas.propias', 'usuarios.gestionar', 'push.activar']) {
       expect(ids).toContain(id);
+    }
+  });
+});
+
+describe('gestión de usuarios (contrato 2026-11-17_03): superadmin a todos, admin solo empleados', () => {
+  it('la verdad escrita a mano para puedeGestionarA y puedeAsignarRol', () => {
+    const esperado: Record<Rol, Record<Rol, boolean>> = {
+      superadmin: { superadmin: true, admin: true, empleado: true },
+      admin: { superadmin: false, admin: false, empleado: true },
+      empleado: { superadmin: false, admin: false, empleado: false },
+    };
+    for (const actor of ROLES) {
+      for (const objetivo of ROLES) {
+        expect(puedeGestionarA(actor, objetivo), `${actor} sobre ${objetivo}`).toBe(esperado[actor][objetivo]);
+        expect(puedeAsignarRol(actor, objetivo), `${actor} asigna ${objetivo}`).toBe(esperado[actor][objetivo]);
+      }
+    }
+  });
+
+  it('en la matriz: admin "parcial" con su matiz y el texto nuevo', () => {
+    expect(CAPACIDADES.find((c) => c.id === 'usuarios.gestionar')).toEqual({
+      id: 'usuarios.gestionar',
+      grupo: 'Usuarios',
+      texto: 'Crear, editar, desactivar y eliminar usuarios del panel',
+      roles: { superadmin: 'si', admin: 'parcial', empleado: 'no' },
+      matiz: { admin: 'Solo empleados: crearlos, editarlos, desactivarlos y darlos de baja' },
+    });
+  });
+
+  it('GET /api/admin/permisos la muestra igual a los tres roles', async () => {
+    const context = await createTestContext();
+    for (const rol of ROLES) {
+      const { client } = await loginAs(context, rol);
+      const capacidades = (await client.get('/api/admin/permisos')).body.capacidades as { id: string }[];
+      expect(capacidades.find((c) => c.id === 'usuarios.gestionar'), rol).toEqual({
+        id: 'usuarios.gestionar',
+        grupo: 'Usuarios',
+        texto: 'Crear, editar, desactivar y eliminar usuarios del panel',
+        roles: { superadmin: 'si', admin: 'parcial', empleado: 'no' },
+        matiz: { admin: 'Solo empleados: crearlos, editarlos, desactivarlos y darlos de baja' },
+      });
     }
   });
 });
@@ -193,8 +241,9 @@ describe('GET /api/admin/permisos', () => {
     expect(texto('empleado')).toMatch(/completados/);
     expect(texto('empleado')).toMatch(/sin importes/);
     expect(texto('admin')).toMatch(/cobro/);
-    expect(texto('admin')).toMatch(/No gestiona usuarios/);
-    expect(texto('superadmin')).toMatch(/gestionar usuarios/);
+    expect(texto('admin')).toMatch(/Gestiona solo a los empleados/);
+    expect(texto('admin')).not.toMatch(/No gestiona usuarios/);
+    expect(texto('superadmin')).toMatch(/gestionar a todos los usuarios/);
   });
 
   it('exige sesión', async () => {

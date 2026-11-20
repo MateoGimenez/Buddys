@@ -344,15 +344,15 @@ describe('GET /api/admin/gastos', () => {
     }
   });
 
-  it('si la persona que lo cargó se borra, el gasto queda sin autor', async () => {
+  it('la persona que cargó un gasto no se puede borrar (FK RESTRICT): el gasto sigue con su autor', async () => {
     const { context, admin } = await equipo();
     const ana = await addUser(context, { email: 'carla@t.test', rol: 'admin', nombre: 'Carla' });
     const carla = await loginClient(context, 'carla@t.test');
     const creado = await carla.post('/api/admin/gastos', valido());
     expect(creado.body.gasto.creadoPor).toEqual({ id: ana, nombre: 'Carla' });
-    await context.db.sql.query('DELETE FROM auth.users WHERE id = $1::uuid', [ana]);
+    await expect(context.db.sql.query('DELETE FROM auth.users WHERE id = $1::uuid', [ana])).rejects.toMatchObject({ code: '23001' });
     const lista = await admin.get('/api/admin/gastos');
-    expect(lista.body.gastos[0]).toMatchObject({ descripcion: 'Cera en pasta', creadoPor: null });
+    expect(lista.body.gastos[0]).toMatchObject({ descripcion: 'Cera en pasta', creadoPor: { id: ana, nombre: 'Carla' } });
   });
 });
 

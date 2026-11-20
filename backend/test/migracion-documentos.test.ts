@@ -62,8 +62,9 @@ describe('migraciones de inventario y documentos sobre una base con datos', () =
   it('verifyPostgresSchema exige las tablas nuevas', async () => {
     const db = await createPgliteDatabase();
     await expect(verifyPostgresSchema(db.appSql)).resolves.toBeUndefined();
+    await db.sql.query('DROP TABLE buddys.recetas'); // depende de insumos (migración recetas_stock)
     await db.sql.query('DROP TABLE buddys.movimientos_stock');
-    await db.sql.query('DROP TABLE buddys.insumos');
+    await db.sql.query('DROP TABLE buddys.insumos CASCADE');
     await expect(verifyPostgresSchema(db.appSql)).rejects.toThrow(/inventario.*insumos/s);
     await db.close();
   });

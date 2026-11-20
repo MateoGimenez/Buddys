@@ -1,0 +1,189 @@
+/* ------------------------------------------------------------------ Listas de hojas (servicios, equipo, insumos...) */
+
+.lista-hojas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fila-hoja {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fila-hoja[data-inactivo] {
+  background: var(--inactivo);
+}
+
+.fila-hoja[data-alerta] {
+  background: var(--alerta-claro);
+}
+
+.fila-hoja-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+
+.fila-hoja-titulo {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.fila-hoja-monto {
+  margin-inline-start: auto;
+  font-weight: 750;
+  font-size: 1.125rem;
+}
+
+.fila-hoja-texto {
+  color: var(--tinta-2);
+}
+
+.precios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+@media (min-width: 560px) {
+  .precios {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.precios .precios-duracion {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--tinta-2);
+}
+
+.precios div {
+  padding: 8px 10px;
+  border: var(--grosor-fino) solid var(--linea);
+  border-radius: var(--radio-chico);
+}
+
+.precios dt {
+  font-size: 0.8125rem;
+  color: var(--tinta-3);
+  font-weight: 600;
+}
+
+.precios dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.precios [data-no-ofrece] dd {
+  font-weight: 500;
+  color: var(--tinta-3);
+}
+
+.stock strong {
+  font-size: 1.125rem;
+}
+
+.stock span {
+  color: var(--tinta-2);
+}
+
+.lista-simple {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fila-simple {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: var(--grosor-fino) dashed var(--linea);
+}
+
+.fila-simple:last-child {
+  border-bottom: 0;
+}
+
+.fila-simple-principal {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  inline-size: 100%;
+}
+
+.fila-simple-titulo {
+  font-weight: 650;
+}
+
+.fila-simple-monto {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fila-simple-detalle {
+  color: var(--tinta-3);
+  font-size: 0.9375rem;
+}
+
+.total-linea {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: var(--grosor) solid var(--tinta);
+}
+
+.total-linea strong {
+  font-size: 1.375rem;
+  font-weight: 750;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  grid-template-areas: 'desc desc' 'cant precio' 'quitar quitar';
+  gap: 8px;
+  inline-size: 100%;
+  padding-bottom: 12px;
+  border-bottom: var(--grosor-fino) dashed var(--linea);
+}
+
+.item-desc {
+  grid-area: desc;
+}
+
+.item-cant {
+  grid-area: cant;
+}
+
+.item-precio {
+  grid-area: precio;
+}
+
+.item-quitar {
+  grid-area: quitar;
+  justify-self: end;
+}
+
+@media (min-width: 640px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) 90px 150px auto;
+    grid-template-areas: 'desc cant precio quitar';
+    align-items: end;
+  }
+}
+
+/* Foto de la persona (Equipo): centrada con el nombre aunque la fila se alinee por la base del texto. */
+.fila-hoja-cabeza > .avatar {
+  align-self: center;
+}

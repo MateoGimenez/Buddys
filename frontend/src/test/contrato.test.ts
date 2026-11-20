@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import type { PlanillaDelDia, Turno, Usuario } from '../api/types';
-import { errores, lavado, planillaAdmin, planillaEmpleado, real, usuarioAdmin } from './fixtures';
+import type { AlertasStock, Consumo, ParaComprar, PlanillaDelDia, Receta, Turno, Usuario } from '../api/types';
+import {
+  alertas,
+  consumoNoviembre,
+  consumoVacio,
+  errores,
+  fx,
+  lavado,
+  paraComprar,
+  planillaAdmin,
+  planillaEmpleado,
+  real,
+  recetaBasico,
+  usuarioAdmin,
+} from './fixtures';
 
 /** Forma de un valor: las claves de los objetos (recursivo, el primer elemento de cada lista). Las hojas no importan. */
 function forma(valor: unknown): unknown {
@@ -20,11 +33,37 @@ function cuerpo<T>(clave: string): T {
 }
 
 describe('los fixtures del panel tienen la forma de las respuestas reales del backend', () => {
-  it('login, /me y refresh devuelven { usuario: { id, email, nombre, rol } }', () => {
+  it('login, /me y refresh devuelven { usuario: { id, email, nombre, rol, fotoVersion } }', () => {
     for (const clave of ['loginAdmin', 'meAdmin', 'meEmpleado', 'refreshOk']) {
       expect(real[clave]?.status, clave).toBe(200);
-      expect(Object.keys(cuerpo<{ usuario: Usuario }>(clave).usuario).sort(), clave).toEqual(['email', 'id', 'nombre', 'rol']);
+      const u = cuerpo<{ usuario: Usuario }>(clave).usuario;
+      expect(Object.keys(u).sort(), clave).toEqual(['email', 'fotoVersion', 'id', 'nombre', 'rol']);
+      expect(u.fotoVersion === null || typeof u.fotoVersion === 'string', clave).toBe(true);
     }
+    expect(cuerpo<{ usuario: Usuario }>('meAdminConFoto').usuario.fotoVersion).toMatch(/Z$/);
+  });
+
+  it('el perfil (GET, PATCH, PUT y DELETE de /api/admin/perfil) tiene la forma del usuario de la sesión', () => {
+    const claves = Object.keys(usuarioAdmin).sort();
+    for (const clave of ['perfilAdmin', 'perfilEmpleado', 'perfilSinFotos']) {
+      const body = cuerpo<{ perfil: Usuario; fotosDisponibles: boolean }>(clave);
+      expect(Object.keys(body).sort(), clave).toEqual(['fotosDisponibles', 'perfil']);
+      expect(Object.keys(body.perfil).sort(), clave).toEqual(claves);
+    }
+    expect(cuerpo<{ fotosDisponibles: boolean }>('perfilSinFotos').fotosDisponibles).toBe(false);
+    for (const clave of ['perfilPatchNombre', 'perfilPatchPassword', 'perfilFotoSube', 'perfilFotoQuita']) {
+      expect(real[clave]?.status, clave).toBe(200);
+      expect(Object.keys(cuerpo<object>(clave)), clave).toEqual(['perfil']);
+      expect(Object.keys(cuerpo<{ perfil: Usuario }>(clave).perfil).sort(), clave).toEqual(claves);
+    }
+    expect(cuerpo<{ perfil: Usuario }>('perfilFotoSube').perfil.fotoVersion).toMatch(/Z$/);
+    expect(cuerpo<{ perfil: Usuario }>('perfilFotoQuita').perfil.fotoVersion).toBeNull();
+    // Los errores del perfil que usan los tests son los del backend.
+    expect(errores.fotoInvalida).toMatchObject({ status: 400, body: { error: { fields: { foto: 'Subí una foto JPG, PNG o WebP.' } } } });
+    expect(errores.fotoPesada).toMatchObject({ status: 413, body: { error: { code: 'PAYLOAD_TOO_LARGE' } } });
+    expect(errores.passwordActualMal).toMatchObject({ status: 400, body: { error: { fields: { passwordActual: 'La contraseña actual no es correcta.' } } } });
+    expect(errores.passwordLimite).toMatchObject({ status: 429, body: { error: { code: 'RATE_LIMITED' } } });
+    expect(real.fotoAjenaEmpleado?.status).toBe(403);
     expect(usuarioAdmin.rol).toBe('superadmin');
   });
 
@@ -60,18 +99,80 @@ describe('los fixtures del panel tienen la forma de las respuestas reales del ba
     expect(forma(planillaEmpleado('2026-10-16'))).toEqual(forma(cuerpo<PlanillaDelDia>('planillaEmpleado')));
   });
 
+  it('sin ranking: ni la planilla ni las estadísticas traen porTrabajador; cada lavado trae registradoPor', () => {
+    for (const clave of ['planillaAdmin', 'planillaEmpleado', 'planillaVacia']) {
+      expect(cuerpo<PlanillaDelDia>(clave).resumen, clave).not.toHaveProperty('porTrabajador');
+    }
+    for (const clave of ['estadisticasMes', 'estadisticasAnio', 'estadisticasVacio']) {
+      expect(fx[clave]?.body, clave).not.toHaveProperty('porTrabajador');
+      expect(fx[clave]?.body, clave).not.toHaveProperty('completadosSinTrabajador');
+    }
+    // El empleado también recibe quién registró cada lavado (es un nombre, no un importe).
+    const delEmpleado = cuerpo<PlanillaDelDia>('planillaEmpleado').lavados;
+    expect(delEmpleado.every((l) => l.registradoPor === null || typeof l.registradoPor.nombre === 'string')).toBe(true);
+    expect(delEmpleado.map((l) => l.registradoPor?.nombre)).toContain('Beto');
+    expect(cuerpo<{ lavado: Turno }>('lavadoAdmin').lavado.registradoPor).toEqual({ id: usuarioAdmin.id, nombre: 'Ana' });
+    // Turnos de la web: registradoPor null (backend, lista de turnos).
+    const turnos = (fx.listaAdmin?.body as { bookings: Turno[] }).bookings;
+    expect(turnos.some((t) => t.origen === 'web' && t.registradoPor === null)).toBe(true);
+  });
+
   it('al empleado el backend le manda los montos en null (lavado, planilla y corrección de nota)', () => {
     expect(cuerpo<{ lavado: Turno }>('lavadoEmpleado').lavado.monto).toBeNull();
     const p = cuerpo<PlanillaDelDia>('planillaEmpleado');
     expect(p.lavados.every((l) => l.monto === null)).toBe(true);
     expect(p.resumen.total).toBeNull();
-    expect(p.resumen.porTrabajador.every((r) => r.total === null)).toBe(true);
     expect(p.resumen.porFormaPago.length).toBeGreaterThan(0);
     expect(p.resumen.porFormaPago.every((f) => f.total === null)).toBe(true);
     expect(cuerpo<{ booking: Turno }>('patchEmpleado').booking.monto).toBeNull();
     // y la fixture del empleado respeta lo mismo
     const f = planillaEmpleado('2026-10-16');
     expect(f.lavados.every((l) => l.monto === null) && f.resumen.total === null).toBe(true);
+  });
+
+  it('recetas, alertas, para comprar y consumo (contrato 06): misma forma que el contrato del backend, y los fixtures salen de ahí', () => {
+    const pares: [string, string][] = [
+      ['recetasAdmin', 'recetasAdmin'],
+      ['recetasEmpleado', 'recetasEmpleado'],
+      ['recetaPut', 'recetaPut'],
+      ['alertasAdmin', 'alertasAdmin'],
+      ['paraComprarAdmin', 'paraComprarAdmin'],
+      ['consumoAdmin', 'consumoAdmin'],
+      ['recetaPutInsumoInvalido', 'error400RecetaInsumo'],
+      ['recetaPutVehiculoNoOfrecido', 'error400RecetaVehiculo'],
+      ['recetaPutEmpleado', 'error403RecetaEmpleado'],
+      ['alertasEmpleado', 'error403AlertasEmpleado'],
+      ['paraComprarEmpleado', 'error403ParaComprarEmpleado'],
+      ['consumoEmpleado', 'error403ConsumoEmpleado'],
+    ];
+    for (const [delPanel, delBackend] of pares) {
+      expect(real[delPanel]?.status, delPanel).toBe(fx[delBackend]?.status);
+      expect(forma(real[delPanel]?.body), delPanel).toEqual(forma(fx[delBackend]?.body));
+    }
+    // Los mensajes de error son los mismos (el panel los muestra tal cual).
+    expect(real.recetaPutInsumoInvalido?.body).toEqual(fx.error400RecetaInsumo?.body);
+    expect(real.consumoEmpleado?.body).toEqual(fx.error403ConsumoEmpleado?.body);
+
+    // Los fixtures de los tests son esas respuestas.
+    expect(recetaBasico()).toEqual(cuerpo<{ recetas: Receta[] }>('recetasAdmin').recetas[0]);
+    expect(alertas(2)).toEqual(cuerpo<AlertasStock>('alertasAdmin'));
+    expect(forma(alertas(3))).toEqual(forma(fx.alertasAdmin?.body));
+    expect(paraComprar()).toEqual(cuerpo<ParaComprar>('paraComprarAdmin'));
+    expect(consumoNoviembre()).toEqual(cuerpo<Consumo>('consumoAdmin'));
+    expect(Object.keys(consumoVacio()).sort()).toEqual(Object.keys(fx.consumoAdmin?.body as object).sort());
+    expect(consumoVacio().porInsumo).toEqual([]);
+
+    // Tipos que el panel da por sentados (api/types.ts).
+    for (const p of [cuerpo<ParaComprar>('paraComprarAdmin'), fx.paraComprarAdmin?.body as ParaComprar]) {
+      expect(typeof p.costoTotalEstimado).toBe('number'); // nunca null: 0 si nada tiene costo
+      expect(p.costoTotalEstimado).toBe(p.items.reduce((a, i) => a + (i.costoEstimado ?? 0), 0));
+    }
+    expect(consumoVacio().costoPorLavado).toBeNull();
+    expect(consumoVacio().lavados.serie.length).toBeGreaterThan(0); // con ceros, no vacía
+    expect(typeof consumoNoviembre().costoPorLavado).toBe('number');
+    // El empleado ve las recetas sin costos.
+    expect(JSON.stringify(real.recetasEmpleado?.body)).not.toMatch(/costo/i);
+    expect(JSON.stringify(fx.recetasEmpleado?.body)).not.toMatch(/costo/i);
   });
 
   it('los errores que usan los tests son los del backend', () => {

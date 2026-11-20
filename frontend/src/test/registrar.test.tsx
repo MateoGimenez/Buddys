@@ -63,26 +63,28 @@ describe('Registrar lavado', () => {
     expect(monto()).toHaveValue('16.000');
   });
 
-  it('manda el lavado con servicios, vehículo, monto y trabajador, y muestra la confirmación', async () => {
+  it('manda el lavado con servicios, vehículo y monto (sin trabajadorId), y muestra la confirmación', async () => {
     const api = apiFalsa({
       ...sesionAdmin(),
-      'POST /api/admin/lavados': {
-        status: 201,
-        body: registrado({ servicioId: 'lavado-basico', monto: 13500, trabajador: { id: BETO_ID, nombre: 'Beto' } }),
-      },
+      'POST /api/admin/lavados': { status: 201, body: registrado({ servicioId: 'lavado-basico', monto: 13500 }) },
     });
     const { user } = renderApp('/registrar');
     await user.click(await screen.findByRole('checkbox', { name: /Lavado Básico/ }));
     await user.clear(monto());
     await user.type(monto(), '13500');
     expect(monto()).toHaveValue('13.500');
-    await user.selectOptions(screen.getByLabelText('Quién lo lavó'), BETO_ID);
+    // Sin selector "Quién lo lavó" (contrato 05): queda registrado a nombre de quien lo carga.
+    expect(screen.queryByLabelText('Quién lo lavó')).toBeNull();
+    expect(screen.getByText('Registrado por')).toBeInTheDocument();
+    expect(screen.getByText('Vos, Ana')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Registrar lavado' }));
 
     expect(await screen.findByText('Lavado registrado')).toBeInTheDocument();
     const [pedido] = api.de('POST', '/api/admin/lavados');
     expect(pedido?.headers['Content-Type']).toBe('application/json');
-    expect(pedido?.body).toEqual({ servicioIds: ['lavado-basico'], vehiculoTipo: 'auto', monto: 13500, trabajadorId: BETO_ID, idLocal: unUuid() });
+    expect(pedido?.body).toEqual({ servicioIds: ['lavado-basico'], vehiculoTipo: 'auto', monto: 13500, idLocal: unUuid() });
+    // Ni el admin pide la lista del equipo: ya no hay a quién elegir.
+    expect(api.de('GET', '/api/admin/trabajadores')).toHaveLength(0);
     expect(pedido?.body).not.toHaveProperty('servicioId');
     // El formulario queda listo para el siguiente.
     expect(monto()).toHaveValue('');
@@ -163,7 +165,7 @@ describe('Registrar lavado', () => {
     }
   });
 
-  it('el empleado queda fijo como quien lavó y no manda trabajadorId', async () => {
+  it('el empleado ve que queda registrado a su nombre y no manda trabajadorId', async () => {
     const api = apiFalsa({
       ...sesionEmpleado(),
       'POST /api/admin/lavados': { status: 201, body: registrado({ monto: null, trabajador: { id: BETO_ID, nombre: 'Beto' } }) },
@@ -284,7 +286,7 @@ describe('Registrar con varios servicios (catálogo de 14)', () => {
     await user.type(monto(), '20000');
     await user.click(screen.getByRole('checkbox', { name: /Motor/ }));
     expect(monto()).toHaveValue('20.000');
-    expect(monto()).toHaveAccessibleDescription(/Lo cambiaste a mano: la lista da \$ 75\.000/);
+    expect(monto()).toHaveAccessibleDescription(/Lo cambiaste a mano: la lista da \$\s75\.000/);
     await user.click(screen.getByRole('radio', { name: 'SUV' }));
     expect(monto()).toHaveValue('20.000');
   });

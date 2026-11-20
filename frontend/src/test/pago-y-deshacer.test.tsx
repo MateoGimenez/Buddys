@@ -81,7 +81,7 @@ describe('Deshacer el lavado recién registrado', () => {
     await user.click(screen.getByRole('button', { name: 'Deshacer' }));
 
     expect(await screen.findByText('Lavado borrado')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Ya no cuenta en la planilla.');
+    expect(screen.getByRole('status')).toHaveTextContent('Ya no cuenta en la planilla y los productos que usó volvieron al stock.');
     const [del] = api.de('DELETE', '/api/admin/lavados/nuevo');
     expect(del?.headers['Content-Type']).toBe('application/json');
     const cerrar = screen.getByRole('button', { name: 'Cerrar' });

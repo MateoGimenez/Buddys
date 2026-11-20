@@ -62,6 +62,8 @@ describe('desarrollo: defaults seguros', () => {
     });
     expect(DEFAULT_RATE_LIMITS.bookings).toEqual({ windowMs: 15 * 60 * 1000, limit: 5 });
     expect(DEFAULT_RATE_LIMITS.loginFailures).toEqual({ windowMs: 15 * 60 * 1000, limit: 5 });
+    expect(DEFAULT_RATE_LIMITS.loginFailuresIp).toEqual({ windowMs: 15 * 60 * 1000, limit: 30 });
+    expect(DEFAULT_RATE_LIMITS.lavados).toEqual({ windowMs: 60 * 1000, limit: 60 });
   });
 
   it('TURNOS_ONLINE: true/1 o false/0 (por defecto, apagado: sistema interno)', () => {

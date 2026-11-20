@@ -350,3 +350,16 @@ describe('varios orígenes permitidos (FRONTEND_ORIGIN con una lista, ej.: proba
     expect(stranger.headers['access-control-allow-origin']).toBeUndefined();
   });
 });
+
+describe('CSP fuera de /api (el backend no sirve el panel)', () => {
+  it('el backend no sirve el panel: /sw.js, /manifest.webmanifest y /admin/sw.js son 404 JSON con la CSP que bloquea todo', async () => {
+    const { app } = await createTestContext();
+    for (const ruta of ['/sw.js', '/push-sw.js', '/manifest.webmanifest', '/admin/sw.js', '/']) {
+      const r = await request(app).get(ruta);
+      expect(r.status, ruta).toBe(404);
+      expect(r.headers['content-type'], ruta).toMatch(/application\/json/);
+      expect(r.headers['content-security-policy'], ruta).toBe("default-src 'none';frame-ancestors 'none'");
+      expect(r.headers['x-frame-options'], ruta).toBe('DENY');
+    }
+  });
+});

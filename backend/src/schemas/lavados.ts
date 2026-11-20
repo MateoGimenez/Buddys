@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FRANJAS, MONTO_MAX, VEHICULO_TIPOS } from '../domain/booking.js';
+import { ETAPAS, FRANJAS, MONTO_MAX, VEHICULO_TIPOS } from '../domain/booking.js';
 import { SERVICIO_ID_MAX, SERVICIO_ID_REGEX } from '../domain/servicios.js';
 import { isValidCalendarDate } from '../lib/dates.js';
 import { MAX_NOTAS_INTERNAS, charLength, formaPagoTurnoSchema } from './admin.js';
@@ -15,6 +15,7 @@ import {
   nullToUndefined,
   stripBidi,
 } from './bookings.js';
+import { descuentoMotivoSchema, descuentoSchema, revisarDescuento } from './descuentos.js';
 import { SERVICIOS_LAVADO_MSG, servicioIdsSchema } from './servicios.js';
 
 /** Hasta cuántos días para atrás se puede registrar un lavado que se olvidó cargar. */
@@ -25,7 +26,7 @@ const TRABAJADOR_MSG = 'Elegí quién hizo el lavado.';
 const FECHA_MSG = 'Elegí una fecha válida (YYYY-MM-DD).';
 const SERVICIOS_DOS_FORMAS_MSG = 'Mandá servicioIds (la lista) o servicioId (uno solo), no los dos.';
 const NOTAS_MSG = `La nota tiene que tener hasta ${String(MAX_NOTAS_INTERNAS)} caracteres.`;
-
+const ETAPA_MSG = `La etapa tiene que ser una de: ${ETAPAS.join(', ')}.`;
 /** Texto opcional de una línea: "" u omitido => null. */
 const textoOpcional = (max: number, campo: string) =>
   z.preprocess(
@@ -86,6 +87,9 @@ export function registrarLavadoSchema(range: { min: string; max: string }) {
       .optional(),
     franja: z.enum(FRANJAS, { error: 'La franja tiene que ser manana o tarde.' }).optional(),
     formaPago: formaPagoTurnoSchema.default(null),
+    etapa: z.enum(ETAPAS, { error: ETAPA_MSG }).default('entregado'),
+    descuento: descuentoSchema.default(0),
+    descuentoMotivo: descuentoMotivoSchema,
     idLocal: z
       .uuid({ error: 'El idLocal tiene que ser un UUID.' })
       .transform((id) => id.toLowerCase())
@@ -127,18 +131,22 @@ export function registrarLavadoSchema(range: { min: string; max: string }) {
         .default(null),
     ),
   })
-    .superRefine(({ servicioIds, servicioId }, ctx) => {
+    .superRefine(({ servicioIds, servicioId, monto, descuento, descuentoMotivo }, ctx) => {
       if (servicioIds !== undefined && servicioId !== undefined) {
         ctx.addIssue({ code: 'custom', path: ['servicioIds'], message: SERVICIOS_DOS_FORMAS_MSG });
       } else if (servicioIds === undefined && servicioId === undefined) {
         ctx.addIssue({ code: 'custom', path: ['servicioIds'], message: SERVICIOS_LAVADO_MSG });
       }
+      revisarDescuento(ctx, monto, descuento, descuentoMotivo);
     })
     .transform(({ servicioIds, servicioId, ...resto }) => ({
       ...resto,
       servicioIds: servicioIds ?? (servicioId === undefined ? [] : [servicioId]),
     }));
 }
+
+/** PATCH /api/admin/lavados/:id/etapa { etapa }. */
+export const etapaSchema = z.strictObject({ etapa: z.enum(ETAPAS, { error: ETAPA_MSG }) });
 
 /** GET /api/admin/lavados?fecha=YYYY-MM-DD (sin fecha: hoy). */
 export const lavadosQuerySchema = z.object({

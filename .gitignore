@@ -43,3 +43,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Copia de las skills que instala `npx skills add` (las versionadas están en .claude/skills)
+.agents/
