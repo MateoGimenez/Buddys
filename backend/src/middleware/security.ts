@@ -6,12 +6,10 @@ import type { AppConfig } from '../config.js';
 const PERMISSIONS_POLICY = 'camera=(), microphone=(), geolocation=(), payment=(), usb=()';
 
 /**
- * Cabeceras de seguridad (helmet), iguales para TODAS las respuestas. Este proceso sirve solo la API (render.yaml:
- * un único Web Service; afuera de /api solo hay el 404 en JSON): nunca entrega HTML, scripts, el service worker ni el
- * manifest. Por eso la CSP es la mínima, "default-src 'none'; frame-ancestors 'none'": nada de lo que responda puede
- * cargar ni ejecutar recursos ni embeberse en un frame.
- * El frontend (la PWA de frontend/, con su sw.js y su manifest.webmanifest en la raíz) se publica aparte, como sitio
- * estático (todavía no está en render.yaml): su CSP la ponen las cabeceras de ese hosting, no este middleware.
+ * Cabeceras de seguridad (helmet), iguales para TODAS las respuestas. La CSP es la mínima, "default-src 'none';
+ * frame-ancestors 'none'": nada de lo que responda la API puede cargar ni ejecutar recursos ni embeberse en un frame.
+ * Si PANEL_DIR está, lo que entrega el panel (HTML, scripts, service worker, manifest) la pisa con la suya
+ * (middleware/panel.ts); lo que cae al 404 JSON conserva esta.
  */
 export function securityHeaders(config: Pick<AppConfig, 'isProduction'>): RequestHandler {
   const headers = helmet({

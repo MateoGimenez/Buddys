@@ -10,6 +10,7 @@ import { SupabaseAdminClient } from './lib/supabase-admin.js';
 import { type FetchFn, SupabaseAuthClient } from './lib/supabase-auth.js';
 import { SupabaseStorageClient } from './lib/supabase-storage.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { servirPanel } from './middleware/panel.js';
 import { type PlazosCuerpo, plazoDelCuerpo } from './middleware/plazo-cuerpo.js';
 import { createRateLimiters } from './middleware/rate-limit.js';
 import { requestLogger } from './middleware/request-logger.js';
@@ -240,7 +241,10 @@ export function createApp(deps: AppDeps): Express {
       exportar,
     }),
   );
-
+  // El panel compilado, en el mismo origen (solo si PANEL_DIR está): después de /api, nunca pisa la API.
+  if (config.panelDir !== undefined) {
+    app.use(servirPanel(config.panelDir, config.supabase.url));
+  }
 
   app.use(notFoundHandler);
   app.use(errorHandler(logger));

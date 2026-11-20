@@ -1,40 +1,41 @@
-# Render Blueprint: UN servicio.
-#  - buddys (Web Service): la API de Node (Express) del sistema interno de Buddys Wash Detail. El panel web está en
-#    frontend/ y llama a /api relativo: tiene que compartir origen con la API (proxy). Su despliegue está PENDIENTE
-#    (lo decide el dueño); por ahora este Blueprint publica solo la API (ver backend/README.md, "Despliegue").
-#    En el plan gratis se duerme tras 15 min sin pedidos; el primer pedido la despierta.
+# Render Blueprint: UN servicio, panel y API juntos.
+#  - buddys (Web Service): el proceso de Node (Express) sirve la API en /api y el panel web compilado (frontend/dist,
+#    PANEL_DIR) en el resto de las rutas. Un solo origen, como necesita el panel (llama a /api relativo con cookies
+#    SameSite=Strict). En el plan gratis se duerme tras 15 min sin pedidos; el primer pedido la despierta.
 # Uso: en Render, New > Blueprint, elegir este repo (o, si ya existe, "Sync" del Blueprint). Las variables con
 # `sync: false` se cargan a mano en el panel de Render (son secretos o datos tuyos): nunca van al repo. Detalle de cada
 # una en backend/.env.example.
 #
-# Dominio provisorio de la API: api.buddyswashdetail.com.ar (COMPLETAR con el dominio real).
+# Dirección: la que asigna Render (https://<nombre>.onrender.com). FRONTEND_ORIGIN y PUBLIC_URL llevan esa misma
+# dirección. Un dominio propio (ej. panel.buddyswashdetail.com.ar) se suma después en Settings > Custom Domains, y
+# entonces se agrega a FRONTEND_ORIGIN.
 services:
-  # ---------------------------------------------------------------------------------------------------------------
-  # Backend: la API (Web Service)
-  # ---------------------------------------------------------------------------------------------------------------
   - type: web
     name: buddys
     runtime: node
     # Poné la región más cercana a tu proyecto de Supabase (menos demora entre la API y la base).
     region: virginia
-    # Plan gratis: se duerme tras 15 min sin pedidos (el primero espera ~30-60 s). Un monitor gratis (UptimeRobot,
-    # cada 10 min a https://api.buddyswashdetail.com.ar/api/health) lo mantiene despierto. Cuando haya clientes, cambiá a
-    # `starter` (~US$7/mes, no se duerme) y volvé a sincronizar el Blueprint.
+    # Plan gratis: se duerme tras 15 min sin pedidos (el primero espera ~30-60 s). Antes de mostrarlo, abrilo un minuto
+    # antes, o usá un monitor gratis (UptimeRobot, cada 10 min a /api/health). Para uso diario, `starter` (~US$7/mes).
     plan: free
-    # NODE_ENV=production hace que `npm ci` salte las devDependencies (typescript), que el build necesita.
-    buildCommand: npm --prefix backend ci --include=dev && npm --prefix backend run build
+    # NODE_ENV=production hace que `npm ci` salte las devDependencies (typescript, vite), que el build necesita.
+    buildCommand: >-
+      npm --prefix backend ci --include=dev && npm --prefix backend run build &&
+      npm --prefix frontend ci --include=dev && npm --prefix frontend run build
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
-    # Solo se vuelve a publicar si cambia algo del backend.
+    # Se vuelve a publicar si cambia el backend o el panel.
     buildFilter:
       paths:
         - backend/**
+        - frontend/**
         - package.json
         - .node-version
-    domains:
-      - api.buddyswashdetail.com.ar
     envVars:
+      # El panel compilado (relativo a backend/): lo sirve este mismo proceso fuera de /api.
+      - key: PANEL_DIR
+        value: ../frontend/dist
       - key: NODE_VERSION
         value: "24"
       - key: NODE_ENV
@@ -48,11 +49,11 @@ services:
       # Un proxy inverso (el de Render) entre el visitante y la API: para que el límite de pedidos vea la IP real.
       - key: TRUST_PROXY
         value: "1"
-      # Orígenes exactos del frontend que va a usar esta API (esquema + host, sin barra final), separados por coma.
-      # Los usan CORS y la defensa CSRF. Cargá acá el dominio público del panel cuando se defina su despliegue.
+      # La dirección pública exacta del servicio (https://<nombre>.onrender.com, sin barra final). La usan CORS y la
+      # defensa CSRF: si no coincide con la que ve el navegador, todos los POST/PATCH/DELETE dan 403.
       - key: FRONTEND_ORIGIN
         sync: false
-      # Dirección pública del panel (links en los avisos). Opcional hasta que se defina el despliegue del panel.
+      # La misma dirección (links al panel en los avisos).
       - key: PUBLIC_URL
         sync: false
       # El certificado raíz de Supabase ya está en el repo (backend/certs).

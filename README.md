@@ -4,8 +4,9 @@ Sistema interno de **Buddys Wash Detail** ([@buddyswashdetail](https://www.insta
 registrar los lavados y llevar el seguimiento del taller: cuántos autos se lavan, quién registró cada uno, los
 ingresos y qué hay que reponer. Tiene dos partes: la **API** (`backend/`, el backend del sistema de MgDetailing
 adaptado a Buddys) y el **panel web** (`frontend/`, Vite + React), que se usa desde el celular y llama a la API por
-`/api`. Cómo se publica el panel en producción está **pendiente** (ver
-[backend/README.md](backend/README.md#despliegue)).
+`/api`. En producción los dos van juntos en un solo servicio de Render (`render.yaml`): la API sirve también el panel
+compilado. Cómo publicarlo y cómo cargar o borrar los datos de ejemplo para una demo:
+[backend/README.md, "Despliegue"](backend/README.md#despliegue).
 
 ## Qué hace
 

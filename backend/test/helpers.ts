@@ -68,6 +68,7 @@ export function testConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     recordatorios: { cronSecret: undefined, email: undefined, whatsapp: undefined },
     push: undefined,
     publicUrl: undefined,
+    panelDir: undefined,
     warnings: [],
     ...overrides,
   };

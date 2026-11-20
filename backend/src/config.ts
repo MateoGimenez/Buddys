@@ -152,6 +152,12 @@ export interface AppConfig {
   push: PushConfig | undefined;
   /** Origen público del sitio (sin barra final), para el link al panel en los avisos. */
   publicUrl: string | undefined;
+  /**
+   * Carpeta del panel compilado (frontend/dist, con su index.html). Si está, este mismo proceso sirve el panel fuera
+   * de /api: un solo origen, como necesita el cliente del frontend (llama a /api relativo). undefined = solo la API
+   * (fuera de /api, 404 JSON).
+   */
+  panelDir: string | undefined;
   /** Avisos para mostrar al arrancar (ej.: variables que ya no se usan). */
   warnings: string[];
 }
@@ -397,6 +403,7 @@ const envSchema = z.object({
   SUPABASE_SECRET_KEY: optionalEnv(z.string()),
   TRUST_PROXY: optionalEnv(trustProxySchema),
   PUBLIC_URL: optionalEnv(originSchema),
+  PANEL_DIR: optionalEnv(z.string().trim().min(1).max(500, { error: 'es demasiado larga' })),
   WHATSAPP_PROVIDER: optionalEnv(
     z
       .string()
@@ -810,6 +817,15 @@ export function parseConfig(env: NodeJS.ProcessEnv): AppConfig {
   const recordatorios = recordatoriosFromValues(values, isProduction, problems, warnings);
   const push = pushFromValues(values, problems);
 
+  let panelDir: string | undefined;
+  if (values?.PANEL_DIR !== undefined) {
+    panelDir = path.resolve(BACKEND_ROOT, values.PANEL_DIR);
+    const index = path.join(panelDir, 'index.html');
+    if (!existsSync(index)) {
+      problems.push(`PANEL_DIR: falta el panel compilado (${index}); corré npm run build:front`);
+    }
+  }
+
   const database = databaseResult.database;
   if (problems.length > 0 || values === undefined || database === undefined || supabase === undefined) {
     throw new ConfigError(problems);
@@ -853,6 +869,7 @@ export function parseConfig(env: NodeJS.ProcessEnv): AppConfig {
     push,
     turnosOnline: values.TURNOS_ONLINE ?? false,
     publicUrl: values.PUBLIC_URL,
+    panelDir,
     warnings,
   };
 }

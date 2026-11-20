@@ -1513,23 +1513,46 @@ Si se vuelve a correr `npm run vapid` y se cambia el par, los dispositivos ya su
 
 ### Despliegue
 
-Hoy `render.yaml` (raíz) crea solo el Web Service de la API, `buddys` (`npm start` → `node dist/index.js`), detrás
-del HTTPS de Render, con `TURNOS_ONLINE=false`. **Pendiente: cómo se despliega el frontend** (lo decide el dueño).
+`render.yaml` (raíz) crea un solo Web Service, `buddys` (`npm start` → `node dist/index.js`), detrás del HTTPS de
+Render, con `TURNOS_ONLINE=false`. El build compila la API y el panel; con `PANEL_DIR=../frontend/dist` el mismo
+proceso sirve **la API en `/api` y el panel en el resto de las rutas** (`src/middleware/panel.ts`).
 
 ```
-cliente (panel web, curl, app) --HTTPS--> api.buddyswashdetail.com.ar (esta API)
-                                                  |
-                                                  +--TLS--> Postgres en Supabase (Session pooler, esquema buddys)
-                                                  +--HTTPS--> Supabase Auth (/auth/v1: token, logout, JWKS)
+navegador --HTTPS--> https://<nombre>.onrender.com
+                       |-- /api/*  -> esta API
+                       |-- resto   -> el panel (frontend/dist; rutas del panel -> index.html)
+                       +--TLS--> Postgres en Supabase (Session pooler, esquema buddys)
+                       +--HTTPS--> Supabase Auth (/auth/v1: token, logout, JWKS)
 ```
 
-Cómo habla el panel con la API hoy: el frontend (`frontend/src/api/client.ts`) llama a **`/api` relativo** con
-`credentials: 'same-origin'`, así que **la web y la API tienen que compartir origen**. En desarrollo lo resuelve el
-proxy de Vite (`5173 -> 4000`); en producción hace falta lo mismo: un proxy (o la misma app) que sirva el panel y
-mande `/api` a esta API bajo un único dominio. Con dominios separados (`app.dominio` y `api.dominio`) el panel no
-funcionaría tal como está: habría que cambiar el cliente a una URL absoluta con `credentials: 'include'`. En
-cualquier caso, `FRONTEND_ORIGIN` lleva el origen público exacto del panel (CORS + defensa CSRF). **Pendiente: definir
-el despliegue del frontend** (dominio y proxy); hasta entonces este esquema es solo de la API.
+Por qué un solo origen: el frontend (`frontend/src/api/client.ts`) llama a **`/api` relativo** con
+`credentials: 'same-origin'` y las cookies de sesión son `SameSite=Strict`. En desarrollo lo resuelve el proxy de Vite
+(`5173 -> 4000`); en producción, este mismo proceso. `FRONTEND_ORIGIN` y `PUBLIC_URL` llevan la dirección pública
+exacta del servicio. Un dominio propio se suma en Render (Settings > Custom Domains) y se agrega a `FRONTEND_ORIGIN`.
+
+Cabeceras del panel: su propia CSP (`script-src`, `style-src`, `worker-src` y `manifest-src` en `'self'`, imágenes y
+subidas también a Supabase Storage, sin `'unsafe-inline'`), `assets/` con caché de un año (`immutable`, nombres con
+hash) y `index.html`, `sw.js` y el manifest sin caché, para que la PWA se actualice. Lo que no es del panel sigue con
+la CSP que bloquea todo y el `404` JSON.
+
+#### Publicar en Render (primera vez)
+
+1. En Render: **New > Blueprint**, elegir el repo `Buddys` y la rama `main`.
+2. Cargar las variables `sync: false`: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
+   `SUPABASE_SECRET_KEY` y las tres `VAPID_*` (las mismas de `backend/.env`). `FRONTEND_ORIGIN` y `PUBLIC_URL` se
+   pueden dejar vacías en el primer deploy.
+3. Cuando Render muestre la dirección (`https://<nombre>.onrender.com`), ponerla en `FRONTEND_ORIGIN` y en
+   `PUBLIC_URL` (sin barra final) y volver a desplegar. Sin eso, el login y todo lo que guarda da `403`.
+4. Probar `https://<nombre>.onrender.com/api/health` y entrar al panel.
+
+En el plan gratis el servicio se duerme a los 15 minutos sin uso: antes de mostrarlo, abrirlo un minuto antes.
+
+#### Datos de ejemplo (demo)
+
+`supabase/demo/cargar.sql` carga ~75 días de lavados, turnos de los próximos días, gastos, insumos y la meta del mes,
+a nombre de los perfiles existentes. Todo tiene un id que empieza con `de30000`. **`supabase/demo/borrar.sql` lo saca
+entero** sin tocar los datos reales: correrlo antes de que el lavadero empiece a usar el sistema en serio. Se corren en
+el SQL Editor de Supabase (proyecto Buddys), no con el rol `buddys_app` (no puede borrar movimientos de stock).
 
 ### Variables en producción
 
@@ -1584,7 +1607,7 @@ Igual que en desarrollo: los usuarios se crean en el panel de Supabase y se acti
 - **Seguimiento público**: solo campos sin datos personales, `404` igual para inexistente e inválido, UUID aleatorio (122 bits), rate limit propio y `noindex`.
 - **Último lugar**: el alta pública bloquea la fecha con `pg_advisory_xact_lock` dentro de la transacción del `INSERT` (sin carreras). Con mucha contención, el `lock_timeout` de 5 s de `buddys_app` puede cortar una espera (`500`); para un taller no pasa.
 - **Entrada**: zod estricto (rechaza campos desconocidos), body máximo de 10 kb, sin cuerpos comprimidos. SQL siempre parametrizado (`$1, $2...`), y una regla de ESLint prohíbe construir SQL con interpolación o concatenación en `query()` y `exec()`.
-- **Cabeceras**: helmet (HSTS en producción, `nosniff`, `X-Frame-Options: DENY`...), `Permissions-Policy`, `Cache-Control: no-store` en la API. Una sola CSP para todo, `default-src 'none'; frame-ancestors 'none'`: el backend sirve solo la API (fuera de `/api`, un `404` JSON) y nunca HTML, scripts, el service worker ni el manifest. La CSP del panel (la PWA de `frontend/`, con `sw.js`, `push-sw.js` y `manifest.webmanifest` en la raíz) la tiene que poner el hosting estático del frontend (con `script-src` y `worker-src` en `'self'`, porque el service worker hace `importScripts('/push-sw.js')`).
+- **Cabeceras**: helmet (HSTS en producción, `nosniff`, `X-Frame-Options: DENY`...), `Permissions-Policy`, `Cache-Control: no-store` en la API. La API lleva `default-src 'none'; frame-ancestors 'none'`. Con `PANEL_DIR`, lo que entrega el panel lleva su propia CSP (`middleware/panel.ts`: todo en `'self'`, más Supabase en `img-src` y `connect-src`, sin `'unsafe-inline'`); lo demás fuera de `/api` es `404` JSON con la CSP de la API.
 - **Textos de una línea** (nombres, categorías, notas, descripciones de gastos, motivos): además de los controles `Cc`, se rechazan los separadores de línea y de párrafo de Unicode (U+2028 y U+2029).
 - **Datos personales**: nunca se escriben en los logs (una línea por request: método, ruta sin query, status y milisegundos; al crear un turno solo `id + servicio + fecha`; el aviso de WhatsApp solo `id` y status; login y gestión de usuarios solo ids de usuario, nunca emails ni tokens). Al borrar un turno, la fila queda en disco hasta que `autovacuum` reutiliza el espacio.
 - **Base de datos (Postgres)**: esquemas `buddys` y `buddys_private` no expuestos por la Data API, RLS en todas las tablas con policies solo para `buddys_app`, `REVOKE` a `anon`/`authenticated`/`service_role`, TLS con verificación del certificado de Supabase, contraseña solo en `DATABASE_URL` (nunca en logs ni errores). Ver [Seguridad en la base](#seguridad-en-la-base-supabase).
@@ -1645,7 +1668,7 @@ Los tests usan un reloj fijo, **PGlite** (Postgres compilado a WebAssembly, en m
 - `push.test.ts`: lista permitida de endpoints (anti SSRF), estado con y sin claves, alta válida e inválida (host no permitido, http, base64 malo, campos de más), todos los roles, 401 sin sesión, CSRF, reasignación entre usuarios, tope de 10, baja idempotente, cascade al borrar el perfil, permisos de la tabla, envío (payload exacto sin datos personales, solo usuarios activos, `pendientes`, 404/410 borra, fallos y colgados que no rompen el alta ni los otros envíos, tope de tiempo, sin claves no envía, honeypot) y el cliente real `web-push` con la red simulada.
 - `plazo-cuerpo.test.ts`: un `Content-Length` mayor que el cuerpo se corta antes de 10 s + margen con los plazos reales (tarda ~10 s); con plazos acortados, que un goteo de bytes no estira el plazo, que la foto mantiene el suyo y que un cuerpo que llega entero en partes se procesa.
 - `limites-login-lavados.test.ts`: dos personas en la misma IP (una se frena a los 5 fallos, la otra entra; el email se normaliza y no queda en los logs), el tope por IP, email mal formado (solo IP), los intentos frenados no gastan el cupo de la IP; lavados: `429` en el pedido 61 (el `DELETE` también cuenta, otra persona sigue) y 70 reintentos del mismo `idLocal` que no lo disparan.
-- `vapid.test.ts`: el par generado y el formato de `npm run vapid`. `config.test.ts` cubre las tres variables VAPID juntas o ninguna; `security.test.ts`, que `/sw.js`, `/manifest.webmanifest` y `/admin/sw.js` son `404` JSON con la CSP que bloquea todo (el backend no sirve el panel).
+- `vapid.test.ts`: el par generado y el formato de `npm run vapid`. `config.test.ts` cubre las tres variables VAPID juntas o ninguna; `security.test.ts`, que `/sw.js`, `/manifest.webmanifest` y `/admin/sw.js` son `404` JSON con la CSP que bloquea todo (sin `PANEL_DIR`). `panel.test.ts`: con `PANEL_DIR`, las rutas del panel devuelven `index.html` con la CSP del panel, caché de `assets/` y del service worker, y `/api` y los archivos inexistentes siguen en `404` JSON.
 
 `createTestContext` abre por defecto los 7 días con 20 cupos y quita los días especiales (`disponibilidad: 'libre'`), para que los tests anteriores al objetivo 4 sigan probando lo suyo; los de disponibilidad usan `disponibilidad: 'fabrica'` (la base tal como la deja la migración).
 
