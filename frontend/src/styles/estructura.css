@@ -212,7 +212,12 @@
     grid-area: riel;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Si la ventana es baja, el riel scrollea con la barra en sus colores (no el gris del navegador). */
+    scrollbar-width: thin;
+    scrollbar-color: var(--nav-texto) var(--nav-fondo);
     position: sticky;
     top: 62px;
     block-size: calc(100vh - 62px);
@@ -260,6 +265,20 @@
 
   .riel-link:focus-visible {
     outline-color: var(--nav-marca);
+  }
+
+  /* Grupos (los mismos de Más), separados por el troquel del talonario. */
+  .riel-grupo {
+    padding-block-start: 10px;
+    border-block-start: var(--grosor-fino) dashed var(--nav-texto);
+  }
+
+  .riel-grupo-titulo {
+    margin: 0 0 4px;
+    padding-inline: 12px;
+    color: var(--nav-texto);
+    font-size: 0.8125rem;
+    font-weight: 700;
   }
 
   .contenido {

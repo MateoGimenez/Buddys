@@ -49,6 +49,21 @@
   color: var(--tinta-3);
 }
 
+/* Grupos de Más (Atención, Plata, Taller): un título y su hoja de enlaces. */
+.mas-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mas-grupo-titulo {
+  margin: 0 0 8px;
+  padding-inline: 4px;
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--tinta-2);
+}
+
 .menu {
   list-style: none;
   margin: 0;

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Usuario } from '../../api/types';
 import { Avatar } from '../../components/Avatar';
-import { nombreDe, useSecciones } from '../../components/Layout';
+import { agrupar, nombreDe, useSecciones } from '../../components/Layout';
 import { Aviso, Boton, Encabezado, Segmentado } from '../../components/ui';
 import { NOMBRE_ROL } from '../../lib/format';
 import { elegirTema, useTema, type Tema } from '../../lib/tema';
@@ -12,7 +12,8 @@ import { useSesion, useUsuario } from '../../session/SessionContext';
 export function Mas() {
   const usuario = useUsuario();
   const { salir, puede } = useSesion();
-  const secciones = useSecciones().filter((s) => !s.principal);
+  // Agrupadas como en el riel (contrato reportes/2026-11-19_08_mas-por-secciones.md); un grupo vacío para el rol no sale.
+  const grupos = agrupar(useSecciones());
   const [saliendo, setSaliendo] = useState(false);
   const tema = useTema();
   const [noGuardo, setNoGuardo] = useState(false);
@@ -31,22 +32,29 @@ export function Mas() {
           <Quien usuario={usuario} />
         </section>
       )}
-      {secciones.length ? (
-        <nav aria-label="Otras secciones">
-          <ul className="menu">
-            {secciones.map((s) => (
-              <li key={s.ruta}>
-                <Link to={s.ruta} className="menu-item" viewTransition>
-                  <s.icono aria-hidden size={22} />
-                  <span className="menu-texto">
-                    <span className="menu-nombre">{s.nombre}</span>
-                    <span className="menu-desc">{s.descripcion}</span>
-                  </span>
-                  <ChevronRight aria-hidden size={20} />
-                </Link>
-              </li>
-            ))}
-          </ul>
+      {grupos.length ? (
+        <nav aria-label="Otras secciones" className="mas-grupos">
+          {grupos.map((g) => (
+            <section key={g.id} className="mas-grupo" aria-labelledby={`mas-${g.id}`}>
+              <h2 id={`mas-${g.id}`} className="mas-grupo-titulo">
+                {g.nombre}
+              </h2>
+              <ul className="menu">
+                {g.secciones.map((s) => (
+                  <li key={s.ruta}>
+                    <Link to={s.ruta} className="menu-item" viewTransition>
+                      <s.icono aria-hidden size={22} />
+                      <span className="menu-texto">
+                        <span className="menu-nombre">{s.nombre}</span>
+                        <span className="menu-desc">{s.descripcion}</span>
+                      </span>
+                      <ChevronRight aria-hidden size={20} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </nav>
       ) : null}
       <div className="hoja">

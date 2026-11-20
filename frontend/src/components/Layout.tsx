@@ -30,7 +30,25 @@ export interface Seccion {
   capacidad: string;
   /** Va en la barra de abajo del celular. */
   principal?: boolean;
+  /** Las que no son principales van agrupadas en Más y en el riel (contrato reportes/2026-11-19_08_mas-por-secciones.md). */
+  grupo?: GrupoId;
   descripcion: string;
+}
+
+export type GrupoId = 'atencion' | 'plata' | 'taller';
+
+/** Los grupos de Más y del riel, en este orden. */
+export const GRUPOS: { id: GrupoId; nombre: string }[] = [
+  { id: 'atencion', nombre: 'Atención' },
+  { id: 'plata', nombre: 'Plata' },
+  { id: 'taller', nombre: 'Taller' },
+];
+
+/** Las secciones no principales por grupo, en el orden de GRUPOS. Un grupo sin secciones (para ese rol) no aparece. */
+export function agrupar(secciones: readonly Seccion[]): { id: GrupoId; nombre: string; secciones: Seccion[] }[] {
+  return GRUPOS.map((g) => ({ ...g, secciones: secciones.filter((s) => !s.principal && s.grupo === g.id) })).filter(
+    (g) => g.secciones.length > 0,
+  );
 }
 
 export const SECCIONES: Seccion[] = [
@@ -38,14 +56,14 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/registrar', nombre: 'Registrar', icono: PlusCircle, capacidad: 'lavados.registrar', principal: true, descripcion: 'Anotar un lavado' },
   { ruta: '/planilla', nombre: 'Planilla', icono: ClipboardList, capacidad: 'turnos.ver', principal: true, descripcion: 'Los lavados del día' },
   { ruta: '/numeros', nombre: 'Números', icono: BarChart3, capacidad: 'estadisticas.propias', principal: true, descripcion: 'Ingresos, metas y seguimiento' },
-  { ruta: '/agenda', nombre: 'Agenda', icono: CalendarDays, capacidad: 'turnos.ver', descripcion: 'Turnos largos y señas' },
-  { ruta: '/caja', nombre: 'Caja', icono: Wallet, capacidad: 'caja.cerrar', descripcion: 'Contar y cerrar la caja del día' },
-  { ruta: '/clientes', nombre: 'Clientes', icono: Contact, capacidad: 'turnos.clientes', descripcion: 'Historial, sellos e inactivos' },
-  { ruta: '/servicios', nombre: 'Servicios', icono: Tags, capacidad: 'catalogo.ver', descripcion: 'Precios y vehículos' },
-  { ruta: '/insumos', nombre: 'Insumos', icono: Boxes, capacidad: 'inventario.ver', descripcion: 'Stock y uso de productos' },
-  { ruta: '/gastos', nombre: 'Gastos', icono: Receipt, capacidad: 'finanzas.gastos', descripcion: 'Lo que se gasta en el mes' },
-  { ruta: '/presupuestos', nombre: 'Presupuestos', icono: FileText, capacidad: 'documentos.presupuestos', descripcion: 'Armar y bajar en PDF' },
-  { ruta: '/equipo', nombre: 'Equipo', icono: Users, capacidad: 'usuarios.gestionar', descripcion: 'Usuarios, roles y bajas' },
+  { ruta: '/agenda', grupo: 'atencion', nombre: 'Agenda', icono: CalendarDays, capacidad: 'turnos.ver', descripcion: 'Turnos largos y señas' },
+  { ruta: '/caja', grupo: 'plata', nombre: 'Caja', icono: Wallet, capacidad: 'caja.cerrar', descripcion: 'Contar y cerrar la caja del día' },
+  { ruta: '/clientes', grupo: 'atencion', nombre: 'Clientes', icono: Contact, capacidad: 'turnos.clientes', descripcion: 'Historial, sellos e inactivos' },
+  { ruta: '/servicios', grupo: 'taller', nombre: 'Servicios', icono: Tags, capacidad: 'catalogo.ver', descripcion: 'Precios y vehículos' },
+  { ruta: '/insumos', grupo: 'taller', nombre: 'Insumos', icono: Boxes, capacidad: 'inventario.ver', descripcion: 'Stock y uso de productos' },
+  { ruta: '/gastos', grupo: 'plata', nombre: 'Gastos', icono: Receipt, capacidad: 'finanzas.gastos', descripcion: 'Lo que se gasta en el mes' },
+  { ruta: '/presupuestos', grupo: 'plata', nombre: 'Presupuestos', icono: FileText, capacidad: 'documentos.presupuestos', descripcion: 'Armar y bajar en PDF' },
+  { ruta: '/equipo', grupo: 'taller', nombre: 'Equipo', icono: Users, capacidad: 'usuarios.gestionar', descripcion: 'Usuarios, roles y bajas' },
 ];
 
 export function useSecciones(): Seccion[] {
@@ -62,6 +80,7 @@ export function Layout() {
   const { puede } = useSesion();
   const secciones = useSecciones();
   const principales = secciones.filter((s) => s.principal);
+  const grupos = agrupar(secciones);
   const { pathname } = useLocation();
   const primeraVez = useRef(true);
 
@@ -94,7 +113,7 @@ export function Layout() {
 
       <nav className="riel" aria-label="Secciones">
         <ul>
-          {secciones.map((s) => (
+          {principales.map((s) => (
             <li key={s.ruta}>
               <NavLink to={s.ruta} className="riel-link" viewTransition>
                 <s.icono aria-hidden size={20} />
@@ -103,6 +122,24 @@ export function Layout() {
             </li>
           ))}
         </ul>
+        {/* Los mismos grupos que Más: así las dos navegaciones dicen lo mismo. */}
+        {grupos.map((g) => (
+          <div key={g.id} className="riel-grupo">
+            <p className="riel-grupo-titulo" id={`riel-${g.id}`}>
+              {g.nombre}
+            </p>
+            <ul aria-labelledby={`riel-${g.id}`}>
+              {g.secciones.map((s) => (
+                <li key={s.ruta}>
+                  <NavLink to={s.ruta} className="riel-link" viewTransition>
+                    <s.icono aria-hidden size={20} />
+                    {s.nombre}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       <main id="contenido" className="contenido" tabIndex={-1}>
