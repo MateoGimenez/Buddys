@@ -1539,10 +1539,11 @@ la CSP que bloquea todo y el `404` JSON.
 
 1. En Render: **New > Blueprint**, elegir el repo `Buddys` y la rama `main`.
 2. Cargar las variables `sync: false`: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`,
-   `SUPABASE_SECRET_KEY` y las tres `VAPID_*` (las mismas de `backend/.env`). `FRONTEND_ORIGIN` y `PUBLIC_URL` se
-   pueden dejar vacías en el primer deploy.
-3. Cuando Render muestre la dirección (`https://<nombre>.onrender.com`), ponerla en `FRONTEND_ORIGIN` y en
-   `PUBLIC_URL` (sin barra final) y volver a desplegar. Sin eso, el login y todo lo que guarda da `403`.
+   `SUPABASE_SECRET_KEY` y las tres `VAPID_*` (las mismas de `backend/.env`).
+3. `FRONTEND_ORIGIN` y `PUBLIC_URL` llevan la dirección que muestra Render arriba del servicio
+   (`https://<nombre>.onrender.com`, sin barra final). **Son obligatorias en producción**: sin `FRONTEND_ORIGIN` el
+   proceso no arranca ("Configuración inválida"), y con una dirección distinta el login y todo lo que guarda da `403`.
+   Si el primer deploy falló por eso, cargarlas y "Save, rebuild and deploy".
 4. Probar `https://<nombre>.onrender.com/api/health` y entrar al panel.
 
 En el plan gratis el servicio se duerme a los 15 minutos sin uso: antes de mostrarlo, abrirlo un minuto antes.
