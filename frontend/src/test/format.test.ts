@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hoy, miles, pesos, slug, sumarDias, ultimoDelMes } from '../lib/format';
+import { esFechaValida, hoy, miles, pesos, slug, sumarDias, ultimoDelMes } from '../lib/format';
 
 describe('formato', () => {
   it('pesos en es-AR sin decimales', () => {
@@ -46,5 +46,15 @@ describe('formato', () => {
     expect(ultimoDelMes('2026-02-01')).toBe('2026-02-28');
     // 23:30 del 31/12 en Argentina ya es 1/1 en UTC.
     expect(hoy(new Date('2027-01-01T02:30:00Z'))).toBe('2026-12-31');
+  });
+});
+
+describe('esFechaValida (el ?fecha= de Planilla y Cierre de caja)', () => {
+  it('acepta fechas que existen y rechaza las imposibles o mal escritas', () => {
+    expect(esFechaValida('2026-11-19')).toBe(true);
+    expect(esFechaValida('2028-02-29')).toBe(true);
+    for (const mala of ['2026-13-01', '2026-00-10', '2026-02-31', '2027-02-29', '2026-1-01', 'hoy', '2026-11-19x', '']) {
+      expect(esFechaValida(mala), mala).toBe(false);
+    }
   });
 });

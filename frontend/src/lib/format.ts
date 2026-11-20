@@ -273,3 +273,12 @@ export function pesosCortos(n: number): string {
   if (abs >= 1000) return `$ ${Math.round(n / 1000).toLocaleString('es-AR')} mil`;
   return `$ ${String(n)}`;
 }
+
+/** true si es una fecha YYYY-MM-DD que existe en el calendario (no "2026-13-01" ni "2026-02-31"). Para ?fecha=. */
+export function esFechaValida(fecha: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  if (!m) return false;
+  const [a, mes, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const f = new Date(Date.UTC(a, mes - 1, d));
+  return f.getUTCFullYear() === a && f.getUTCMonth() === mes - 1 && f.getUTCDate() === d;
+}

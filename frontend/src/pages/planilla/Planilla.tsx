@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import * as ep from '../../api/endpoints';
 import { Aviso, Boton, Cargando, Encabezado, Vacio } from '../../components/ui';
 import { EVENTO_ENVIADOS } from '../../lib/cola';
-import { fechaLarga, hoy, sumarDias } from '../../lib/format';
+import { esFechaValida, fechaLarga, hoy, sumarDias } from '../../lib/format';
 import { useFotosDisponibles } from '../../lib/fotosDisponibles';
 import { useCarga } from '../../lib/useCarga';
 import { useSesion, useVeImportes } from '../../session/SessionContext';
@@ -19,7 +19,8 @@ export function Planilla() {
   const [params] = useSearchParams();
   const [fechaElegida, setFechaElegida] = useState<string | null>(() => {
     const f = params.get('fecha');
-    return f && /^\d{4}-\d{2}-\d{2}$/.test(f) && f < hoyAR ? f : null;
+    // esFechaValida: una fecha imposible ("2026-13-01") rompía el encabezado; se abre hoy.
+    return f && esFechaValida(f) && f < hoyAR ? f : null;
   });
   const fecha = fechaElegida ?? hoyAR;
   const setFecha = (f: string) => {

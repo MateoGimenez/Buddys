@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { caja, cierresDeCaja, type Cierre } from '../../api/finanzas';
 import { Aviso, Boton, Cargando, Encabezado } from '../../components/ui';
-import { fechaLarga, hoy, pesos, sumarDias } from '../../lib/format';
+import { esFechaValida, fechaLarga, hoy, pesos, sumarDias } from '../../lib/format';
 import { usePuedeDelTodo } from '../../lib/nivel';
 import { useCarga } from '../../lib/useCarga';
 import { Arqueo } from './Arqueo';
@@ -23,7 +23,8 @@ export function PantallaCaja() {
   const [params] = useSearchParams();
   const [fechaElegida, setFechaElegida] = useState<string | null>(() => {
     const f = params.get('fecha');
-    return f && /^\d{4}-\d{2}-\d{2}$/.test(f) && f < hoyAR && f >= sumarDias(hoyAR, -DIAS_ATRAS) ? f : null;
+    // esFechaValida: una fecha imposible ("2026-00-10") rompía el encabezado; se abre hoy.
+    return f && esFechaValida(f) && f < hoyAR && f >= sumarDias(hoyAR, -DIAS_ATRAS) ? f : null;
   });
   const fecha = fechaElegida ?? hoyAR;
   const minimo = sumarDias(hoyAR, -DIAS_ATRAS);
