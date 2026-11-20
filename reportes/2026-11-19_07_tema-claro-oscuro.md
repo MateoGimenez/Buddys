@@ -78,4 +78,4 @@ Ninguno: es del dispositivo, lo usan los tres roles. No toca la API ni la base.
   crudo); el test de contraste mide de verdad los oscuros (probado con una mutación); arreglados en `lib/tema.ts` el
   aviso entre pestañas (ahora siempre activo y con `localStorage.clear()`) y la clase `cambiando-tema` con dos cambios
   seguidos. Tests: 316.
-- [ ] Revisión de seguridad
+- [x] Revisión de seguridad (19/11): nada crítico, alto ni medio. Para el despliegue: CSP con `script-src 'self'` y `Cache-Control: no-cache` en los archivos sin hash (`index.html`, `sw.js`, `push-sw.js`, `tema-inicial.js`). El detalle de ARIA del menú quedó arreglado.

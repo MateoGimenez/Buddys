@@ -537,3 +537,10 @@ export interface SuscripcionPush {
   expirationTime: number | null;
   keys: { p256dh: string; auth: string };
 }
+
+/** GET /api/admin/metas/hoy: la meta de lavados de hoy del equipo (contrato 2026-11-19_09). Nunca lleva pesos. */
+export interface MetaDeHoy {
+  fecha: string;
+  /** null si el mes no tiene meta de lavados o hoy no se atiende. */
+  lavados: { hechos: number; objetivo: number; mesCumplido: boolean } | null;
+}

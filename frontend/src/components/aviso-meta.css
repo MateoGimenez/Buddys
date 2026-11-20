@@ -1,0 +1,136 @@
+/* Aviso de la meta de hoy (components/AvisoMeta.tsx): un talón chico que entra arriba al abrir la app y se va solo.
+   En el celular, ancho, debajo de la barra; en la compu, en la esquina, sin tapar el contenido. */
+
+.aviso-meta {
+  position: fixed;
+  z-index: 30;
+  inset-block-start: calc(var(--barra-alto) + 10px);
+  inset-inline: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px 12px 16px;
+  background: var(--papel);
+  color: var(--tinta);
+  border: var(--grosor-fino) solid var(--linea-fuerte);
+  /* El troquel del talonario: la hoja recién arrancada. */
+  border-block-start: var(--grosor) dashed var(--tinta-3);
+  border-radius: 2px 2px var(--radio) var(--radio);
+  box-shadow: var(--sombra-dialogo);
+  animation: aviso-meta-entra 320ms var(--curva) both;
+}
+
+.aviso-meta[data-estado='saliendo'] {
+  animation: aviso-meta-sale 200ms var(--curva-salida) both;
+}
+
+@media (min-width: 900px) {
+  .aviso-meta {
+    inset-inline: auto 24px;
+    inline-size: 340px;
+  }
+}
+
+.aviso-meta-cuerpo {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-meta-titulo {
+  margin: 0;
+  color: var(--tinta-2);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.aviso-meta-cifra {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.aviso-meta[data-llego] .aviso-meta-titulo {
+  color: var(--ok);
+}
+
+.aviso-meta-pista {
+  display: block;
+  block-size: 8px;
+  border-radius: 4px;
+  background: var(--pista);
+  overflow: hidden;
+}
+
+.aviso-meta-relleno {
+  display: block;
+  block-size: 100%;
+  background: var(--tinta);
+  border-radius: 4px;
+  transform-origin: left center;
+  /* Se llena de 0 al avance una sola vez, un poco después de entrar. */
+  transition: transform 900ms var(--curva) 150ms;
+}
+
+/* El festejo: un sello de "listo" que cae sobre el talón, como el de pagado. */
+.aviso-meta-sello {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 50%;
+  background: var(--ok);
+  color: var(--sobre-ok);
+  transform: rotate(-10deg);
+  animation: aviso-meta-sello 420ms var(--curva) 250ms both;
+}
+
+.aviso-meta-cerrar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-chico);
+  background: transparent;
+  color: var(--tinta-2);
+  cursor: pointer;
+}
+
+.aviso-meta-cerrar:hover {
+  background: var(--carbon-claro);
+  color: var(--tinta);
+}
+
+.aviso-meta-cerrar:focus-visible {
+  outline: 3px solid var(--carbon);
+  outline-offset: -3px;
+}
+
+@keyframes aviso-meta-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes aviso-meta-sale {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes aviso-meta-sello {
+  from {
+    opacity: 0;
+    transform: rotate(-24deg) scale(1.6);
+  }
+}
+
+:root[data-tema='contraste'] .aviso-meta {
+  border: var(--grosor) solid var(--tinta);
+}

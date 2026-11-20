@@ -2387,6 +2387,16 @@
           }
         },
         {
+          "id": "metas.hoy",
+          "grupo": "Finanzas",
+          "texto": "Ver la meta de lavados de hoy del equipo (sin pesos)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
           "id": "finanzas.exportar",
           "grupo": "Finanzas",
           "texto": "Exportar a Excel (CSV) la planilla, los gastos y las estadísticas",
@@ -2843,6 +2853,16 @@
             "superadmin": "si",
             "admin": "si",
             "empleado": "no"
+          }
+        },
+        {
+          "id": "metas.hoy",
+          "grupo": "Finanzas",
+          "texto": "Ver la meta de lavados de hoy del equipo (sin pesos)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
           }
         },
         {
@@ -8037,6 +8057,16 @@
           }
         },
         {
+          "id": "metas.hoy",
+          "grupo": "Finanzas",
+          "texto": "Ver la meta de lavados de hoy del equipo (sin pesos)",
+          "roles": {
+            "superadmin": "si",
+            "admin": "si",
+            "empleado": "si"
+          }
+        },
+        {
           "id": "finanzas.exportar",
           "grupo": "Finanzas",
           "texto": "Exportar a Excel (CSV) la planilla, los gastos y las estadísticas",
@@ -8181,6 +8211,17 @@
         }
       ],
       "tuRol": "admin"
+    }
+  },
+  "metaHoyEmpleado": {
+    "status": 200,
+    "body": {
+      "fecha": "2026-10-16",
+      "lavados": {
+        "hechos": 8,
+        "objetivo": 3,
+        "mesCumplido": false
+      }
     }
   },
   "usuariosVistaAdmin": {

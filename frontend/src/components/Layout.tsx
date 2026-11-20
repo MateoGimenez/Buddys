@@ -17,6 +17,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSesion, useUsuario } from '../session/SessionContext';
+import { AvisoMeta } from './AvisoMeta';
 import { Campanita } from './Campanita';
 import { ErrorBoundary } from './ErrorBoundary';
 import { MenuCuenta } from './MenuCuenta';
@@ -144,6 +145,7 @@ export function Layout() {
 
       <main id="contenido" className="contenido" tabIndex={-1}>
         <Senal usuarioId={usuario.id} />
+        <AvisoMeta />
         <ErrorBoundary clave={pathname}>
           <Outlet />
         </ErrorBoundary>

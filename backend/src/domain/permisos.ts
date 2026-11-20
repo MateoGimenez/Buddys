@@ -232,6 +232,12 @@ export const CAPACIDADES = [
     roles: { superadmin: 'si', admin: 'si', empleado: 'no' },
   },
   {
+    id: 'metas.hoy',
+    grupo: 'Finanzas',
+    texto: 'Ver la meta de lavados de hoy del equipo (sin pesos)',
+    roles: { superadmin: 'si', admin: 'si', empleado: 'si' },
+  },
+  {
     id: 'finanzas.exportar',
     grupo: 'Finanzas',
     texto: 'Exportar a Excel (CSV) la planilla, los gastos y las estadísticas',
@@ -455,6 +461,11 @@ export function puedeGestionarGastos(rol: Rol): boolean {
 /** Metas mensuales: fijarlas y seguirlas. El empleado nunca recibe metas. */
 export function puedeGestionarMetas(rol: Rol): boolean {
   return nivelDe(rol, 'finanzas.metas') === 'si';
+}
+
+/** La meta de lavados de hoy del equipo (GET /api/admin/metas/hoy): solo cantidades, nunca pesos. */
+export function puedeVerMetaDeHoy(rol: Rol): boolean {
+  return nivelDe(rol, 'metas.hoy') === 'si';
 }
 
 /** Presupuestos y su PDF. */

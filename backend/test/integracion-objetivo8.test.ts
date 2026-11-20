@@ -373,6 +373,8 @@ describe('respuestas reales del backend (contrato de la API)', () => {
     cap('errorClienteRegistrado', await empleado.post('/api/admin/errores-cliente', { mensaje: 'TypeError: x is undefined', url: '/admin/planilla', userAgent: 'Mozilla/5.0', version: '1.0.0' }));
     cap('error400ErrorCliente', await createClient(context.app).post('/api/errores-cliente', { mensaje: '' }));
     cap('permisosAdminMejoras', await admin.get('/api/admin/permisos'));
+    // Meta de hoy (contrato 2026-11-19_09): la ven los tres roles, solo cantidades de lavados.
+    cap('metaHoyEmpleado', await empleado.get('/api/admin/metas/hoy'));
 
     // Gestión de usuarios (contrato 2026-11-17_03): Ana es admin (gestiona solo empleados). Al final: dar de baja a Beto
     // no mueve nada de arriba.

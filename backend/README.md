@@ -1271,6 +1271,21 @@ PATCH acepta cualquiera de esos campos (al menos uno; `proveedor: null` lo borra
 
 **Para el inventario (M2):** `registrarGastoDeInventario(tx, { fecha, descripcion, monto, proveedor?, creadoPor? })` en `src/services/gastos.ts` crea el gasto (`categoria: "insumos"`, `origen: "inventario"`) **dentro de la transacción de quien la llama** (`tx` es el cliente de `sql.transaction(async (tx) => ...)`) y devuelve el `Gasto` (su `id` va al movimiento de stock). Si algo después falla, el gasto se revierte con el resto. Los valores tienen que respetar los topes de la tabla (si no, la base rechaza y se revierte todo).
 
+#### `GET /api/admin/metas/hoy`
+
+La meta de lavados de **hoy** del equipo, para el aviso que sale al abrir el panel (contrato
+`reportes/2026-11-19_09_meta-de-hoy.md`). La ven los **tres roles** (permiso `metas.hoy`): solo cantidades, nunca pesos.
+Va antes del permiso de metas del router (el resto de `/metas` sigue solo para admin y superadmin).
+
+- `objetivo = ceil((trabajosObjetivo del mes − lavados completados hasta ayer) / días de atención que quedan contando hoy)`.
+  Se calcula al empezar el día: lo de hoy suma a `hechos`, no corre el objetivo.
+- Mes ya cumplido al empezar el día: `objetivo: 0, mesCumplido: true`.
+- Sin meta de lavados en el mes, o hoy cerrado: `lavados: null`.
+
+```json
+{ "fecha": "2026-11-19", "lavados": { "hechos": 12, "objetivo": 20, "mesCumplido": false } }
+```
+
 #### `GET /api/admin/metas/actual`
 
 `200 { "mes": "2026-10", "meta": { ingresosObjetivo, trabajosObjetivo } | null, "progreso": { ingresos, trabajos, porcentajeIngresos, porcentajeTrabajos, diasDeAtencionTranscurridos, diasDeAtencionRestantes, diasDeAtencionTotales, proyeccionIngresos, necesarioPorDia, estado } }`. El mes y "hoy" son los de La Rioja. Ingresos y trabajos del mes: los de las estadísticas (turnos completados por fecha de agenda). **Días de atención** = días del mes en que el taller atiende según el horario semanal y los días especiales (`DisponibilidadService.cupos`): domingos y feriados cerrados no cuentan, un día especial abierto sí; **hoy cuenta como transcurrido**. `proyeccionIngresos` = ingresos / transcurridos x totales (redondeado; `null` sin transcurridos o sin meta). `necesarioPorDia` = (objetivo de ingresos - ingresos) / restantes, redondeado (`0` si ya se cumplió; `null` sin restantes, sin objetivo de ingresos o sin meta). `estado`: `sin-meta`; `cumplida` (todos los objetivos fijados alcanzados); si no, con `esperado = objetivo x transcurridos / totales`: `adelantado` (>= 110 %), `en-ritmo` (90 a 110 %), `atrasado` (< 90 %); con dos objetivos se mira el más atrasado; sin días transcurridos (o mes sin días de atención) es `en-ritmo`. Los porcentajes son `null` si ese objetivo no está fijado (y pueden pasar de 1).

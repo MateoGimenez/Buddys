@@ -13,6 +13,7 @@ import type {
   LavadoRegistrado,
   ListaInsumos,
   MetaActual,
+  MetaDeHoy,
   MisTrabajos,
   Movimiento,
   MovimientoNuevo,
@@ -105,6 +106,8 @@ export const estadisticas = (desde: string, hasta: string) =>
 export const misTrabajos = (desde: string, hasta: string) =>
   api<MisTrabajos>(`/api/admin/estadisticas/mias${query({ desde, hasta })}`);
 export const metaActual = () => api<MetaActual>('/api/admin/metas/actual');
+/** La ven los tres roles: solo cantidades de lavados. */
+export const metaDeHoy = () => api<MetaDeHoy>('/api/admin/metas/hoy');
 export const fijarMeta = (mes: string, meta: { ingresosObjetivo: number | null; trabajosObjetivo: number | null }) =>
   api<{ meta: { mes: string } }>(`/api/admin/metas/${encodeURIComponent(mes)}`, { method: 'PUT', body: meta });
 

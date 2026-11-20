@@ -18,6 +18,7 @@
 @import '../components/elegir-servicios.css';
 @import '../components/etapa-auto.css';
 @import '../components/fotos.css';
+@import '../components/aviso-meta.css';
 
 /* Pantallas */
 @import '../pages/registrar/registrar.css';

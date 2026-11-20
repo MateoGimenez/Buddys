@@ -191,3 +191,30 @@ export function calcularProgreso(meta: ObjetivosMeta | null, avance: Avance, dia
 export function mesesDelAnio(anio: number): string[] {
   return Array.from({ length: 12 }, (_, i) => `${String(anio).padStart(4, '0')}-${String(i + 1).padStart(2, '0')}`);
 }
+
+/** La meta de lavados de hoy del equipo (GET /api/admin/metas/hoy). Nunca lleva pesos. */
+export interface MetaDeHoy {
+  fecha: string;
+  lavados: { hechos: number; objetivo: number; mesCumplido: boolean } | null;
+}
+
+/**
+ * Cuántos lavados pide hoy la meta del mes (contrato: reportes/2026-11-19_09_meta-de-hoy.md). Lo que faltaba al empezar
+ * el día, repartido en los días de atención que quedan contando hoy, redondeado para arriba. Se calcula con lo hecho
+ * hasta ayer: lo de hoy suma a "hechos" pero no corre el objetivo. null si el mes no tiene meta de lavados o hoy no se
+ * atiende. Con el mes ya cumplido al empezar el día: objetivo 0 y mesCumplido.
+ */
+export function calcularMetaDeHoy(entrada: {
+  trabajosObjetivo: number | null;
+  hechosHastaAyer: number;
+  hechosHoy: number;
+  hoyAbierto: boolean;
+  /** Días de atención del mes que quedan DESPUÉS de hoy. */
+  diasRestantesSinHoy: number;
+}): MetaDeHoy['lavados'] {
+  const { trabajosObjetivo, hechosHastaAyer, hechosHoy, hoyAbierto, diasRestantesSinHoy } = entrada;
+  if (trabajosObjetivo === null || !hoyAbierto) return null;
+  const falta = Math.max(0, trabajosObjetivo - hechosHastaAyer);
+  if (falta === 0) return { hechos: hechosHoy, objetivo: 0, mesCumplido: true };
+  return { hechos: hechosHoy, objetivo: Math.ceil(falta / (diasRestantesSinHoy + 1)), mesCumplido: false };
+}
