@@ -56,12 +56,16 @@ export function aplicarTema(tema: Tema) {
  * Cambia el tema sin transiciones: los botones tienen transition en el color y, si no, por un instante se verían con
  * el texto de un tema y el fondo del otro. La clase se va después del siguiente dibujo.
  */
+let cambios = 0;
 function cambiarDeUna(tema: Tema) {
   const raiz = document.documentElement;
+  // Con dos cambios seguidos (doble toque), solo el último saca la clase: si no, el segundo cambio se dibujaba con
+  // transiciones.
+  const este = ++cambios;
   raiz.classList.add('cambiando-tema');
   aplicarTema(tema);
   const sacar = () => {
-    raiz.classList.remove('cambiando-tema');
+    if (este === cambios) raiz.classList.remove('cambiando-tema');
   };
   if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(sacar));
   else sacar();
@@ -92,19 +96,24 @@ export function iniciarTema() {
   oscuro.addEventListener('change', alCambiar);
 }
 
+/**
+ * Otra pestaña eligió otro tema (o borró todo: key null). Un solo oyente para todo el módulo, siempre activo: así se
+ * sigue también en las pantallas sin selector montado (ingreso) y `actual` nunca queda viejo.
+ */
+function alGuardarEnOtraPestana(e: StorageEvent) {
+  if (e.key !== null && e.key !== CLAVE) return;
+  const nuevo = leerTema();
+  if (nuevo === actual) return;
+  actual = nuevo;
+  cambiarDeUna(nuevo);
+  for (const o of oyentes) o();
+}
+if (typeof window !== 'undefined') window.addEventListener('storage', alGuardarEnOtraPestana);
+
 function suscribir(oyente: () => void) {
   oyentes.add(oyente);
-  // Otra pestaña eligió otro tema.
-  const alGuardar = (e: StorageEvent) => {
-    if (e.key !== CLAVE) return;
-    actual = leerTema();
-    aplicarTema(actual);
-    oyente();
-  };
-  window.addEventListener('storage', alGuardar);
   return () => {
     oyentes.delete(oyente);
-    window.removeEventListener('storage', alGuardar);
   };
 }
 

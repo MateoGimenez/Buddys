@@ -173,6 +173,10 @@ export function MenuCuenta() {
               {usuario.nombre && usuario.email ? ` · ${usuario.email}` : ''}
             </span>
           </div>
+          {/* Fuera del menú y siempre montada: así el lector de pantalla anuncia el aviso cuando aparece el texto. */}
+          <p className="cuenta-tema-aviso" role="status">
+            {noGuarda ? 'Este celular no deja guardarlo: queda así hasta que cierres el panel.' : ''}
+          </p>
           <div ref={menuRef} id={menuId} role="menu" aria-labelledby={botonId} onKeyDown={alTeclearMenu}>
             {editaPerfil ? (
               <Link
@@ -189,8 +193,9 @@ export function MenuCuenta() {
                 Mi perfil
               </Link>
             ) : null}
-            <div role="group" aria-labelledby={`${id}-tema`} className="cuenta-grupo">
-              <span id={`${id}-tema`} className="cuenta-grupo-titulo">
+            {/* Dentro de role="menu" solo van ítems y grupos: el título visible es decorativo y el grupo lleva su nombre. */}
+            <div role="group" aria-label="Cómo se ve" className="cuenta-grupo">
+              <span className="cuenta-grupo-titulo" aria-hidden>
                 Cómo se ve
               </span>
               {OPCIONES_TEMA.map(({ valor, etiqueta, icono: Icono }) => (
@@ -217,11 +222,6 @@ export function MenuCuenta() {
                   {tema === valor ? <Check aria-hidden size={18} className="cuenta-tema-marca" /> : null}
                 </button>
               ))}
-              {noGuarda ? (
-                <p className="cuenta-tema-aviso" role="status">
-                  Este celular no deja guardarlo: queda así hasta que cierres el panel.
-                </p>
-              ) : null}
             </div>
             <button
               type="button"

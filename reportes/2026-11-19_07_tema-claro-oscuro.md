@@ -74,4 +74,8 @@ Ninguno: es del dispositivo, lo usan los tres roles. No toca la API ni la base.
 
 - [x] Implementado
 - [x] Typecheck, lint y tests (frontend: 306 tests)
-- [ ] Revisión de pruebas y de seguridad
+- [x] Revisión de pruebas (19/11): build traduce light-dark (52 pares `--lightningcss-light/dark`, ningún `light-dark(`
+  crudo); el test de contraste mide de verdad los oscuros (probado con una mutación); arreglados en `lib/tema.ts` el
+  aviso entre pestañas (ahora siempre activo y con `localStorage.clear()`) y la clase `cambiando-tema` con dos cambios
+  seguidos. Tests: 316.
+- [ ] Revisión de seguridad

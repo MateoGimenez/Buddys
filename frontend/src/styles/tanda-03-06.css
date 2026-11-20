@@ -815,6 +815,10 @@
   color: var(--tinta);
 }
 
+.cuenta-tema-aviso:empty {
+  margin: 0;
+}
+
 .cuenta-tema-aviso {
   margin: 4px 12px 2px;
   color: var(--tinta-2);

@@ -1,10 +1,10 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { apiFalsa } from './apiFalsa';
-import { COLOR_BARRA } from '../lib/tema';
+import { COLOR_BARRA, elegirTema } from '../lib/tema';
 import { renderApp } from './render';
 import { sesionEmpleado } from './sesiones';
 
@@ -114,5 +114,74 @@ describe('color de la barra del sistema (theme-color)', () => {
     await user.click(screen.getByRole('radio', { name: /Alto contraste/ }));
     expect(meta.content).toBe(COLOR_BARRA.contraste);
     meta.remove();
+  });
+});
+
+describe('el tema elegido en otra pestaña', () => {
+  const otraPestana = (valor: string | null, key: string | null = 'buddys.tema.v1') => {
+    if (key === null) localStorage.clear();
+    else if (valor === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, valor);
+    window.dispatchEvent(new StorageEvent('storage', { key, newValue: valor }));
+  };
+
+  it('se aplica aunque esta pestaña no tenga ningún selector montado (pantalla de ingreso)', () => {
+    // Sin componentes: antes el aviso entre pestañas solo existía mientras había un useTema montado.
+    otraPestana('oscuro');
+    expect(document.documentElement).toHaveAttribute('data-tema', 'oscuro');
+  });
+
+  it('con el menú de la cuenta abierto, marca la opción nueva sin cerrarlo', async () => {
+    apiFalsa(sesionEmpleado());
+    const { user } = renderApp('/registrar');
+    await user.click(await screen.findByRole('button', { name: /Beto/ }));
+    const grupo = screen.getByRole('group', { name: 'Cómo se ve' });
+    act(() => {
+      otraPestana('contraste');
+    });
+    expect(document.documentElement).toHaveAttribute('data-tema', 'contraste');
+    expect(within(grupo).getByRole('menuitemradio', { name: /Alto contraste/ })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getAllByRole('menuitemradio', { checked: true })).toHaveLength(1);
+  });
+
+  it('si la otra pestaña borra todo (localStorage.clear, key null), vuelve a Automático', async () => {
+    apiFalsa(sesionEmpleado());
+    const { user } = renderApp('/registrar');
+    await user.click(await screen.findByRole('button', { name: /Beto/ }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Oscuro' }));
+    act(() => {
+      otraPestana(null, null);
+    });
+    expect(document.documentElement).not.toHaveAttribute('data-tema');
+    expect(screen.getByRole('menuitemradio', { name: /Automático/ })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('un valor raro guardado por otra pestaña queda en Automático', () => {
+    otraPestana('oscuro');
+    otraPestana('violeta');
+    expect(document.documentElement).not.toHaveAttribute('data-tema');
+  });
+});
+
+describe('cambiar de tema sin transiciones (clase cambiando-tema)', () => {
+  it('con dos cambios seguidos, la clase se va recién después del último', () => {
+    const cuadros: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (fn: FrameRequestCallback) => {
+      cuadros.push(fn);
+      return cuadros.length;
+    });
+    const dibujar = () => {
+      for (const fn of cuadros.splice(0)) fn(0);
+    };
+    const raiz = document.documentElement;
+    elegirTema('oscuro');
+    dibujar();
+    elegirTema('claro');
+    // Segundo cuadro del primer cambio: el segundo todavía no se dibujó, la clase tiene que seguir.
+    dibujar();
+    expect(raiz).toHaveClass('cambiando-tema');
+    dibujar();
+    expect(raiz).not.toHaveClass('cambiando-tema');
+    vi.unstubAllGlobals();
   });
 });
