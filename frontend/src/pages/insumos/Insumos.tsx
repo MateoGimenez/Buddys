@@ -5,6 +5,7 @@ import { ApiError, mensajeDeError } from '../../api/client';
 import * as ep from '../../api/endpoints';
 import { UNIDADES, type Consumo, type Insumo, type ItemParaComprar, type MovimientoNuevo, type Unidad } from '../../api/types';
 import { Barras } from '../../components/Barras';
+import { BarrasHorizontales } from '../../components/BarrasHorizontales';
 import { Aviso, Boton, Campo, Cargando, Encabezado, Selector, Vacio } from '../../components/ui';
 import { avisarCambioDeStock } from '../../lib/avisosStock';
 import { numeroParaCampo, textoParaComprar, urlWhatsApp } from '../../lib/compras';
@@ -348,6 +349,23 @@ function VistaParaComprar({ gestiona }: { gestiona: boolean }) {
             {items.length === 1 ? '1 insumo llegó al mínimo.' : `${String(items.length)} insumos llegaron al mínimo.`} Lo sugerido deja el
             stock en el doble del mínimo.
           </p>
+          {/* Cada barra va de 0 al doble del mínimo (lo que deja la compra sugerida); la raya es el mínimo. Así se
+              comparan insumos de unidades distintas. */}
+          <section className="hoja bloque">
+            <BarrasHorizontales
+              titulo="Cuánto queda de cada uno"
+              columnas={['Insumo', 'Queda']}
+              maximo={1}
+              filas={items.map((i) => ({
+                id: i.insumoId,
+                nombre: i.nombre,
+                valor: i.stockMinimo > 0 ? i.stock / (2 * i.stockMinimo) : 0,
+                texto: `${cantidad(i.stock, i.unidad)} · mín. ${numero(i.stockMinimo)}`,
+                marca: { valor: 0.5, texto: `el mínimo es ${cantidad(i.stockMinimo, i.unidad)}` },
+                alerta: i.stock <= i.stockMinimo,
+              }))}
+            />
+          </section>
           {grupos.map((g) => (
             <section key={g.categoria} className="categoria">
               {muchasCategorias ? <h2 className="categoria-titulo">{g.categoria}</h2> : null}
@@ -559,6 +577,16 @@ function TableroConsumo({ c, mes }: { c: Consumo; mes: string }) {
           <Vacio titulo="No se descontó nada este mes">Se descuenta solo con la receta de cada servicio, o con “Anotar uso” en Stock.</Vacio>
         ) : (
           <>
+            {c.porInsumo.some((i) => i.costo !== null && i.costo > 0) ? (
+              <BarrasHorizontales
+                titulo="Lo que costó cada insumo"
+                columnas={['Insumo', 'Costo']}
+                filas={c.porInsumo
+                  .filter((i) => i.costo !== null && i.costo > 0)
+                  .sort((a, b) => (b.costo ?? 0) - (a.costo ?? 0))
+                  .map((i) => ({ id: i.insumoId, nombre: i.nombre, valor: i.costo ?? 0, texto: pesos(i.costo ?? 0) }))}
+              />
+            ) : null}
             <div className="tabla-scroll">
               <table className="tabla">
                 <thead>

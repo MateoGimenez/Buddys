@@ -129,6 +129,12 @@ const PARES: [string, string, Tipo, string][] = [
   ['sobre-serie', 'serie', 'texto', 'número de la campanita (insumos con poco stock)'],
   ['linea-fuerte', 'papel', 'borde', 'borde del menú de la cuenta'],
   ['linea-fuerte', 'fondo', 'borde', 'borde del menú de la cuenta sobre el fondo'],
+  // Gráficos (tanda 07): barras sobre su pista y la raya del eje o del mínimo.
+  ['tinta-2', 'papel', 'borde', 'barras de las series en el tiempo'],
+  ['alerta', 'pista', 'borde', 'insumo bajo el mínimo, lo que sobró en la caja'],
+  ['peligro', 'pista', 'borde', 'lo que faltó en la caja'],
+  ['ok', 'pista', 'borde', 'caja que cerró justo'],
+  ['ok', 'papel', 'texto', 'título del aviso de la meta cumplida'],
   ['linea-fuerte', 'papel', 'borde', 'borde de la foto grande del perfil'],
 ];
 

@@ -12,6 +12,7 @@ import {
   miles,
   nombreMes,
   pesos,
+  pesosCortos,
   porcentaje,
   primeroDelMes,
   ultimoDelMes,
@@ -95,7 +96,8 @@ function Propias({ desde, hasta }: { desde: string; hasta: string }) {
           <Vacio titulo="Todavía no registraste lavados en este período">Cada lavado que registres va a aparecer acá.</Vacio>
         ) : (
           <Barras
-            titulo={d.serie[0]?.clave.length === 7 ? 'Lavados por mes' : 'Lavados por día'}
+            titulo="Mis lavados"
+            agrupable
             puntos={d.serie.map((p) => ({ clave: p.clave, valor: p.completados }))}
             formato={(v) => `${v}`}
           />
@@ -214,10 +216,23 @@ function Tablero({ e }: { e: EstadisticasConFijos }) {
         {p.completados === 0 && p.gastos === 0 ? (
           <Vacio titulo="No hay movimiento en estas fechas">Probá con otro período.</Vacio>
         ) : (
+          <Barras titulo="Ingresos" agrupable puntos={e.serie.map((s) => ({ clave: s.clave, valor: s.ingresos }))} formato={pesos} corto={pesosCortos} />
+        )}
+      </section>
+
+      {/* Lavados de todo el equipo junto: nunca por persona (no se compara a nadie). */}
+      <section className="hoja bloque" aria-labelledby="t-lavados">
+        <h2 id="t-lavados" className="bloque-titulo">
+          Lavados del equipo
+        </h2>
+        {p.completados === 0 ? (
+          <Vacio titulo="No hubo lavados en estas fechas">Probá con otro período.</Vacio>
+        ) : (
           <Barras
-            titulo={e.granularidad === 'dia' ? 'Ingresos por día' : 'Ingresos por mes'}
-            puntos={e.serie.map((s) => ({ clave: s.clave, valor: s.ingresos }))}
-            formato={pesos}
+            titulo="Lavados"
+            agrupable
+            puntos={e.serie.map((s) => ({ clave: s.clave, valor: s.completados }))}
+            formato={(v) => `${String(v)} ${v === 1 ? 'lavado' : 'lavados'}`}
           />
         )}
       </section>

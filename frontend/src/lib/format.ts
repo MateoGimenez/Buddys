@@ -265,3 +265,11 @@ export function iniciales(nombre: string | null | undefined): string {
     .join('');
   return letras || '?';
 }
+
+/** Pesos en poco lugar (el valor arriba de una barra): "$ 850", "$ 175 mil", "$ 1,2 M". */
+export function pesosCortos(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `$ ${(n / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`;
+  if (abs >= 1000) return `$ ${Math.round(n / 1000).toLocaleString('es-AR')} mil`;
+  return `$ ${String(n)}`;
+}

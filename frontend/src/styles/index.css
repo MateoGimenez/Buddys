@@ -19,6 +19,7 @@
 @import '../components/etapa-auto.css';
 @import '../components/fotos.css';
 @import '../components/aviso-meta.css';
+@import '../components/graficos.css';
 
 /* Pantallas */
 @import '../pages/registrar/registrar.css';
