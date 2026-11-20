@@ -1,3 +1,6 @@
+/// <reference types="node" />
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AVISO_META_MS, olvidarAvisoMeta } from '../lib/avisoMeta';
@@ -60,6 +63,15 @@ describe('aviso de la meta de hoy', () => {
     expect(segunda.api.de('GET', '/api/admin/metas/hoy')).toHaveLength(0);
   });
 
+  it('si en la misma pestaña entra otra persona, a ella sí le aparece', async () => {
+    const { unmount } = abrir(sesionEmpleado());
+    await screen.findByText('12 de 20 lavados');
+    unmount();
+    const otra = abrir(sesionAdmin());
+    expect(await screen.findByText('12 de 20 lavados')).toBeInTheDocument();
+    expect(otra.api.de('GET', '/api/admin/metas/hoy')).toHaveLength(1);
+  });
+
   it('se pausa con el puntero encima y con el foco adentro; sigue al salir', async () => {
     abrir();
     await screen.findByText('12 de 20 lavados');
@@ -99,6 +111,79 @@ describe('aviso de la meta de hoy', () => {
     expect(await screen.findByText('¡Ya cumplieron la meta del mes!')).toBeInTheDocument();
     expect(screen.getByText('Hoy van 1 lavado.')).toBeInTheDocument();
     expect(document.querySelector('.aviso-meta-pista')).toBeNull();
+  });
+
+  it('un toque con el dedo lo deja quieto: el pointerleave al levantar el dedo no lo reanuda', async () => {
+    abrir();
+    await screen.findByText('12 de 20 lavados');
+    const aviso = document.querySelector('.aviso-meta') as HTMLElement;
+    fireEvent.pointerEnter(aviso, { pointerType: 'touch' });
+    fireEvent.pointerDown(aviso, { pointerType: 'touch' });
+    fireEvent.pointerUp(aviso, { pointerType: 'touch' });
+    fireEvent.pointerLeave(aviso, { pointerType: 'touch' });
+    pasar(AVISO_META_MS * 3);
+    pasar(300);
+    expect(screen.getByText('12 de 20 lavados')).toBeInTheDocument();
+    expect(aviso).toHaveAttribute('data-estado', 'visible');
+  });
+
+  it('cerrar con el teclado deja el foco en el contenido, no perdido en el body', async () => {
+    const { user } = abrir();
+    await screen.findByText('12 de 20 lavados');
+    const cerrar = screen.getByRole('button', { name: 'Cerrar el aviso de la meta' });
+    cerrar.focus();
+    await user.keyboard('{Enter}');
+    pasar(300);
+    expect(document.querySelector('.aviso-meta')).toBeNull();
+    expect(document.activeElement).toBe(document.getElementById('contenido'));
+  });
+
+  it('con objetivo 1 dice "lavado" en singular', async () => {
+    abrir(sesionEmpleado(), { hechos: 0, objetivo: 1, mesCumplido: false });
+    expect(await screen.findByText('0 de 1 lavado')).toBeInTheDocument();
+  });
+
+  it('con muchos lavados hechos la barra no pasa del 100% y festeja', async () => {
+    abrir(sesionEmpleado(), { hechos: 9999, objetivo: 3, mesCumplido: false });
+    expect(await screen.findByText('9999 de 3 lavados')).toBeInTheDocument();
+    expect(screen.getByText('¡Llegaron a la meta de hoy!')).toBeInTheDocument();
+    await waitFor(() => {
+      expect((document.querySelector('.aviso-meta-relleno') as HTMLElement).style.transform).toBe('scaleX(1)');
+    });
+  });
+
+  describe('con sessionStorage bloqueado', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('igual sale una sola vez en esta carga de la página', async () => {
+      const bloqueado = () => {
+        throw new DOMException('Bloqueado', 'SecurityError');
+      };
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(bloqueado);
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(bloqueado);
+      const { api, unmount } = abrir();
+      await screen.findByText('12 de 20 lavados');
+      unmount();
+      const segunda = abrir();
+      await screen.findByRole('heading', { name: 'Registrar lavado' });
+      expect(screen.queryByText('12 de 20 lavados')).toBeNull();
+      expect(api.de('GET', '/api/admin/metas/hoy')).toHaveLength(1);
+      expect(segunda.api.de('GET', '/api/admin/metas/hoy')).toHaveLength(0);
+    });
+  });
+
+  it('queda debajo de la barra (y de su menú de la cuenta)', () => {
+    const z = (archivo: string, selector: string) => {
+      const css = readFileSync(resolve(process.cwd(), archivo), 'utf8');
+      const bloque = css.slice(css.indexOf(`${selector} {`));
+      return Number(/z-index:\s*(\d+)/.exec(bloque.slice(0, bloque.indexOf('}')))?.[1]);
+    };
+    const aviso = z('src/components/aviso-meta.css', '.aviso-meta');
+    const barra = z('src/styles/estructura.css', '.barra');
+    expect(Number.isFinite(aviso) && Number.isFinite(barra)).toBe(true);
+    expect(aviso).toBeLessThan(barra);
   });
 
   it('sin meta de hoy, o si la API falla, no aparece nada', async () => {

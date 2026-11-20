@@ -32,4 +32,6 @@ uso). No hay una lista guardada de `buddys-mejoras`: la propuesta sale de la aud
 
 - [x] Implementado
 - [x] Typecheck, lint y tests (frontend: 311 tests)
-- [ ] Revisión de pruebas y de seguridad
+- [x] Revisión de pruebas (19/11): sin errores; toda sección no principal tiene grupo (test), los grupos vacíos para el
+  rol no salen ni en Más ni en el riel.
+- [x] Revisión de seguridad (19/11): sin hallazgos; ningún rol ve secciones fuera de su capacidad ni grupos vacíos.

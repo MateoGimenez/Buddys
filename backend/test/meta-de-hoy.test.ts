@@ -92,6 +92,57 @@ describe('GET /api/admin/metas/hoy', () => {
     expect((await admin.get('/api/admin/metas/hoy')).body).toEqual({ fecha: '2026-10-01', lavados: { hechos: 1, objetivo: 2, mesCumplido: false } });
   });
 
+  it('cerca de medianoche manda la hora de La Rioja: 23:30 del 31/10 (02:30 UTC del 1/11) es el último día de octubre', async () => {
+    const context = await createTestContext({ now: new Date('2026-11-01T02:30:00.000Z') });
+    const admin = (await loginAs(context, 'admin', 'ana@t.test')).client;
+    await admin.put('/api/admin/metas/2026-10', { trabajosObjetivo: 40 });
+    await admin.put('/api/admin/metas/2026-11', { trabajosObjetivo: 300 });
+    await completados(context, '2026-10-05', 10);
+    await completados(context, '2026-10-31', 2);
+    await completados(context, '2026-11-01', 5); // noviembre: no cuenta todavía
+    // Último día de octubre: pide todo lo que falta (30), sin repartir.
+    expect((await admin.get('/api/admin/metas/hoy')).body).toEqual({ fecha: '2026-10-31', lavados: { hechos: 2, objetivo: 30, mesCumplido: false } });
+
+    // 00:30 del 1/11 en La Rioja: ya es noviembre (300 en 30 días = 10) y lo de octubre no cuenta.
+    context.clock.current = new Date('2026-11-01T03:30:00.000Z');
+    expect((await admin.get('/api/admin/metas/hoy')).body).toEqual({ fecha: '2026-11-01', lavados: { hechos: 5, objetivo: 10, mesCumplido: false } });
+  });
+
+  it('los turnos cancelados, pendientes o confirmados no cuentan como lavados', async () => {
+    const context = await createTestContext();
+    const admin = (await loginAs(context, 'admin', 'ana@t.test')).client;
+    await admin.put('/api/admin/metas/2026-10', { trabajosObjetivo: 16 });
+    for (const estado of ['cancelado', 'pendiente', 'confirmado']) {
+      for (const fecha of ['2026-10-10', '2026-10-16']) {
+        await context.db.sql.query(
+          `INSERT INTO buddys.bookings (nombre, telefono, vehiculo_tipo, servicio_id, fecha_preferida, franja, estado)
+           VALUES ('Cliente', '12345678', 'auto', 'pulido', $1::date, 'manana', $2)`,
+          [fecha, estado],
+        );
+      }
+    }
+    // Nada completado: faltan 16 en 16 días → 1, y hoy van 0.
+    expect((await admin.get('/api/admin/metas/hoy')).body).toEqual({ fecha: '2026-10-16', lavados: { hechos: 0, objetivo: 1, mesCumplido: false } });
+  });
+
+  it('febrero bisiesto: el 28/2/2028 quedan dos días (28 y 29)', async () => {
+    const context = await createTestContext({ now: new Date('2028-02-28T15:00:00.000Z') });
+    const admin = (await loginAs(context, 'admin', 'ana@t.test')).client;
+    await admin.put('/api/admin/metas/2028-02', { trabajosObjetivo: 100 });
+    await completados(context, '2028-02-10', 95);
+    // Faltan 5 en 2 días → 3.
+    expect((await admin.get('/api/admin/metas/hoy')).body).toEqual({ fecha: '2028-02-28', lavados: { hechos: 0, objetivo: 3, mesCumplido: false } });
+  });
+
+  it('con el mes ya cumplido al empezar el día: objetivo 0, mesCumplido y los de hoy en hechos', async () => {
+    const context = await createTestContext();
+    const admin = (await loginAs(context, 'admin', 'ana@t.test')).client;
+    await admin.put('/api/admin/metas/2026-10', { trabajosObjetivo: 5 });
+    await completados(context, '2026-10-02', 5);
+    await completados(context, '2026-10-16', 2);
+    expect((await admin.get('/api/admin/metas/hoy')).body).toEqual({ fecha: '2026-10-16', lavados: { hechos: 2, objetivo: 0, mesCumplido: true } });
+  });
+
   it('sin sesión: 401', async () => {
     const context = await createTestContext();
     expect((await createClient(context.app).get('/api/admin/metas/hoy')).status).toBe(401);

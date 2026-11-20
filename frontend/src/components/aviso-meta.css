@@ -3,7 +3,9 @@
 
 .aviso-meta {
   position: fixed;
-  z-index: 30;
+  /* Debajo de la barra (20) y de su menú de la cuenta: si se abre el menú con el aviso a la vista, el menú queda arriba.
+     (.contenido ya arma su propio contexto con view-transition-name, pero no en los navegadores que no lo tienen.) */
+  z-index: 19;
   inset-block-start: calc(var(--barra-alto) + 10px);
   inset-inline: 12px;
   display: flex;

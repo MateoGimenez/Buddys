@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as ep from '../api/endpoints';
 import type { MetaDeHoy } from '../api/types';
 import { AVISO_META_MS, marcarAvisoMetaVisto, yaSeVioAvisoMeta } from '../lib/avisoMeta';
-import { useSesion } from '../session/SessionContext';
+import { useSesion, useUsuario } from '../session/SessionContext';
 
 /** Lo que tarda en irse (la animación de salida); con movimiento reducido es instantáneo igual. */
 const SALIDA_MS = 200;
@@ -17,21 +17,23 @@ type Lavados = NonNullable<MetaDeHoy['lavados']>;
  */
 export function AvisoMeta() {
   const { puede } = useSesion();
+  const { id: usuarioId } = useUsuario();
   const habilitado = puede('metas.hoy');
   const [lavados, setLavados] = useState<Lavados | null>(null);
   const [estado, setEstado] = useState<'visible' | 'saliendo' | 'cerrado'>('visible');
   const [lleno, setLleno] = useState(false);
   const [pausado, setPausado] = useState(false);
+  const raiz = useRef<HTMLDivElement>(null);
   const restante = useRef(AVISO_META_MS);
   const desde = useRef(0);
 
   useEffect(() => {
-    if (!habilitado || yaSeVioAvisoMeta()) return;
+    if (!habilitado || yaSeVioAvisoMeta(usuarioId)) return;
     let vivo = true;
     ep.metaDeHoy()
       .then((r) => {
         if (!vivo || r.lavados === null) return;
-        marcarAvisoMetaVisto();
+        marcarAvisoMetaVisto(usuarioId);
         setLavados(r.lavados);
       })
       .catch(() => {
@@ -40,7 +42,7 @@ export function AvisoMeta() {
     return () => {
       vivo = false;
     };
-  }, [habilitado]);
+  }, [habilitado, usuarioId]);
 
   // La barra arranca vacía y se llena en el cuadro siguiente (así la transición se ve).
   useEffect(() => {
@@ -54,6 +56,8 @@ export function AvisoMeta() {
   }, [lavados]);
 
   const cerrar = useCallback(() => {
+    // Si el foco estaba adentro (el botón Cerrar), vuelve al contenido: si no, se perdería en el body al desmontarse.
+    if (raiz.current?.contains(document.activeElement)) document.getElementById('contenido')?.focus({ preventScroll: true });
     setEstado('saliendo');
   }, []);
 
@@ -86,10 +90,11 @@ export function AvisoMeta() {
   const titulo = mesCumplido ? '¡Ya cumplieron la meta del mes!' : llego ? '¡Llegaron a la meta de hoy!' : 'Meta de hoy';
   const detalle = mesCumplido
     ? `Hoy van ${String(hechos)} ${hechos === 1 ? 'lavado' : 'lavados'}.`
-    : `${String(hechos)} de ${String(objetivo)} lavados`;
+    : `${String(hechos)} de ${String(objetivo)} ${objetivo === 1 ? 'lavado' : 'lavados'}`;
 
   return (
     <div
+      ref={raiz}
       className="aviso-meta"
       data-estado={estado}
       data-llego={llego ? '' : undefined}
@@ -98,7 +103,9 @@ export function AvisoMeta() {
       onPointerEnter={() => {
         setPausado(true);
       }}
-      onPointerLeave={() => {
+      onPointerLeave={(e) => {
+        // Con el dedo, el pointerleave llega al levantarlo: un toque tiene que dejar el aviso quieto, no reanudarlo.
+        if (e.pointerType === 'touch' || e.pointerType === 'pen') return;
         setPausado(false);
       }}
       onPointerDown={() => {
