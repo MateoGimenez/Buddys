@@ -99,7 +99,11 @@ export function PantallaCaja() {
           ) : null}
         </div>
       </Encabezado>
-      <p className="encabezado-fecha">{fecha === hoyAR ? `Hoy, ${fechaLarga(fecha)}` : fechaLarga(fecha)}</p>
+      <p className="encabezado-fecha">
+        {fecha === hoyAR ? `Hoy, ${fechaLarga(fecha)}` : fechaLarga(fecha)}
+        {' · '}
+        <Link to={fecha === hoyAR ? '/planilla' : `/planilla?fecha=${fecha}`}>Ver la planilla de este día</Link>
+      </p>
 
       {recien ? <Aviso tipo="ok" titulo={recien} /> : null}
       {conflicto ? <Aviso titulo="La caja ya estaba cerrada">{conflicto}</Aviso> : null}

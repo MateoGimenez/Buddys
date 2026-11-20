@@ -31,7 +31,7 @@ describe('Más agrupado por secciones', () => {
     await screen.findByRole('heading', { name: 'Atención', level: 2 });
     expect(gruposDeMas()).toEqual([
       ['Atención', ['Agenda', 'Clientes']],
-      ['Plata', ['Caja', 'Gastos', 'Presupuestos']],
+      ['Plata', ['Cierre de caja', 'Gastos', 'Presupuestos']],
       ['Taller', ['Servicios', 'Insumos', 'Equipo']],
     ]);
   });
@@ -59,6 +59,6 @@ describe('Más agrupado por secciones', () => {
     const listas = within(riel).getAllByRole('list');
     // La primera lista son las principales (sin título); después, una por grupo.
     expect(listas.slice(1).map((l) => l.getAttribute('aria-labelledby'))).toEqual(['riel-atencion', 'riel-plata', 'riel-taller']);
-    expect(within(listas[2] as HTMLElement).getAllByRole('link').map((a) => a.textContent)).toEqual(['Caja', 'Gastos', 'Presupuestos']);
+    expect(within(listas[2] as HTMLElement).getAllByRole('link').map((a) => a.textContent)).toEqual(['Cierre de caja', 'Gastos', 'Presupuestos']);
   });
 });

@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import * as ep from '../../api/endpoints';
 import { Aviso, Boton, Cargando, Encabezado, Vacio } from '../../components/ui';
 import { EVENTO_ENVIADOS } from '../../lib/cola';
@@ -14,8 +14,13 @@ import { Resumen } from './Resumen';
 
 export function Planilla() {
   const hoyAR = hoy();
-  // null = "hoy" (si la pantalla queda abierta pasada la medianoche, muestra el día nuevo).
-  const [fechaElegida, setFechaElegida] = useState<string | null>(null);
+  // null = "hoy" (si la pantalla queda abierta pasada la medianoche, muestra el día nuevo). ?fecha= abre un día pasado
+  // (el enlace "Ver la planilla de este día" del cierre de caja).
+  const [params] = useSearchParams();
+  const [fechaElegida, setFechaElegida] = useState<string | null>(() => {
+    const f = params.get('fecha');
+    return f && /^\d{4}-\d{2}-\d{2}$/.test(f) && f < hoyAR ? f : null;
+  });
   const fecha = fechaElegida ?? hoyAR;
   const setFecha = (f: string) => {
     setFechaElegida(f >= hoyAR ? null : f);

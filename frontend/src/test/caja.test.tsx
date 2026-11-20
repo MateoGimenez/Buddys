@@ -13,11 +13,11 @@ function fila(caja: HTMLElement, forma: string): HTMLElement {
   return tr;
 }
 
-describe('Caja del día y forma de pago en la planilla', () => {
+describe('Cobrado hoy y forma de pago en la planilla', () => {
   it('el encargado ve el total por forma de pago, "Sin indicar" y el total cobrado', async () => {
     apiFalsa({ ...sesionAdmin(), 'GET /api/admin/lavados': { status: 200, body: planillaAdmin(hoy()) } });
     renderApp('/planilla');
-    const caja = (await screen.findByRole('heading', { name: 'Caja del día' })).closest('section');
+    const caja = (await screen.findByRole('heading', { name: 'Cobrado hoy' })).closest('section');
     if (!caja) throw new Error('sin caja');
 
     expect(fila(caja, 'Efectivo')).toHaveTextContent('1 lavado$ 12.000');
@@ -43,7 +43,7 @@ describe('Caja del día y forma de pago en la planilla', () => {
     renderApp('/planilla');
     const caja = (await screen.findByRole('heading', { name: 'Cómo pagaron' })).closest('section');
     if (!caja) throw new Error('sin bloque');
-    expect(screen.queryByRole('heading', { name: 'Caja del día' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Cobrado hoy' })).toBeNull();
     expect(fila(caja, 'Efectivo')).toHaveTextContent('1 lavado');
     expect(fila(caja, 'Sin indicar')).toHaveTextContent('1 lavado');
     // Solo dos columnas: forma y cantidad (sin una vacía donde iría el importe).

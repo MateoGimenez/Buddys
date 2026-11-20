@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { hoy, sumarDias } from '../lib/format';
+import { fechaCorta, hoy, sumarDias } from '../lib/format';
 import { apiFalsa } from './apiFalsa';
 import { cajaAbierta, cajaCerrada, cierreDe, cierres, sesionMejoras } from './fixtures-finanzas';
 import { planillaAdmin } from './fixtures';
@@ -126,7 +126,7 @@ describe('Cierre de caja con arqueo', { timeout: 20_000 }, () => {
       'GET /api/admin/lavados': { status: 200, body: planillaAdmin(HOY) },
     });
     renderApp('/planilla');
-    expect(await screen.findByRole('link', { name: 'Contar y cerrar la caja' })).toHaveAttribute('href', `/caja?fecha=${HOY}`);
+    expect(await screen.findByRole('link', { name: 'Cerrar la caja de este día' })).toHaveAttribute('href', `/caja?fecha=${HOY}`);
   });
 
   it('abre el día que viene en ?fecha= (el enlace de la planilla de un día pasado)', async () => {
@@ -145,7 +145,25 @@ describe('Cierre de caja con arqueo', { timeout: 20_000 }, () => {
     const api = apiFalsa({ ...sesionMejoras('empleado') });
     renderApp('/caja');
     expect(await screen.findByRole('heading', { name: 'Registrar lavado' })).toBeInTheDocument();
-    expect(within(screen.getByRole('navigation', { name: 'Secciones' })).queryByRole('link', { name: 'Caja' })).toBeNull();
+    expect(within(screen.getByRole('navigation', { name: 'Secciones' })).queryByRole('link', { name: 'Cierre de caja' })).toBeNull();
     expect(api.de('GET', '/api/admin/caja')).toHaveLength(0);
+  });
+});
+
+describe('"Cobrado hoy" y "Cierre de caja": un nombre para cada cosa (contrato 2026-11-19_11)', { timeout: 20_000 }, () => {
+  it('desde el cierre de un día pasado se vuelve a la planilla de ese día, y la planilla abre ese día', async () => {
+    const DIA = sumarDias(HOY, -2);
+    apiFalsa({
+      ...sesionMejoras('admin'),
+      'GET /api/admin/caja': { status: 200, body: cajaAbierta(DIA) },
+      'GET /api/admin/caja/cierres': { status: 200, body: { cierres: [], total: 0 } },
+      'GET /api/admin/lavados': { status: 200, body: planillaAdmin(DIA) },
+    });
+    const { user } = renderApp(`/caja?fecha=${DIA}`);
+    const volver = await screen.findByRole('link', { name: 'Ver la planilla de este día' });
+    expect(volver).toHaveAttribute('href', `/planilla?fecha=${DIA}`);
+    await user.click(volver);
+    expect(await screen.findByRole('heading', { name: `Cobrado el ${fechaCorta(DIA)}` })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Cerrar la caja de este día' })).toHaveAttribute('href', `/caja?fecha=${DIA}`);
   });
 });

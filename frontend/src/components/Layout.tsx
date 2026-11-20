@@ -58,7 +58,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/planilla', nombre: 'Planilla', icono: ClipboardList, capacidad: 'turnos.ver', principal: true, descripcion: 'Los lavados del día' },
   { ruta: '/numeros', nombre: 'Números', icono: BarChart3, capacidad: 'estadisticas.propias', principal: true, descripcion: 'Ingresos, metas y seguimiento' },
   { ruta: '/agenda', grupo: 'atencion', nombre: 'Agenda', icono: CalendarDays, capacidad: 'turnos.ver', descripcion: 'Turnos largos y señas' },
-  { ruta: '/caja', grupo: 'plata', nombre: 'Caja', icono: Wallet, capacidad: 'caja.cerrar', descripcion: 'Contar y cerrar la caja del día' },
+  { ruta: '/caja', grupo: 'plata', nombre: 'Cierre de caja', icono: Wallet, capacidad: 'caja.cerrar', descripcion: 'Contar la plata y cerrar el día' },
   { ruta: '/clientes', grupo: 'atencion', nombre: 'Clientes', icono: Contact, capacidad: 'turnos.clientes', descripcion: 'Historial, sellos e inactivos' },
   { ruta: '/servicios', grupo: 'taller', nombre: 'Servicios', icono: Tags, capacidad: 'catalogo.ver', descripcion: 'Precios y vehículos' },
   { ruta: '/insumos', grupo: 'taller', nombre: 'Insumos', icono: Boxes, capacidad: 'inventario.ver', descripcion: 'Stock y uso de productos' },

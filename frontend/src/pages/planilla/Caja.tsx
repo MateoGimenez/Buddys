@@ -1,15 +1,19 @@
 import type { PlanillaDelDia } from '../../api/types';
 import { Link } from 'react-router-dom';
-import { NOMBRE_PAGO, pesos } from '../../lib/format';
+import { NOMBRE_PAGO, fechaCorta, hoy, pesos } from '../../lib/format';
 import { usePuede } from '../../lib/nivel';
 import { Cifra } from './Resumen';
 
-/** Cierre de caja: cuánto entró por cada forma de pago. El empleado ve solo cuántos lavados, nunca importes. */
+/**
+ * "Cobrado hoy" (o "Cobrado el <día>"): cuánto entró por cada forma de pago. No es el cierre de caja (eso es contar la
+ * plata, en /caja): de acá se va con "Cerrar la caja de este día" (contrato reportes/2026-11-19_11). El empleado ve solo
+ * cuántos lavados por forma de pago ("Cómo pagaron"), nunca importes ni el enlace al cierre.
+ */
 export function Caja({ datos, veImportes }: { datos: PlanillaDelDia; veImportes: boolean }) {
   const { porFormaPago, total, sinMonto } = datos.resumen;
   const conImportes = veImportes && total !== null;
   const cierra = usePuede('caja.cerrar');
-  const titulo = conImportes ? 'Caja del día' : 'Cómo pagaron';
+  const titulo = conImportes ? (datos.fecha === hoy() ? 'Cobrado hoy' : `Cobrado el ${fechaCorta(datos.fecha)}`) : 'Cómo pagaron';
   return (
     <section className="caja hoja" aria-labelledby="caja-titulo">
       <h2 id="caja-titulo" className="caja-titulo">
@@ -59,7 +63,7 @@ export function Caja({ datos, veImportes }: { datos: PlanillaDelDia; veImportes:
       ) : null}
       {conImportes && cierra ? (
         <Link to={`/caja?fecha=${datos.fecha}`} className="caja-cerrar">
-          Contar y cerrar la caja
+          Cerrar la caja de este día
         </Link>
       ) : null}
     </section>
